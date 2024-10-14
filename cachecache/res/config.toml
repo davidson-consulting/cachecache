@@ -1,0 +1,36 @@
+[main]
+log-lvl = "debug" # debug < success < info < warn < error < none
+log-path = ""
+duration_init = 86400 # 24 * 3600s = 1 day
+frequence_clean = -1 #3600 # every hours
+cache_size = 200 # cache size in GB
+output_directory = "/tmp"
+
+[caches.0]
+name = "cache0"
+requested = 10
+p0 = 0.75 #90
+p1 = 0.95 #95
+p2 = 0.9999 #99.99
+
+[generators.0]
+target = "cache0"
+#traces = "/home/dimitri/Documents/notes-rd/experiences/Distiller/dynamic-cache/traces-generator/traces/traces_1.csv"
+traces = "/home/dimitri/Téléchargements/cache/45/cluster45.sort_1"
+frequency = 300
+nb_seconds = 3600 #86400
+
+[caches.1]
+name = "cache1"
+requested = 10
+p0 = 0.75 #90
+p1 = 0.95 #95
+p2 = 0.9999 #99.99
+
+[generators.1]
+target = "cache1"
+#traces = "/home/dimitri/Documents/notes-rd/experiences/Distiller/dynamic-cache/traces-generator/traces/traces_2.csv"
+traces = "/home/dimitri/Téléchargements/cache/45/cluster45.sort_2"
+frequency = 300
+nb_seconds = 3600 #86400
+

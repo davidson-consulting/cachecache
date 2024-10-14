@@ -1,3 +1,7 @@
+./cachecache/CacheLib
+./cachecache/.build
+.build
+
 # Prerequisites
 *.d
 
