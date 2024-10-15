@@ -13,6 +13,9 @@
 #include <service/market.hh>
 
 namespace cachecache {
+    /**
+     * Class responsible for managing several instances of cachelib
+     */
     class Supervisor {
         public:
             Supervisor();
@@ -33,7 +36,9 @@ namespace cachecache {
 
             // map between a name and its cache
             std::unordered_map<std::string, Cachecache> _caches; 
+            // map between a cache name and its clock
             std::unordered_map<std::string, Clock> _clocks;
+            // map between a cache name and its generator
             std::unordered_map<std::string, Generator> _generators;
             std::unordered_map<std::string, std::shared_ptr<bool>> _generator_finished;
 

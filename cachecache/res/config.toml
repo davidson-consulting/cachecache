@@ -15,10 +15,10 @@ p2 = 0.9999 #99.99
 
 [generators.0]
 target = "cache0"
-#traces = "/home/dimitri/Documents/notes-rd/experiences/Distiller/dynamic-cache/traces-generator/traces/traces_1.csv"
-traces = "/home/dimitri/Téléchargements/cache/45/cluster45.sort_1"
+traces = "/home/dimitri/Documents/cachecache/xps/traces_tests/traces_1.csv"
+#traces = "../../xps/traces_tests/traces_1.csv"
 frequency = 300
-nb_seconds = 3600 #86400
+nb_seconds = 3600 
 
 [caches.1]
 name = "cache1"
@@ -29,8 +29,8 @@ p2 = 0.9999 #99.99
 
 [generators.1]
 target = "cache1"
-#traces = "/home/dimitri/Documents/notes-rd/experiences/Distiller/dynamic-cache/traces-generator/traces/traces_2.csv"
-traces = "/home/dimitri/Téléchargements/cache/45/cluster45.sort_2"
+traces = "/home/dimitri/Documents/cachecache/xps/traces_tests/traces_1.csv"
+#traces = "../../xps/traces_tests/traces_2.csv"
 frequency = 300
-nb_seconds = 3600 #86400
+nb_seconds = 3600 
 

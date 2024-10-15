@@ -52,8 +52,6 @@ namespace cachecache {
 
             void setTargetedPercentile(unsigned int i);
 
-            void test();
-
         private:
             std::string _name;
             size_t _requested;
