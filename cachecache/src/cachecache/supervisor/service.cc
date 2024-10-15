@@ -3,7 +3,7 @@
 #include <csignal>
 #include "service.hh"
 
-#include <cachecache/client/service.hh>
+#include <cachecache/instance/service.hh>
 #include <rd_utils/foreign/CLI11.hh>
 
 
@@ -82,7 +82,6 @@ namespace cachecache::supervisor {
     ::exit (0);
   }
 
-
   /**
    * ==========================================================================
    * ==========================================================================
@@ -105,13 +104,27 @@ namespace cachecache::supervisor {
       auto port = msg ["port"].getI ();
 
       auto remote = this-> _system-> remoteActor (name, addr + ":" + std::to_string (port));
-      auto uid = name + std::to_string (this-> _lastUid++);
+      auto uid = this-> _lastUid++;
 
-      this-> _instances.emplace (uid, CacheInfo {.remote = remote});
-      return ResponseCode (200);
+      this-> _instances.emplace (uid, CacheInfo {.remote = remote, .name = name});
+      auto resp = std::make_shared <config::Dict> ();
+      resp-> insert ("uid", (int64_t) uid);
+
+      LOG_INFO ("Inserted cache : ", uid);
+      return ResponseCode (200, resp);
     } catch (std::runtime_error & e) {
       LOG_ERROR ("Error in register : ", e.what ());
       return ResponseCode (401);
+    }
+  }
+
+  void SupervisorService::eraseCache (const config::ConfigNode & msg) {
+    try {
+      auto uid = msg ["uid"].getI ();
+      this-> _instances.erase (uid);
+      LOG_INFO ("Erased cache : ", uid);
+    }  catch (std::runtime_error & e) {
+      LOG_ERROR ("Error in erase : ", e.what ());
     }
   }
 
@@ -124,8 +137,13 @@ namespace cachecache::supervisor {
    */
 
   void SupervisorService::onMessage (const rd_utils::utils::config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", "none");
+    auto type = msg.getOr ("type", RequestIds::NONE);
     LOG_INFO ("Supervisor actor (", this-> _name, ") received a message : ", type);
+    switch (type) {
+      case RequestIds::EXIT :
+        this-> eraseCache (msg);
+        break;
+    }
   }
 
   std::shared_ptr<rd_utils::utils::config::ConfigNode> SupervisorService::onRequest (const rd_utils::utils::config::ConfigNode & msg) {

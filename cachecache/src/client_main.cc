@@ -1,13 +1,15 @@
-#define LOG_LEVEL 10
-
-#include <iostream>
-#include <rd_utils/concurrency/actor/_.hh>
 #include <cachecache/client/service.hh>
 
-using namespace cachecache;
 using namespace cachecache::client;
 
 int main (int argc, char ** argv) {
-  CacheService::deploy (argc, argv);
-  return 0;
+  CacheClient cl (argv [1], atoi (argv[2]));
+
+  int v;
+  scanf ("%d", &v);
+  if (v == 0) {
+    std::cout <<  cl.get ("salutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalut90078978789") << std::endl;
+  } else {
+    cl.set ("salut", "test");
+  }
 }

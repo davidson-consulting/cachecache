@@ -15,12 +15,13 @@ namespace cachecache::supervisor {
 
     struct CacheInfo {
       std::shared_ptr <rd_utils::concurrency::actor::ActorRef> remote;
+      std::string name;
     };
 
   private:
 
     // The cache instances
-    std::map <std::string,  CacheInfo> _instances;
+    std::map <uint32_t,  CacheInfo> _instances;
 
     // counter to create UIDs
     uint32_t _lastUid = 1;
@@ -65,6 +66,11 @@ namespace cachecache::supervisor {
      *    - cfg: the message sent by the entity
      */
     std::shared_ptr <rd_utils::utils::config::ConfigNode> registerCache (const rd_utils::utils::config::ConfigNode & cfg);
+
+    /**
+     * Erase a cache instance
+     */
+    void eraseCache (const rd_utils::utils::config::ConfigNode & cfg);
 
     /**
      * Dispose the service, and kill all attached cache entities

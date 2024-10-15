@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+# set -e
 
 # Root directory for the CacheLib project
 CLBASE="$PWD/CacheLib"
@@ -32,7 +32,8 @@ PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/lib64/pkgconfig:${PKG_CONFIG_PATH
 export PKG_CONFIG_PATH
 LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/lib64:${LD_LIBRARY_PATH:-}"
 export LD_LIBRARY_PATH
-echo $LD_LIBRARY_PATH
+
+echo $CMAKE_PREFIX_PATH
 
 mkdir -p .build
 cd .build
