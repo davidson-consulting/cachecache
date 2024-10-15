@@ -7,7 +7,11 @@ using namespace rd_utils;
 using namespace rd_utils::utils;
 using namespace rd_utils::concurrency;
 
+using namespace cachecache::utils;
+
 namespace cachecache::client {
+
+  std::shared_ptr <actor::ActorSystem> CacheService::__GLOBAL_SYSTEM__ = nullptr;
 
   /**
    * ========================================================================
@@ -29,31 +33,15 @@ namespace cachecache::client {
       port = (*repo) ["sys"].getOr ("port", 0);
     }
 
-    std::string superAddr = "127.0.0.1";
-    uint32_t superPort = 8080;
+    __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), 2);
+    __GLOBAL_SYSTEM__-> start ();
 
-    if (repo-> contains ("supervisor")) {
-      superAddr = (*repo) ["supervisor"].getOr ("addr", "0.0.0.0");
-      superPort = (*repo) ["supervisor"].getOr ("port", 0);
-    }
+    LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
 
-    actor::ActorSystem sys (net::SockAddrV4 (addr, port));
-    sys.start ();
+    __GLOBAL_SYSTEM__-> add <CacheService> ("client", repo);
 
-    config::Dict config;
-    config.insert ("super-addr", superAddr);
-    config.insert ("super-port", (int64_t) superPort);
-
-    if (repo-> contains ("service")) {
-      config.insert ("service", repo-> get ("service"));
-    } else {
-      config.insert ("service", std::make_shared <config::Dict> ());
-    }
-
-    sys.add <CacheService> ("client", config);
-
-    sys.join ();
-    sys.dispose ();
+    __GLOBAL_SYSTEM__-> join ();
+    __GLOBAL_SYSTEM__-> dispose ();
   }
 
   std::string CacheService::appOption (int argc, char ** argv) {
@@ -78,11 +66,18 @@ namespace cachecache::client {
    */
 
 
-  CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & cfg) :
+  CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) :
     actor::ActorBase (name, sys)
   {
     LOG_INFO ("Spawning a new cache instance -> ", name);
-    std::cout << cfg << std::endl;
+    this-> _cfg = cfg;
+  }
+
+  void CacheService::onStart () {
+    this-> connectSupervisor (this-> _cfg);
+
+    // no need to keep the configuration
+    this-> _cfg = nullptr;
   }
 
   /**
@@ -95,18 +90,78 @@ namespace cachecache::client {
 
 
   void CacheService::onMessage (const config::ConfigNode & msg) {
-    LOG_INFO ("Cache instance (", this-> _name, ") received a message : ");
-    std::cout << msg << std::endl;
+    auto type = msg.getOr ("type", RequestIds::NONE);
+    LOG_INFO ("Cache instance (", this-> _name, ") received a message : ", type);
+
+    switch (type) {
+    case RequestIds::POISON_PILL :
+      this-> exit ();
+      break;
+    default:
+      LOG_ERROR ("Unkown message");
+      break;
+    }
   }
 
   std::shared_ptr<config::ConfigNode> CacheService::onRequest (const config::ConfigNode & msg) {
-    LOG_INFO ("Cache instance (", this-> _name, ") received a request : ");
-    std::cout << msg << std::endl;
-    return nullptr;
+    auto type = msg.getOr ("type", RequestIds::NONE);
+    LOG_INFO ("Cache instance (", this-> _name, ") received a request : ", type);
+
+    return ResponseCode (404);
   }
 
   void CacheService::onQuit () {
     LOG_INFO ("Killing cache instance -> ", this-> _name);
+    ::exit (0);
   }
+
+  /**
+   * ==========================================================================
+   * ==========================================================================
+   * =========================     SUPERVISOR     ==============================
+   * ==========================================================================
+   * ==========================================================================
+   */
+
+  void CacheService::connectSupervisor (const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) {
+    std::shared_ptr <rd_utils::concurrency::actor::ActorRef> act = nullptr;
+    try {
+      auto & conf = *cfg;
+      std::string sName = "supervisor", sAddr = "127.0.0.1";
+      int64_t sPort = 8080;
+
+      if (conf.contains ("supervisor")) {
+        sName = conf ["supervisor"].getOr ("name", sName);
+        sAddr = conf ["supervisor"].getOr ("addr", sAddr);
+        sPort = conf ["supervisor"].getOr ("port", sPort);
+      }
+
+      if (conf.contains ("sys")) {
+        this-> _iface = conf ["sys"].getOr ("iface", "lo");
+      } else this-> _iface = "lo";
+
+      this-> _supervisor = this-> _system-> remoteActor (sName, sAddr + ":" + std::to_string (sPort), false);
+
+      std::string addr = rd_utils::net::Ipv4Address::getIfaceIp (this-> _iface).toString ();
+
+      auto msg = config::Dict ()
+        .insert ("type", RequestIds::REGISTER)
+        .insert ("name", this-> _name)
+        .insert ("addr", addr)
+        .insert ("port", (int64_t) this-> _system-> port ());
+
+      auto resp = this-> _supervisor-> request (msg);
+      if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
+        throw std::runtime_error ("Failed to register : " + this-> _name);
+      }
+
+    } catch (std::runtime_error & err) {
+      LOG_ERROR ("Error : ", err.what ());
+      throw std::runtime_error ("Failed to connect to supervisor");
+    }
+
+    LOG_INFO ("Connected to supervisor");
+  }
+
 
 }

@@ -1,11 +1,10 @@
-[system]
+[sys]
 addr = "0.0.0.0"
-port = 0
+port = 9092
 
 [supervisor]
-content = 1
 addr = "0.0.0.0"
-port = 9090
+port = 9089
 
 [service]
 content = 2

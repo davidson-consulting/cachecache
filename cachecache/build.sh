@@ -22,7 +22,7 @@ CLBASE="$PWD/CacheLib"
 CLCMAKE="$CLBASE/cachelib/cmake"
 
 # After ensuring we are in the correct directory, set the installation prefix"
-PREFIX="$CLBASE/opt/cachelib/"
+PREFIX="$CLBASE/opt/cachelib"
 
 CMAKE_PARAMS="-DCMAKE_INSTALL_PREFIX='$PREFIX' -DCMAKE_MODULE_PATH='$CLCMAKE' -DCMAKE_BUILD_TYPE=Debug"
 
@@ -32,6 +32,7 @@ PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/lib64/pkgconfig:${PKG_CONFIG_PATH
 export PKG_CONFIG_PATH
 LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/lib64:${LD_LIBRARY_PATH:-}"
 export LD_LIBRARY_PATH
+echo $LD_LIBRARY_PATH
 
 mkdir -p .build
 cd .build

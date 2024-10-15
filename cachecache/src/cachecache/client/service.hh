@@ -1,7 +1,7 @@
 #pragma once
 
 #include <rd_utils/_.hh>
-#include <cachecache/utils/codes/response.hh>
+#include <cachecache/utils/codes/_.hh>
 
 namespace cachecache::client {
 
@@ -11,8 +11,17 @@ namespace cachecache::client {
   class CacheService : public rd_utils::concurrency::actor::ActorBase {
   private:
 
+    // The service network interface
+    std::string _iface;
+
     // The reference to the supervisor actor
     std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _supervisor;
+
+    // The configuration of the actor
+    std::shared_ptr <rd_utils::utils::config::ConfigNode> _cfg;
+
+    // The actor system managing the actor
+    static std::shared_ptr <rd_utils::concurrency::actor::ActorSystem>  __GLOBAL_SYSTEM__;
 
     // The cache entity managed by the actor
     // CacheEntity _entity;
@@ -26,7 +35,12 @@ namespace cachecache::client {
      *    - sys: the actor system of
      *    - cfg: the configuration of the cache
      */
-    CacheService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & cfg);
+    CacheService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg);
+
+    /**
+     * Triggered when the actor is register
+     */
+    void onStart () override;
 
     /**
      * Triggered when a message that does not require an answer is sent to the actor
@@ -52,6 +66,15 @@ namespace cachecache::client {
 
     static void deploy (int argc, char ** argv);
     static std::string appOption (int argc, char ** argv);
+
+  private:
+
+    /**
+     * Connect the cache service actor to the supervisor
+     * @params:
+     *    - cfg: the configuration passed to the service
+     */
+    void connectSupervisor (const std::shared_ptr <rd_utils::utils::config::ConfigNode> conf);
 
   };
 

@@ -2,7 +2,7 @@
 
 #include <map>
 #include <rd_utils/_.hh>
-#include <cachecache/utils/codes/response.hh>
+#include <cachecache/utils/codes/_.hh>
 
 namespace cachecache::supervisor {
 
@@ -13,8 +13,19 @@ namespace cachecache::supervisor {
   class SupervisorService : public rd_utils::concurrency::actor::ActorBase {
   private:
 
+    struct CacheInfo {
+      std::shared_ptr <rd_utils::concurrency::actor::ActorRef> remote;
+    };
+
+  private:
+
     // The cache instances
-    std::map <std::string, std::shared_ptr <rd_utils::concurrency::actor::ActorRef> > _instances;
+    std::map <std::string,  CacheInfo> _instances;
+
+    // counter to create UIDs
+    uint32_t _lastUid = 1;
+
+    static std::shared_ptr <rd_utils::concurrency::actor::ActorSystem>  __GLOBAL_SYSTEM__;
 
   public:
 
@@ -49,11 +60,11 @@ namespace cachecache::supervisor {
   private:
 
     /**
-     * Configure the service
+     * Register a new cache entity
      * @params:
-     *    - cfg: the configuration to use
+     *    - cfg: the message sent by the entity
      */
-    void configure (const rd_utils::utils::config::ConfigNode & cfg);
+    std::shared_ptr <rd_utils::utils::config::ConfigNode> registerCache (const rd_utils::utils::config::ConfigNode & cfg);
 
     /**
      * Dispose the service, and kill all attached cache entities
@@ -73,6 +84,11 @@ namespace cachecache::supervisor {
      * Parse app options
      */
     static std::string appOption (int argc, char ** argv);
+
+    /**
+     * Function called when app is killed
+     */
+    static void ctrlCHandler (int signum);
 
   };
 
