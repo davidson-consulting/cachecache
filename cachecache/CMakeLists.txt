@@ -17,24 +17,23 @@ FetchContent_MakeAvailable(rd_utils)
 
 file(
   GLOB_RECURSE
-  SRC_NO_MAIN
-  src/service/*.cc
-)
-
-file(  
-  GLOB_RECURSE
   SRC
-  src/service/*.cc
-  )
-list(APPEND SRC src/main.cc)
+  src/cachecache/*.cc
+)
 
 # CACHELIB
 find_package(cachelib CONFIG REQUIRED)
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 # Cachecache
-add_executable (cachecache ${SRC})
+add_library (cachecache ${SRC})
+add_executable (supervisor src/supervisor_main.cc)
+add_executable (client src/client_main.cc)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
+
 target_include_directories(cachecache PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src)
-target_link_libraries(cachecache cachelib ${CMAKE_BINARY_DIR}/_deps/rd_utils-build/librd_utils.a)
+target_include_directories(supervisor PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src)
+target_link_libraries(supervisor cachecache ${CMAKE_BINARY_DIR}/_deps/rd_utils-build/librd_utils.a)
+
+target_include_directories(client PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src)
+target_link_libraries(client cachelib cachecache ${CMAKE_BINARY_DIR}/_deps/rd_utils-build/librd_utils.a)
