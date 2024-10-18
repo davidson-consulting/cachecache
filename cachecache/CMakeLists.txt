@@ -4,6 +4,11 @@ project(cachecache)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
+set (CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/../CacheLib/opt/cachelib/lib/cmake\:${CMAKE_PREFIX_PATH\:-}")
+set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../CacheLib/")
+set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_BINARY_DIR}/../CacheLib/cachelib/cmake")
+set (CMAKE_BUILD_TYPE "Debug")
+
 
 # RD UTILS
 include(FetchContent)
@@ -28,6 +33,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
 # Cachecache
 add_library (cachecache ${SRC})
 add_executable (supervisor src/supervisor_main.cc)
+add_dependencies (cachecache rd_utils)
+
 add_executable (cache src/instance_main.cc)
 add_executable (client src/client_main.cc src/cachecache/client/service.cc)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
@@ -41,3 +48,13 @@ target_link_libraries(cache cachelib cachecache ${CMAKE_BINARY_DIR}/_deps/rd_uti
 
 target_include_directories(client PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src)
 target_link_libraries(client ${CMAKE_BINARY_DIR}/_deps/rd_utils-build/librd_utils.a)
+
+add_custom_command (TARGET supervisor
+                   POST_BUILD
+                   COMMAND patchelf --add-needed  libfolly_exception_tracer_base.so.0.58.0-dev supervisor
+    )
+
+add_custom_command (TARGET cache
+                   POST_BUILD
+                   COMMAND patchelf --add-needed  libfolly_exception_tracer_base.so.0.58.0-dev cache
+   )
