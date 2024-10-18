@@ -18,11 +18,11 @@ namespace cachecache::supervisor {
   std::shared_ptr <actor::ActorSystem> SupervisorService::__GLOBAL_SYSTEM__ = nullptr;
 
   /**
-   * ========================================================================
-   * ========================================================================
-   * =======================    DEPLOYEMENT   ===============================
-   * ========================================================================
-   * ========================================================================
+   * ============================================================================================================
+   * ============================================================================================================
+   * ===========================================      DEPLOYMENT      ===========================================
+   * ============================================================================================================
+   * ============================================================================================================
    */
 
   void SupervisorService::deploy (int argc, char ** argv) {
@@ -47,12 +47,7 @@ namespace cachecache::supervisor {
 
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
 
-    config::Dict config ;
-    if (repo-> contains ("supervisor")) {
-      config.insert ("config", repo-> get ("supervisor"));
-    }
-
-    __GLOBAL_SYSTEM__-> add <SupervisorService> ("supervisor", config);
+    __GLOBAL_SYSTEM__-> add <SupervisorService> ("supervisor", repo);
 
     __GLOBAL_SYSTEM__-> join ();
     __GLOBAL_SYSTEM__-> dispose ();
@@ -83,32 +78,85 @@ namespace cachecache::supervisor {
   }
 
   /**
-   * ==========================================================================
-   * ==========================================================================
-   * =========================   CONFIGURATION   ==============================
-   * ==========================================================================
-   * ==========================================================================
+   * ============================================================================================================
+   * ============================================================================================================
+   * ==========================================      CONFIGURE      =============================================
+   * ============================================================================================================
+   * ============================================================================================================
    */
 
-
-  SupervisorService::SupervisorService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & cfg) :
+  SupervisorService::SupervisorService (const std::string & name, actor::ActorSystem * sys, std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) :
     actor::ActorBase (name, sys)
+    , _cfg (cfg)
+    , _marketRoutine (0, nullptr)
   {
     LOG_INFO ("Spawning supervisor actor -> ", name);
   }
+
+
+  void SupervisorService::onStart () {
+    this-> configure (this-> _cfg);
+
+    // no need to keep the configuration
+    this-> _cfg = nullptr;
+  }
+
+  void SupervisorService::configure (std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) {
+    auto & conf = *cfg;
+
+    this-> _memoryPoolSize = 1024;
+    if (conf.contains ("cache")) {
+      this-> _memoryPoolSize = conf ["cache"].getOr ("size", (int64_t) this-> _memoryPoolSize);
+    }
+
+    if (conf.contains ("sys")) {
+      this-> _freq = conf["sys"].getOr ("freq", 1.0f);
+    } else {
+      this-> _freq = 1.0f;
+    }
+
+    this-> _running = true;
+    this-> _marketRoutine = concurrency::spawn (this, &SupervisorService::marketRoutine);
+  }
+
+  void SupervisorService::onQuit () {
+    LOG_INFO ("Supervisor actor (", this-> _name, ") was killed");
+    if (this-> _marketRoutine.id != 0) {
+      this-> _running = false;
+      concurrency::join (this-> _marketRoutine);
+      this-> _marketRoutine = concurrency::Thread (0, nullptr);
+    }
+
+    for (auto & it : this-> _instances) {
+      it.second.remote-> send (config::Dict ()
+                               .insert ("type", RequestIds::POISON_PILL));
+
+      LOG_INFO ("Broadcasting the info to cache entity : ", it.first);
+    }
+  }
+
+  /**
+   * ============================================================================================================
+   * ============================================================================================================
+   * ========================================      REGISTRATION      ============================================
+   * ============================================================================================================
+   * ============================================================================================================
+   */
 
   std::shared_ptr<config::ConfigNode> SupervisorService::registerCache (const config::ConfigNode & msg) {
     try {
       auto name = msg ["name"].getStr ();
       auto addr = msg ["addr"].getStr ();
       auto port = msg ["port"].getI ();
+      auto ask = std::min ((uint64_t) msg ["size"].getI (), this-> _memoryPoolSize);
 
       auto remote = this-> _system-> remoteActor (name, addr + ":" + std::to_string (port));
       auto uid = this-> _lastUid++;
 
-      this-> _instances.emplace (uid, CacheInfo {.remote = remote, .name = name});
+      this-> _instances.emplace (uid, CacheInfo {.remote = remote, .name = name, .req = ask});
       auto resp = std::make_shared <config::Dict> ();
       resp-> insert ("uid", (int64_t) uid);
+      resp-> insert ("max-size", (int64_t) this-> _memoryPoolSize);
 
       LOG_INFO ("Inserted cache : ", uid);
       return ResponseCode (200, resp);
@@ -129,11 +177,11 @@ namespace cachecache::supervisor {
   }
 
   /**
-   * ==========================================================================
-   * ==========================================================================
-   * =========================     MESSAGING     ==============================
-   * ==========================================================================
-   * ==========================================================================
+   * ============================================================================================================
+   * ============================================================================================================
+   * ===========================================      MESSAGING      ============================================
+   * ============================================================================================================
+   * ============================================================================================================
    */
 
   void SupervisorService::onMessage (const rd_utils::utils::config::ConfigNode & msg) {
@@ -157,14 +205,25 @@ namespace cachecache::supervisor {
     return ResponseCode (404);
   }
 
-  void SupervisorService::onQuit () {
-    LOG_INFO ("Supervisor actor (", this-> _name, ") was killed");
-    for (auto & it : this-> _instances) {
-      it.second.remote-> send (config::Dict ()
-                               .insert ("type", RequestIds::POISON_PILL));
+  /**
+   * ============================================================================================================
+   * ============================================================================================================
+   * =============================================      MARKET      =============================================
+   * ============================================================================================================
+   * ============================================================================================================
+   */
 
-      LOG_INFO ("Broadcasting the info to cache entity : ", it.first);
+  void SupervisorService::marketRoutine (rd_utils::concurrency::Thread) {
+    concurrency::timer t;
+    while (this-> _running) {
+      t.reset ();
+      LOG_INFO ("Market iteration");
+
+      auto took = t.time_since_start ();
+      auto sleep = (1.0f / this-> _freq) - took;
+      concurrency::timer::sleep (sleep);
     }
   }
+
 
 }

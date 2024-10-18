@@ -3,3 +3,9 @@
 [sys]
 addr = "0.0.0.0" # accepted connections
 port = 9089 # port of the tcp server
+freq = 1
+
+# Configuration of the memory pool
+# @optional
+[cache]
+size = 8192 # amount of memory usable by the pool in MB

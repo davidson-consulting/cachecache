@@ -41,6 +41,8 @@ namespace cachecache::instance {
     }
 
     __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), 2);
+
+    __GLOBAL_SYSTEM__-> joinOnEmpty (true);
     __GLOBAL_SYSTEM__-> start ();
 
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
@@ -105,17 +107,15 @@ namespace cachecache::instance {
     try {
       auto & conf = *cfg;
       std::string name = "cache";
-      int64_t size = 1024 * 1024 * 1024;
       int64_t ttl = Limits::BASE_TTL;
 
       if (conf.contains ("cache")) {
         name = conf ["cache"].getOr ("name", name);
-        size = conf ["cache"].getOr ("size", size);
         ttl = conf ["cache"].getOr ("ttl", ttl);
       }
 
       this-> _entity = std::make_shared <CacheEntity> ();
-      this-> _entity-> configure (name, size, ttl);
+      this-> _entity-> configure (name, this-> _regSize, ttl);
     } catch (std::runtime_error & e) {
       LOG_ERROR ("Cache entity configuration failed (", e.what (), "). Abort");
       throw std::runtime_error ("in entity configuration");
@@ -164,8 +164,6 @@ namespace cachecache::instance {
                                  .insert ("type", RequestIds::EXIT)
                                  .insert ("uid", (int64_t) this-> _uid));
     }
-
-    ::exit (0);
   }
 
   /**
@@ -181,12 +179,16 @@ namespace cachecache::instance {
     try {
       auto & conf = *cfg;
       std::string sName = "supervisor", sAddr = "127.0.0.1";
-      int64_t sPort = 8080;
+      int64_t sPort = 8080, size = 1024 * 1024 * 1024;
 
       if (conf.contains ("supervisor")) {
         sName = conf ["supervisor"].getOr ("name", sName);
         sAddr = conf ["supervisor"].getOr ("addr", sAddr);
         sPort = conf ["supervisor"].getOr ("port", sPort);
+      }
+
+      if (conf.contains ("cache")) {
+        size = conf ["cache"].getOr ("size", 1024) * 1024 * 1024;
       }
 
       std::string iface = "lo";
@@ -201,13 +203,15 @@ namespace cachecache::instance {
         .insert ("type", RequestIds::REGISTER)
         .insert ("name", this-> _name)
         .insert ("addr", this-> _ifaceAddr)
-        .insert ("port", (int64_t) this-> _system-> port ());
+        .insert ("port", (int64_t) this-> _system-> port ())
+        .insert ("size", size);
 
       auto resp = this-> _supervisor-> request (msg);
       if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
         throw std::runtime_error ("Failed to register : " + this-> _name);
       } else {
         this-> _uid = (*resp) ["content"]["uid"].getI ();
+        this-> _regSize = (*resp) ["content"]["max-size"].getI () * 1024 * 1024;
       }
 
     } catch (std::runtime_error & err) {

@@ -20,3 +20,4 @@ port = 0 # port of the tcp server
 # @optional
 [cache]
 ttl = 5
+# size = 1024 # the guarantee request size in MB

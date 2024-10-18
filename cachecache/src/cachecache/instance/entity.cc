@@ -232,12 +232,14 @@ namespace cachecache::instance {
    */
 
   void CacheEntity::dispose () {
-    this-> _entity.reset ();
-    this-> _entity = nullptr;
-    this-> _pool = 0;
-    this-> _maxValueSize = 0;
-    this-> _maxSize = 0;
-    this-> _name = "";
+    if (this-> _entity != nullptr) {
+      this-> _entity.reset ();
+      this-> _entity = nullptr;
+      this-> _pool = 0;
+      this-> _maxValueSize = 0;
+      this-> _maxSize = 0;
+      this-> _name = "";
+    }
   }
 
   CacheEntity::~CacheEntity () {

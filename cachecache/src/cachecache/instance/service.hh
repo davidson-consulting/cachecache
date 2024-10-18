@@ -18,6 +18,9 @@ namespace cachecache::instance {
                 // The uniq id according to the supervisor
                 uint64_t _uid;
 
+                // The memory pool size according to the supervisor
+                uint64_t _regSize;
+
                 // The reference to the supervisor actor
                 std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _supervisor;
 

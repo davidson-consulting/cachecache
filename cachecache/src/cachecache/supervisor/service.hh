@@ -14,8 +14,14 @@ namespace cachecache::supervisor {
   private:
 
     struct CacheInfo {
+      // The actor managing the cache instance
       std::shared_ptr <rd_utils::concurrency::actor::ActorRef> remote;
+
+      // The name of the cache (for debug purpose)
       std::string name;
+
+      // The amount of memory to try to guarantee
+      uint64_t req;
     };
 
   private:
@@ -25,6 +31,23 @@ namespace cachecache::supervisor {
 
     // counter to create UIDs
     uint32_t _lastUid = 1;
+
+    // The market routine thread
+    rd_utils::concurrency::Thread _marketRoutine;
+
+    // The frequency of the market
+    float _freq;
+
+    // The size of the memory managed by the service
+    uint64_t _memoryPoolSize;
+
+    // The configuration of the supervisor
+    std::shared_ptr <rd_utils::utils::config::ConfigNode> _cfg;
+
+    // while true the market routine runs
+    bool _running;
+
+  private :
 
     static std::shared_ptr <rd_utils::concurrency::actor::ActorSystem>  __GLOBAL_SYSTEM__;
 
@@ -36,7 +59,12 @@ namespace cachecache::supervisor {
      *    - sys: the actor system managing the service
      *    - cfg: the configuration of the supervisor
      */
-    SupervisorService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & cfg);
+    SupervisorService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg);
+
+    /**
+     * Triggered when the actor is registered
+     */
+    void onStart () override;
 
     /**
      * Triggered when a message that does not require an answer is sent to the actor
@@ -61,6 +89,11 @@ namespace cachecache::supervisor {
   private:
 
     /**
+     * Configure the service
+     */
+    void configure (std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg);
+
+    /**
      * Register a new cache entity
      * @params:
      *    - cfg: the message sent by the entity
@@ -76,6 +109,22 @@ namespace cachecache::supervisor {
      * Dispose the service, and kill all attached cache entities
      */
     void dispose ();
+
+
+  private :
+
+    /**
+     *  The market routine defining the amount of memory to give to each cache entities
+     */
+    void marketRoutine (rd_utils::concurrency::Thread);
+
+  /**
+   * ============================================================================================================
+   * ============================================================================================================
+   * =========================================      STATIC      =================================================
+   * ============================================================================================================
+   * ============================================================================================================
+   */
 
   public:
 
