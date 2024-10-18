@@ -6,14 +6,14 @@ namespace cachecache::client {
     this-> _connections = std::make_shared <rd_utils::net::TcpPool> (rd_utils::net::SockAddrV4 (addr, port), poolSize);
   }
 
-  std::string CacheClient::get (const std::string & key) {
+  bool CacheClient::get (const std::string & key, std::string & res) {
     auto session = this-> _connections-> get ();
     session-> sendI32 ('g');
     session-> sendI32 (key.length ());
     session-> send (key.c_str (), key.length ());
 
     auto resLen = session-> receiveI32 ();
-    if (resLen == 0) return "";
+    if (resLen == 0) return false;
 
     std::stringstream ss;
     char buffer [1024];
@@ -27,16 +27,23 @@ namespace cachecache::client {
       resLen -= rest;
     }
 
-    return ss.str ();
+    res = ss.str ();
+    return true;
   }
 
-  void CacheClient::set (const std::string & key, const std::string & value) {
+  bool CacheClient::set (const std::string & key, const std::string & value) {
     auto session = this-> _connections-> get ();
     session-> sendI32 ('s');
     session-> sendI32 (key.length ());
-    session-> sendI32 (value.length ());
     session-> send (key.c_str (), key.length ());
+
+    session-> sendI32 (value.length ());
     session-> send (value.c_str (), value.length ());
+
+    auto i = session-> receiveI32 ();
+    return (session-> isOpen () && i == 1);
+
+    return false;
   }
 
 }

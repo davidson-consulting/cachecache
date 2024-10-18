@@ -94,10 +94,32 @@ namespace cachecache::instance {
 
   void CacheService::onStart () {
     this-> connectSupervisor (this-> _cfg);
+    this-> configureEntity (this-> _cfg);
     this-> configureServer (this-> _cfg);
 
     // no need to keep the configuration
     this-> _cfg = nullptr;
+  }
+
+  void CacheService::configureEntity (const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) {
+    try {
+      auto & conf = *cfg;
+      std::string name = "cache";
+      int64_t size = 1024 * 1024 * 1024;
+      int64_t ttl = Limits::BASE_TTL;
+
+      if (conf.contains ("cache")) {
+        name = conf ["cache"].getOr ("name", name);
+        size = conf ["cache"].getOr ("size", size);
+        ttl = conf ["cache"].getOr ("ttl", ttl);
+      }
+
+      this-> _entity = std::make_shared <CacheEntity> ();
+      this-> _entity-> configure (name, size, ttl);
+    } catch (std::runtime_error & e) {
+      LOG_ERROR ("Cache entity configuration failed (", e.what (), "). Abort");
+      throw std::runtime_error ("in entity configuration");
+    }
   }
 
   /**
@@ -132,11 +154,17 @@ namespace cachecache::instance {
 
   void CacheService::onQuit () {
     LOG_INFO ("Killing cache instance -> ", this-> _name);
+    if (this-> _entity != nullptr) {
+      this-> _entity-> dispose ();
+      this-> _entity = nullptr;
+    }
+
     if (this-> _supervisor != nullptr) {
       this-> _supervisor-> send (config::Dict ()
                                  .insert ("type", RequestIds::EXIT)
                                  .insert ("uid", (int64_t) this-> _uid));
     }
+
     ::exit (0);
   }
 
@@ -225,45 +253,35 @@ namespace cachecache::instance {
   void CacheService::onClient (rd_utils::net::TcpSessionKind kind, std::shared_ptr <net::TcpSession> session) {
     uint32_t id = (*session)-> receiveI32 ();
     if (id == 's') {
-      this-> onSet (session);
+      this-> onSet (*session);
     } else if (id == 'g') {
-      this-> onGet (session);
+      this-> onGet (*session);
     }
   }
 
-  void CacheService::onSet (std::shared_ptr <net::TcpSession> session) {
-    uint32_t keyLen = (*session)-> receiveI32 ();
-    uint32_t valLen = (*session)-> receiveI32 ();
+  void CacheService::onSet (net::TcpSession & session) {
+    uint32_t keyLen = session-> receiveI32 ();
 
     if (keyLen > Limits::MAX_KEY) {
       LOG_ERROR ("Key too large : ", keyLen);
-      (*session)-> close ();
+      session-> close ();
       return;
     }
 
-    if (valLen > Limits::MAX_VALUE) {
-      LOG_ERROR ("Value too large : ", valLen);
-      (*session)-> close ();
-      return;
-    }
-
-    std::string key = this-> readStr (*session, keyLen);
-    std::string value = this-> readStr (*session, valLen);
-
-    std::cout << "Set a key : " << key << " " << value << std::endl;
-
+    std::string key = this-> readStr (session, keyLen);
+    this-> _entity-> insert (key, session);
   }
 
-  void CacheService::onGet (std::shared_ptr <net::TcpSession> session) {
-    uint32_t keyLen = (*session)-> receiveI32 ();
+  void CacheService::onGet (net::TcpSession & session) {
+    uint32_t keyLen = session-> receiveI32 ();
     if (keyLen > Limits::MAX_KEY) {
       LOG_ERROR ("Key too large : ", keyLen);
-      (*session)-> close ();
+      session-> close ();
       return;
     }
 
-    std::string key = this-> readStr (*session, keyLen);
-    std::cout << "Get the key : " << key << std::endl;
+    std::string key = this-> readStr (session, keyLen);
+    this-> _entity-> find (key, session);
   }
 
   std::string CacheService::readStr (net::TcpSession & session, uint32_t resLen) {

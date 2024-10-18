@@ -8,8 +8,17 @@ int main (int argc, char ** argv) {
   int v;
   scanf ("%d", &v);
   if (v == 0) {
-    std::cout <<  cl.get ("salutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalutsalut90078978789") << std::endl;
+    std::string val;
+    if (cl.get ("salut", val)) {
+      std::cout << val << std::endl;
+    } else {
+      std::cout << "Not found" << std::endl;
+    }
   } else {
-    cl.set ("salut", "test");
+    if (cl.set ("salut", "test")) {
+      std::cout << "success" << std::endl;
+    } else {
+      std::cout << "failure" << std::endl;
+    }
   }
 }

@@ -37,13 +37,17 @@ namespace cachecache::client {
 
     /**
      * Get a value from a key
+     * @returns:
+     *    - true iif the value was found
+     *    - res: the found value
      */
-    std::string get (const std::string & key);
+    bool get (const std::string & key, std::string & res);
 
     /**
      * Set a key/value
+     * @returns: true iif insert succeeded
      */
-    void set (const std::string & key, const std::string & value);
+    bool set (const std::string & key, const std::string & value);
 
   };
 
