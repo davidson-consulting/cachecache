@@ -7,8 +7,8 @@ Vagrant.configure("2") do |config|
   end
 
   # Mount cachecache directories
-  config.vm.synced_folder "../cachecache", "/home/vagrant/cachecache", type: "rsync",
-    rsync__exclude: ["CacheLib/", ".build/"]
+  config.vm.synced_folder "../", "/home/vagrant/cachecache", type: "rsync",
+    rsync__exclude: ["CacheLib/", ".build/"] 
 
   # Fetch github rsa public key
   config.vm.provision "shell", privileged: false, inline: "ssh-keyscan -t rsa github.com >> /home/vagrant/.ssh/known_hosts"
@@ -18,6 +18,6 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: "apt-get install -y nlohmann-json3-dev libssh-dev libgc-dev"
 
   # build cachelib
-  config.vm.provision "shell", privileged: false, inline: "cd cachecache; /home/vagrant/cachecache/clone_cachelib.sh"
-  config.vm.provision "shell", privileged: false, inline: "cd cachecache; /home/vagrant/cachecache/build.sh" 
+  config.vm.provision "shell", privileged: false, inline: "cd cachecache/cachecache; /home/vagrant/cachecache/cachecache/clone_cachelib.sh"
+  config.vm.provision "shell", privileged: false, inline: "cd cachecache/cachecache; /home/vagrant/cachecache/cachecache/build.sh" 
 end
