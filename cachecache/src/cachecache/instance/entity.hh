@@ -153,11 +153,6 @@ namespace cachecache::instance {
          */
         void configurePool (const std::string & name);
 
-        /**
-         * Receive a value from a tcp stream and put it in the cache
-         */
-        bool receiveValue (char * memory, uint64_t len, rd_utils::net::TcpSession & session);
-
     };
 
 

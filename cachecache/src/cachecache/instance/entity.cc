@@ -182,14 +182,14 @@ namespace cachecache::instance {
       }
 
       *static_cast <int*> (handle-> getMemory ()) = time (NULL);
-      if (this-> receiveValue (static_cast <char*> (handle-> getMemory ()) + sizeof (int), valLen, session)) {
-        this-> _entity-> insertOrReplace (handle);
-      }
+      session-> receiveRaw (static_cast <char*> (handle-> getMemory ()) + sizeof (int), valLen);
+      this-> _entity-> insertOrReplace (handle);
 
       session-> sendI32 (1);
     } catch (const std::exception & e) {
       LOG_ERROR ("Failed to insert key : ", key, " because ", e.what ());
-      session-> sendI32 (0);
+      this-> _entity-> remove (key);
+      session-> close ();
     }
   }
 
@@ -199,7 +199,7 @@ namespace cachecache::instance {
       if (handle != nullptr) {
         size_t valLen = handle-> getSize () - sizeof (int);
         session-> sendI32 (valLen);
-        session-> send (static_cast <const char*> (handle-> getMemory ()) + sizeof (int), valLen);
+        session-> sendRaw (static_cast <const char*> (handle-> getMemory ()) + sizeof (int), valLen);
 
         *static_cast <int*> (handle-> getMemory ()) = time (NULL);
       } else {
@@ -207,19 +207,7 @@ namespace cachecache::instance {
       }
     } catch (std::exception & e) {
       LOG_ERROR ("Failed to find key : ", key, " because ", e.what ());
-      session-> sendI32 (0);
-    }
-  }
-
-  bool CacheEntity::receiveValue (char * memory, uint64_t len, rd_utils::net::TcpSession & session) {
-    auto rcv = session-> receive (memory, len);
-
-    if (rcv == len) {
-      memory [rcv] = 0;
-      return true;
-    } else {
       session-> close ();
-      return false;
     }
   }
 
