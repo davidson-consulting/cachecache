@@ -1,0 +1,32 @@
+# [global]
+# seed = 0
+
+[datacenter]
+overcommit = 1.0
+
+[datacenter.power-models.dahu]
+min = 90
+max = 268
+idle = 26
+
+[datacenter.machines.dahu]
+nb_cores = 32
+memory = 512
+nb_instances = 1
+hyperthreading = true
+power-model = "dahu"
+
+[vms.templateA]
+nb_cores = 4
+memory = 4
+nb_instances = 3
+start = [0, 1]
+length = [999, 1000]
+multi_threads = false
+usage = "A"
+
+[modals.A]
+frequency = [25, 50]
+usages = [{average = 10, variance = 5, weight = 0.8},
+          {average = 40, variance = 10, weight = 0.1},
+          {average = 99.9, variance = 0.01, weight = 0.1}]

@@ -2,6 +2,8 @@
 ./cachecache/.build
 .build
 
+.vagrant
+
 # Prerequisites
 *.d
 

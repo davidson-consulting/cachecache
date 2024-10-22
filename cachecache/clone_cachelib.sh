@@ -1,6 +1,6 @@
 set -e
 
-# echo "CLONING CACHELIB "
+echo "CLONING CACHELIB "
 git clone --depth 1 --branch v20240621 https://github.com/facebook/CacheLib.git
 
 # echo "APPLY PATCH"
