@@ -255,11 +255,16 @@ namespace cachecache::instance {
   }
 
   void CacheService::onClient (rd_utils::net::TcpSessionKind kind, std::shared_ptr <net::TcpSession> session) {
-    uint32_t id = (*session)-> receiveI32 ();
-    if (id == 's') {
-      this-> onSet (*session);
-    } else if (id == 'g') {
-      this-> onGet (*session);
+    try {
+      uint32_t id = (*session)-> receiveI32 ();
+      if (id == 's') {
+        this-> onSet (*session);
+      } else if (id == 'g') {
+        this-> onGet (*session);
+      }
+    } catch (const std::runtime_error & e) {
+      LOG_ERROR ("Client connection reset : ", e.what ());
+      (*session)-> close ();
     }
   }
 

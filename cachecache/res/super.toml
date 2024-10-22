@@ -2,7 +2,7 @@
 # @optional
 [sys]
 addr = "0.0.0.0" # accepted connections
-port = 9089 # port of the tcp server
+port = 9090 # port of the tcp server
 freq = 1
 
 # Configuration of the memory pool

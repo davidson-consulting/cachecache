@@ -7,43 +7,37 @@ namespace cachecache::client {
   }
 
   bool CacheClient::get (const std::string & key, std::string & res) {
-    auto session = this-> _connections-> get ();
-    session-> sendI32 ('g');
-    session-> sendI32 (key.length ());
-    session-> send (key.c_str (), key.length ());
+    try {
+      auto session = this-> _connections-> get ();
+      session-> sendI32 ('g');
+      session-> sendI32 (key.length ());
+      session-> sendStr (key);
 
-    auto resLen = session-> receiveI32 ();
-    if (resLen == 0) return false;
+      auto resLen = session-> receiveI32 ();
+      if (resLen == 0) return false;
 
-    std::stringstream ss;
-    char buffer [1024];
-    while (resLen > 0) {
-      uint32_t rest = std::min (1024, resLen);
-      if (!session-> receiveRaw<char> (buffer, rest)) {
-        return "";
-      }
-
-      ss << buffer;
-      resLen -= rest;
+      res = session-> receiveStr (resLen);
+      return true;
+    } catch (...) {
+      return false;
     }
-
-    res = ss.str ();
-    return true;
   }
 
   bool CacheClient::set (const std::string & key, const std::string & value) {
-    auto session = this-> _connections-> get ();
-    session-> sendI32 ('s');
-    session-> sendI32 (key.length ());
-    session-> send (key.c_str (), key.length ());
+    try {
+      auto session = this-> _connections-> get ();
+      session-> sendI32 ('s');
+      session-> sendI32 (key.length ());
+      session-> sendStr (key);
 
-    session-> sendI32 (value.length ());
-    session-> send (value.c_str (), value.length ());
+      session-> sendI32 (value.length ());
+      session-> sendStr (value);
 
-    auto i = session-> receiveI32 ();
-    return (session-> isOpen () && i == 1);
-
-    return false;
+      auto i = session-> receiveI32 ();
+      return i == 1;
+    } catch (...) {
+      return false;
+    }
   }
 
 }

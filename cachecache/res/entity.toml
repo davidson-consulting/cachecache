@@ -8,7 +8,7 @@ port = 0 # port of the tcp server
 # @mandatory
 [supervisor]
 addr = "127.0.0.1" # address of the actor system managing the host
-port = 9089 # its port
+port = 9090 # its port
 
 # server avaible for clients
 # @optional
