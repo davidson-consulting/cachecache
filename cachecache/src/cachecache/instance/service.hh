@@ -19,7 +19,7 @@ namespace cachecache::instance {
                 uint64_t _uid;
 
                 // The memory pool size according to the supervisor
-                uint64_t _regSize;
+                rd_utils::utils::MemorySize _regSize;
 
                 // The reference to the supervisor actor
                 std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _supervisor;
@@ -125,7 +125,7 @@ namespace cachecache::instance {
                  * @params:
                  *    - conf: the configuration passed to the service
                  */
-                void connectSupervisor (const std::shared_ptr <rd_utils::utils::config::ConfigNode> conf);
+                bool connectSupervisor (const std::shared_ptr <rd_utils::utils::config::ConfigNode> conf);
 
                 /**
                  * Configure the cache entity
@@ -140,6 +140,16 @@ namespace cachecache::instance {
                  *    - cfg: the configuration passed to the service
                  */
                 void configureServer (const std::shared_ptr <rd_utils::utils::config::ConfigNode> conf);
+
+                /**
+                 * Apply a resize of the cache entity
+                 */
+                void onSizeUpdate (const rd_utils::utils::config::ConfigNode & msg);
+
+                /**
+                 * Answer to a supervisor request for the current cache usage
+                 */
+                std::shared_ptr <rd_utils::utils::config::ConfigNode> onEntityInfoRequest (const rd_utils::utils::config::ConfigNode & msg);
 
         };
 

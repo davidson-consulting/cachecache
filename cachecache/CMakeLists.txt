@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.8)
 project(cachecache)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -35,9 +35,14 @@ add_library (cachecache ${SRC})
 add_executable (supervisor src/supervisor_main.cc)
 add_dependencies (cachecache rd_utils)
 
+add_dependencies (supervisor rd_utils)
+
 add_executable (cache src/instance_main.cc)
 add_executable (client src/client_main.cc src/cachecache/client/service.cc)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
+
+add_dependencies (cache rd_utils)
+add_dependencies (client rd_utils)
 
 target_include_directories(cachecache PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src ${CMAKE_BINARY_DIR}/../CacheLib/opt/cachelib/include)
 target_include_directories(supervisor PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src ${CMAKE_BINARY_DIR}/../CacheLib/opt/cachelib/include)
