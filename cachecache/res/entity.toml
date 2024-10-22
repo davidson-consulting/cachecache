@@ -1,0 +1,23 @@
+# Configuration of the actor system
+# @optional
+[sys]
+addr = "0.0.0.0" # accepted connections
+port = 0 # port of the tcp server
+
+# Connection to the supervisor
+# @mandatory
+[supervisor]
+addr = "127.0.0.1" # address of the actor system managing the host
+port = 9089 # its port
+
+# server avaible for clients
+# @optional
+[service]
+addr = "0.0.0.0" # accepted connections
+port = 0 # port of the tcp server
+
+# Configure cache entity default values
+# @optional
+[cache]
+ttl = 5
+# size = 1024 # the guarantee request size in MB
