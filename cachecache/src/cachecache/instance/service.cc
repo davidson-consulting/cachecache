@@ -35,16 +35,20 @@ namespace cachecache::instance {
     auto repo = toml::parseFile (configFile);
     std::string addr = "0.0.0.0";
     uint32_t port = 0;
+    int64_t nbThreads = 1;
     uint32_t nbInstances = 1;
     if (repo-> contains ("sys")) {
       addr = (*repo) ["sys"].getOr ("addr", "0.0.0.0");
       port = (*repo) ["sys"].getOr ("port", 0);
+      nbThreads = (*repo) ["sys"].getOr ("nb-threads", 1);
       nbInstances = (*repo)["sys"].getOr ("instances", 1);
 
       Logger::globalInstance ().changeLevel ((*repo)["sys"].getOr ("log-lvl", "info"));
     }
 
-    __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), 1);
+    if (nbThreads == 0) nbThreads = 1;
+
+    __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), nbThreads);
 
     __GLOBAL_SYSTEM__-> joinOnEmpty (true);
     __GLOBAL_SYSTEM__-> start ();
@@ -52,7 +56,7 @@ namespace cachecache::instance {
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
 
     for (uint32_t i = 0 ; i < nbInstances ; i++) {
-      __GLOBAL_SYSTEM__-> add <CacheService> ("instance(" + std::to_string (i) + ")", repo);
+      __GLOBAL_SYSTEM__-> add <CacheService> ("instance(" + std::to_string (i) + ")", repo, i);
     }
 
     __GLOBAL_SYSTEM__-> join ();
@@ -93,12 +97,13 @@ namespace cachecache::instance {
    */
 
 
-  CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) :
+  CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t nb) :
     actor::ActorBase (name, sys)
     , _regSize (MemorySize::B (0))
   {
     LOG_INFO ("Spawning a new cache instance -> ", name);
     this-> _cfg = cfg;
+    this-> _uniqNb = nb;
   }
 
   void CacheService::onStart () {
@@ -296,6 +301,8 @@ namespace cachecache::instance {
         nbThreads = conf ["service"].getOr ("nb-threads", nbThreads);
         maxCon = conf ["service"].getOr ("max-conn", maxCon);
       }
+
+      if (sPort != 0) sPort += this-> _uniqNb;
 
       this-> _clients = std::make_shared <net::TcpServer> (net::SockAddrV4 (sAddr, sPort), nbThreads, maxCon);
       this-> _clients-> start (this, &CacheService::onClient);

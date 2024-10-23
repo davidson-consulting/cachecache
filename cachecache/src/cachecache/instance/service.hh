@@ -39,6 +39,9 @@ namespace cachecache::instance {
                 // Set to true when everything is set and running
                 bool _fullyConfigured = false;
 
+                // THe number of the instance in local system
+                uint32_t _uniqNb;
+
         public:
 
                 /**
@@ -48,7 +51,7 @@ namespace cachecache::instance {
                  *    - sys: the actor system of
                  *    - cfg: the configuration of the cache
                  */
-                CacheService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg);
+                CacheService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t uniqNb);
 
                 /**
                  * Triggered when the actor is register

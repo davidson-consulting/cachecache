@@ -38,13 +38,18 @@ namespace cachecache::supervisor {
     auto repo = toml::parseFile (configFile);
     std::string addr = "0.0.0.0";
     uint32_t port = 0;
+    int64_t nbThreads = 1;
+
     if (repo-> contains ("sys")) {
       addr = (*repo) ["sys"].getOr ("addr", "0.0.0.0");
       port = (*repo) ["sys"].getOr ("port", 0);
+      nbThreads = (*repo) ["sys"].getOr ("nb-threads", 1);
+
       Logger::globalInstance ().changeLevel ((*repo)["sys"].getOr ("log-lvl", "info"));
     }
 
-    SupervisorService::__GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), 1);
+    if (nbThreads == 0) nbThreads = 1;
+    SupervisorService::__GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), nbThreads);
     __GLOBAL_SYSTEM__-> start ();
 
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
