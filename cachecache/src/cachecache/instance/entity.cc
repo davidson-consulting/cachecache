@@ -15,6 +15,7 @@ namespace cachecache::instance {
     _maxSize (MemorySize::B (0))
     , _maxValueSize (MemorySize::B (0))
     , _requested (MemorySize::B (0))
+    , _entity (nullptr)
   {}
 
   /**
@@ -92,6 +93,8 @@ namespace cachecache::instance {
    */
 
   bool CacheEntity::resize (rd_utils::utils::MemorySize newSize) {
+    if (this-> _entity == nullptr) return false;
+
     auto current = MemorySize::B (this-> _entity-> getPool (this-> _pool).getPoolSize ());
 
     // compute the new size to make it a power of a slab size
@@ -160,6 +163,7 @@ namespace cachecache::instance {
    */
 
   MemorySize CacheEntity::getCurrentMemoryUsage () const {
+    if (this-> _entity == nullptr) return MemorySize::B (0);
     return MemorySize::B (this-> _entity-> getPool (this-> _pool).getCurrentAllocSize ());
   }
 

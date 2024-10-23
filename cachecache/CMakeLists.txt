@@ -9,7 +9,6 @@ set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../CacheLib/")
 set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_BINARY_DIR}/../CacheLib/cachelib/cmake")
 set (CMAKE_BUILD_TYPE "Debug")
 
-
 # RD UTILS
 include(FetchContent)
 FetchContent_Declare(

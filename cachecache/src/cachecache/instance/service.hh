@@ -36,6 +36,9 @@ namespace cachecache::instance {
                 // The cache entity managed by the actor
                 std::shared_ptr <CacheEntity> _entity;
 
+                // Set to true when everything is set and running
+                bool _fullyConfigured = false;
+
         public:
 
                 /**

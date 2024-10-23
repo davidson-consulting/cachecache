@@ -268,7 +268,7 @@ namespace cachecache::supervisor {
       auto took = t.time_since_start ();
       auto suppose = 1.0f / this-> _freq;
       if (took < suppose) {
-        LOG_INFO ("Sleep ", sleep);
+        LOG_INFO ("Sleep ", suppose - took);
         if (this-> _marketSleeping.wait (suppose - took)) {
           LOG_INFO ("Interupted");
           return;
@@ -284,7 +284,7 @@ namespace cachecache::supervisor {
     std::map <uint32_t, CacheInfo> rests;
     for (auto & inst : this-> _instances) {
       try {
-        auto res = inst.second.remote-> request (msg, 1); // 1 seconds timeout
+        auto res = inst.second.remote-> request (msg, 5); // 5 seconds timeout
         if (res == nullptr || res-> getOr ("code", 0) != 200) {
           throw std::runtime_error ("Cache request failure");
         }

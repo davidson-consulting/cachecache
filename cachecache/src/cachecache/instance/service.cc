@@ -35,21 +35,25 @@ namespace cachecache::instance {
     auto repo = toml::parseFile (configFile);
     std::string addr = "0.0.0.0";
     uint32_t port = 0;
+    uint32_t nbInstances = 1;
     if (repo-> contains ("sys")) {
       addr = (*repo) ["sys"].getOr ("addr", "0.0.0.0");
       port = (*repo) ["sys"].getOr ("port", 0);
+      nbInstances = (*repo)["sys"].getOr ("instances", 1);
 
       Logger::globalInstance ().changeLevel ((*repo)["sys"].getOr ("log-lvl", "info"));
     }
 
-    __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), 2);
+    __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (net::SockAddrV4 (addr, port), 1);
 
     __GLOBAL_SYSTEM__-> joinOnEmpty (true);
     __GLOBAL_SYSTEM__-> start ();
 
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
 
-    __GLOBAL_SYSTEM__-> add <CacheService> ("instance", repo);
+    for (uint32_t i = 0 ; i < nbInstances ; i++) {
+      __GLOBAL_SYSTEM__-> add <CacheService> ("instance(" + std::to_string (i) + ")", repo);
+    }
 
     __GLOBAL_SYSTEM__-> join ();
     __GLOBAL_SYSTEM__-> dispose ();
@@ -98,6 +102,7 @@ namespace cachecache::instance {
   }
 
   void CacheService::onStart () {
+    this-> _fullyConfigured = false;
     if (this-> connectSupervisor (this-> _cfg)) {
       this-> configureEntity (this-> _cfg);
       this-> configureServer (this-> _cfg);
@@ -105,6 +110,7 @@ namespace cachecache::instance {
 
     // no need to keep the configuration
     this-> _cfg = nullptr;
+    this-> _fullyConfigured = true;
   }
 
   void CacheService::configureEntity (const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) {
@@ -189,16 +195,22 @@ namespace cachecache::instance {
    */
 
   void CacheService::onSizeUpdate (const config::ConfigNode & msg) {
-    auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
-    auto size = MemorySize::unit (msg ["size"].getI (), unit);
-    this-> _entity-> resize (size);
+    if (this-> _fullyConfigured) { // entity must be running to be resized
+      auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
+      auto size = MemorySize::unit (msg ["size"].getI (), unit);
+      this-> _entity-> resize (size);
+    }
   }
 
   std::shared_ptr <config::ConfigNode> CacheService::onEntityInfoRequest (const config::ConfigNode & msg) {
     auto result = std::make_shared <config::Dict> ();
-    result-> insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
-    result-> insert ("unit", (int64_t) MemorySize::Unit::KB);
+    if (this-> _fullyConfigured) { // entity must be running to have a size
+      result-> insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
+    } else {
+      result-> insert ("usage", (int64_t) 0);
+    }
 
+    result-> insert ("unit", (int64_t) MemorySize::Unit::KB);
     return ResponseCode (200, result);
   }
 
@@ -244,8 +256,10 @@ namespace cachecache::instance {
 
       auto resp = this-> _supervisor-> request (msg, 5); // 5 seconds timeout
       if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
+        LOG_ERROR ("Failure");
         throw std::runtime_error ("Failed to register : " + this-> _name);
       } else {
+        LOG_INFO ("Server response : ", *resp);
         this-> _uid = (*resp) ["content"]["uid"].getI ();
         auto unit = static_cast <MemorySize::Unit> ((*resp)["content"].getOr ("unit", (int64_t) MemorySize::Unit::KB));
         this-> _regSize = MemorySize::unit ((*resp)["content"]["max-size"].getI (), unit);

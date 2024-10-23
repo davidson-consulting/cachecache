@@ -3,6 +3,7 @@
 [sys]
 addr = "0.0.0.0" # accepted connections
 port = 0 # port of the tcp server
+instances = 2
 
 # Connection to the supervisor
 # @mandatory
