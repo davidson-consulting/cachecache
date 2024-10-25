@@ -286,23 +286,13 @@ namespace cachecache::supervisor {
     auto msg = config::Dict ()
       .insert ("type", RequestIds::ENTITY_INFO);
 
+    std::vector <std::pair <uint32_t, actor::ActorRef::RequestFuture> > reqs;
+    reqs.reserve (this-> _instances.size ());
     std::map <uint32_t, CacheInfo> rests;
     for (auto & inst : this-> _instances) {
       try {
-        auto res = inst.second.remote-> request (msg, 5); // 5 seconds timeout
-        if (res == nullptr || res-> getOr ("code", 0) != 200) {
-          throw std::runtime_error ("Cache request failure");
-        }
-
-        auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
-        auto usage = MemorySize::unit ((*res)["content"]["usage"].getI (), unit);
-        LOG_INFO ("Current usage of (", inst.first, " aka ", inst.second.name, ") = ", usage.megabytes (), " MB");
-        rests.emplace (inst.first, CacheInfo {.remote = std::move (inst.second.remote),
-                                              .name = inst.second.name,
-                                              .uid = inst.second.uid});
-
-        this-> _market.updateUsage (inst.first, usage);
-      } catch (const std::runtime_error & e) {
+        reqs.push_back (std::make_pair (inst.first, inst.second.remote-> request (msg, 5))); // 5 seconds timeout
+      } catch (std::runtime_error & e) {
         LOG_ERROR ("Cache (", inst.first, " aka ", inst.second.name, ") refused to answer information update, [", e.what (), "]");
         LOG_INFO ("Killing cache (", inst.first, " aka ", inst.second.name, ")");
         try {
@@ -313,6 +303,37 @@ namespace cachecache::supervisor {
         }
 
         this-> _market.removeCache (inst.first);
+      }
+
+    }
+
+    for (auto & it : reqs) {
+      auto inst = this-> _instances.find (it.first);
+      try {
+        auto res = it.second. wait ();
+        if (res == nullptr || res-> getOr ("code", 0) != 200) {
+          throw std::runtime_error ("Cache request failure");
+        }
+
+        auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
+        auto usage = MemorySize::unit ((*res)["content"]["usage"].getI (), unit);
+        LOG_INFO ("Current usage of (", inst-> first, " aka ", inst-> second.name, ") = ", usage.megabytes (), " MB");
+        rests.emplace (inst-> first, CacheInfo {.remote = std::move (inst-> second.remote),
+                                              .name = inst-> second.name,
+                                              .uid = inst-> second.uid});
+
+        this-> _market.updateUsage (inst-> first, usage);
+      } catch (const std::runtime_error & e) {
+        LOG_ERROR ("Cache (", inst-> first, " aka ", inst-> second.name, ") refused to answer information update, [", e.what (), "]");
+        LOG_INFO ("Killing cache (", inst-> first, " aka ", inst-> second.name, ")");
+        try {
+          inst-> second.remote-> send (config::Dict ()
+                                     .insert ("type", RequestIds::POISON_PILL), 1);
+        } catch (const std::runtime_error & e) {
+          LOG_ERROR ("Failed to send kill signal to entity (", inst-> first, " aka ", inst-> second.name, ") ", e.what ());
+        }
+
+        this-> _market.removeCache (inst-> first);
       }
     }
 

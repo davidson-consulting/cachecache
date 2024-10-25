@@ -202,7 +202,7 @@ namespace cachecache::instance {
    */
 
   void CacheService::onSizeUpdate (const config::ConfigNode & msg) {
-    if (this-> _fullyConfigured) { // entity must be running to be resized
+    if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to be resized
       auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
       auto size = MemorySize::unit (msg ["size"].getI (), unit);
       this-> _entity-> resize (size);
@@ -261,7 +261,7 @@ namespace cachecache::instance {
         .insert ("port", (int64_t) this-> _system-> port ())
         .insert ("size", size);
 
-      auto resp = this-> _supervisor-> request (msg, 5); // 5 seconds timeout
+      auto resp = this-> _supervisor-> request (msg, 5).wait (); // 5 seconds timeout
       if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
         LOG_ERROR ("Failure");
         throw std::runtime_error ("Failed to register : " + this-> _name);
