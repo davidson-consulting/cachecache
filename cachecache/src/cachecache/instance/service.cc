@@ -154,6 +154,7 @@ namespace cachecache::instance {
       this-> onSizeUpdate (msg);
       break;
     case RequestIds::POISON_PILL :
+      this-> _fullyConfigured = false;
       this-> _supervisor = nullptr;
       this-> exit ();
       break;
@@ -174,12 +175,7 @@ namespace cachecache::instance {
   }
 
   void CacheService::onQuit () {
-    LOG_INFO ("Killing cache instance -> ", this-> _name);
-    if (this-> _entity != nullptr) {
-      this-> _entity-> dispose ();
-      this-> _entity = nullptr;
-    }
-
+    this-> _fullyConfigured = false;
     if (this-> _supervisor != nullptr) {
       try {
         this-> _supervisor-> send (config::Dict ()
@@ -188,6 +184,12 @@ namespace cachecache::instance {
       } catch (...) {
         LOG_WARN ("Supervisor is offline.");
       }
+    }
+
+    LOG_INFO ("Killing cache instance -> ", this-> _name);
+    if (this-> _entity != nullptr) {
+      this-> _entity-> dispose ();
+      this-> _entity = nullptr;
     }
   }
 
@@ -209,7 +211,7 @@ namespace cachecache::instance {
 
   std::shared_ptr <config::ConfigNode> CacheService::onEntityInfoRequest (const config::ConfigNode & msg) {
     auto result = std::make_shared <config::Dict> ();
-    if (this-> _fullyConfigured) { // entity must be running to have a size
+    if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to have a size
       result-> insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
     } else {
       result-> insert ("usage", (int64_t) 0);
