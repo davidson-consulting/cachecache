@@ -40,14 +40,13 @@ add_executable (client src/client_main.cc src/cachecache/client/service.cc)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 target_include_directories(cachecache PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src ${CMAKE_BINARY_DIR}/../CacheLib/opt/cachelib/include)
-target_include_directories(supervisor PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src ${CMAKE_BINARY_DIR}/../CacheLib/opt/cachelib/include)
 target_link_libraries(supervisor cachelib cachecache rd_utils)
 
 target_include_directories(cache PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src ${CMAKE_BINARY_DIR}/../CacheLib/opt/cachelib/include)
 target_link_libraries(cache cachelib cachecache rd_utils)
 
 target_include_directories(client PUBLIC ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src)
-target_link_libraries(client ${CMAKE_BINARY_DIR}/_deps/rd_utils-build/librd_utils.a)
+target_link_libraries(client rd_utils)
 
 add_custom_command (TARGET supervisor
                    POST_BUILD
