@@ -4,8 +4,11 @@
 addr = "0.0.0.0" # accepted connections
 port = 9090 # port of the tcp server
 freq = 1
+# nb-threads = 1 # number of threads in the system (-1 means nb cpu cores), only one required
+# log-lvl = "info" # log level, info, debug, etc.
 
 # Configuration of the memory pool
 # @optional
 [cache]
-size = 8192 # amount of memory usable by the pool in MB
+size = 8 # amount of memory usable by the pool in MB
+unit = "GB"

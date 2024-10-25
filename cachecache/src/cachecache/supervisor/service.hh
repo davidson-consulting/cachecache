@@ -4,6 +4,8 @@
 #include <rd_utils/_.hh>
 #include <cachecache/utils/codes/_.hh>
 
+#include "market.hh"
+
 namespace cachecache::supervisor {
 
   /**
@@ -20,8 +22,8 @@ namespace cachecache::supervisor {
       // The name of the cache (for debug purpose)
       std::string name;
 
-      // The amount of memory to try to guarantee
-      uint64_t req;
+      // The uniq id of the cache
+      uint64_t uid;
     };
 
   private:
@@ -38,14 +40,23 @@ namespace cachecache::supervisor {
     // The frequency of the market
     float _freq;
 
-    // The size of the memory managed by the service
-    uint64_t _memoryPoolSize;
+    // The sleep or wait in market routine
+    rd_utils::concurrency::semaphore _marketSleeping;
+
+    // The size of the memory managed by the service in KB
+    rd_utils::utils::MemorySize _memoryPoolSize;
 
     // The configuration of the supervisor
     std::shared_ptr <rd_utils::utils::config::ConfigNode> _cfg;
 
     // while true the market routine runs
     bool _running;
+
+    // Mutex of the actor
+    rd_utils::concurrency::mutex _m;
+
+    // The market of the supervisor, used to select the size of the cache entities
+    Market _market;
 
   private :
 
@@ -117,6 +128,18 @@ namespace cachecache::supervisor {
      *  The market routine defining the amount of memory to give to each cache entities
      */
     void marketRoutine (rd_utils::concurrency::Thread);
+
+    /**
+     * Update the entity usage informations by requesting it to the cache services
+     * @assume: thread mutex lock
+     */
+    void updateEntityInfo ();
+
+    /**
+     * Sent the decision of the market to the cache instances
+     * @assume: thread mutex lock
+     */
+    void informEntitySizes ();
 
   /**
    * ============================================================================================================

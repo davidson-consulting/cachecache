@@ -3,6 +3,9 @@
 [sys]
 addr = "0.0.0.0" # accepted connections
 port = 0 # port of the tcp server
+instances = 2 # number of cache instances to spawn
+# nb-threads = 1 # number of threads in the system (-1 means nb cpu cores), only one required
+# log-lvl = "info" # log level, info, debug, etc.
 
 # Connection to the supervisor
 # @mandatory

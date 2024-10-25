@@ -19,7 +19,7 @@ namespace cachecache::instance {
                 uint64_t _uid;
 
                 // The memory pool size according to the supervisor
-                uint64_t _regSize;
+                rd_utils::utils::MemorySize _regSize;
 
                 // The reference to the supervisor actor
                 std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _supervisor;
@@ -36,6 +36,12 @@ namespace cachecache::instance {
                 // The cache entity managed by the actor
                 std::shared_ptr <CacheEntity> _entity;
 
+                // Set to true when everything is set and running
+                bool _fullyConfigured = false;
+
+                // THe number of the instance in local system
+                uint32_t _uniqNb;
+
         public:
 
                 /**
@@ -45,7 +51,7 @@ namespace cachecache::instance {
                  *    - sys: the actor system of
                  *    - cfg: the configuration of the cache
                  */
-                CacheService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg);
+                CacheService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t uniqNb);
 
                 /**
                  * Triggered when the actor is register
@@ -125,7 +131,7 @@ namespace cachecache::instance {
                  * @params:
                  *    - conf: the configuration passed to the service
                  */
-                void connectSupervisor (const std::shared_ptr <rd_utils::utils::config::ConfigNode> conf);
+                bool connectSupervisor (const std::shared_ptr <rd_utils::utils::config::ConfigNode> conf);
 
                 /**
                  * Configure the cache entity
@@ -140,6 +146,16 @@ namespace cachecache::instance {
                  *    - cfg: the configuration passed to the service
                  */
                 void configureServer (const std::shared_ptr <rd_utils::utils::config::ConfigNode> conf);
+
+                /**
+                 * Apply a resize of the cache entity
+                 */
+                void onSizeUpdate (const rd_utils::utils::config::ConfigNode & msg);
+
+                /**
+                 * Answer to a supervisor request for the current cache usage
+                 */
+                std::shared_ptr <rd_utils::utils::config::ConfigNode> onEntityInfoRequest (const rd_utils::utils::config::ConfigNode & msg);
 
         };
 

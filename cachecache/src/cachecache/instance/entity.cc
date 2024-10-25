@@ -7,10 +7,16 @@
 #include "cachelib/allocator/memory/Slab.h"
 
 using namespace facebook;
+using namespace rd_utils::utils;
 
 namespace cachecache::instance {
 
-  CacheEntity::CacheEntity () {}
+  CacheEntity::CacheEntity () :
+    _maxSize (MemorySize::B (0))
+    , _maxValueSize (MemorySize::B (0))
+    , _requested (MemorySize::B (0))
+    , _entity (nullptr)
+  {}
 
   /**
    * ============================================================================================================
@@ -20,16 +26,16 @@ namespace cachecache::instance {
    * ============================================================================================================
    */
 
-  void CacheEntity::configure (const std::string & name, size_t maxSize, uint64_t ttl) {
+  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t ttl) {
     this-> configureEntity (name, maxSize, ttl);
     this-> configureLru ();
     this-> configurePool ("default");
   }
 
-  void CacheEntity::configureEntity (const std::string & name, size_t maxSize, uint64_t ttl) {
+  void CacheEntity::configureEntity (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t ttl) {
     try {
       auto config = cachelib::LruAllocator::Config ()
-        .setCacheSize (maxSize)
+        .setCacheSize (maxSize.bytes ())
         .setCacheName (name)
         .setAccessConfig ({25, 10})
         .validate ();
@@ -38,9 +44,10 @@ namespace cachecache::instance {
       this-> _name = name;
       this-> _maxSize = maxSize;
 
-      this-> _maxValueSize = (cachelib::Slab::kSize - sizeof (int)) - sizeof (char); // The first int is used to store the last time used info
+      this-> _maxValueSize = CacheEntity::getSlabSize () - MemorySize::B (sizeof (int)) - MemorySize::B (sizeof (char)); // The first int is used to store the last time used info
       this-> _ttl = ttl;
 
+      LOG_INFO ("Cache configured  maxSize=", this-> _maxSize.megabytes (), "MB, maxValueSize=", this-> _maxValueSize.megabytes (), "MB, ttl=", this-> _ttl, "s");
     } catch (...) {
       LOG_ERROR ("Failed to configure cache");
       throw std::runtime_error ("Failed to configure cache");
@@ -85,29 +92,35 @@ namespace cachecache::instance {
    * ============================================================================================================
    */
 
-  bool CacheEntity::resize (size_t newSize) {
-    auto current = this-> _entity-> getPool (this-> _pool).getPoolSize ();
+  bool CacheEntity::resize (rd_utils::utils::MemorySize newSize) {
+    if (this-> _entity == nullptr) return false;
 
-    // compute the new size to make it a power of kSize
-    auto bound = std::max ((size_t) 1, newSize / facebook::cachelib::Slab::kSize) * facebook::cachelib::Slab::kSize;
-    LOG_INFO ("Asking for a cache resize from ", current, " to ~", newSize, ". Will resize to ", bound);
+    auto current = MemorySize::B (this-> _entity-> getPool (this-> _pool).getPoolSize ());
 
-    if (current == bound) return true;
-    if (current > bound) { // Shrinking
-      if (!this-> _entity-> shrinkPool (this-> _pool, current - bound)) return false;
+    // compute the new size to make it a power of a slab size
+    auto bound = MemorySize::min (MemorySize::max (CacheEntity::getSlabSize (), newSize), this-> _maxSize);
+    LOG_INFO ("Asking for a cache resize from ", current.megabytes (), "MB to ~", newSize.megabytes (), "MB. Will resize to ", bound.megabytes (), "MB");
+
+    if (current.bytes () < bound.bytes ()) { // Growing
+      return this-> _entity-> growPool (this-> _pool, (bound - current).bytes ());
+    }
+
+    else if (current.bytes () > bound.bytes ()) { // Shrinking
+      if (!this-> _entity-> shrinkPool (this-> _pool, (current - bound).bytes ())) return false;
 
       auto currMemUsage = this-> getCurrentMemoryUsage ();
-      if (currMemUsage > bound) this-> reclaimSlabs (currMemUsage - bound);
+      if (currMemUsage.bytes () > bound.bytes ()) this-> reclaimSlabs (currMemUsage - bound);
 
       return true;
     }
 
-    return this-> _entity-> growPool (this-> _pool, bound - current);
+    return true;
   }
 
-  void CacheEntity::reclaimSlabs (size_t memSize) {
-    auto nbSlabs = std::max ((size_t) 1, memSize / cachelib::Slab::kSize);
-    LOG_INFO ("Reclaiming : ", memSize, " or ", nbSlabs, " slabs");
+  void CacheEntity::reclaimSlabs (rd_utils::utils::MemorySize memSize) {
+    auto reclaim = MemorySize::max (CacheEntity::getSlabSize (), memSize);
+    uint64_t nbSlabs = reclaim.bytes () / CacheEntity::getSlabSize ().bytes ();
+    LOG_INFO ("Reclaiming : ", reclaim.megabytes (), "MB or ", nbSlabs, " slabs");
 
     this-> _entity-> updateNumSlabsToAdvise (nbSlabs);
     auto results = this-> _entity-> calcNumSlabsToAdviseReclaim ();
@@ -149,12 +162,17 @@ namespace cachecache::instance {
    * ============================================================================================================
    */
 
-  size_t CacheEntity::getCurrentMemoryUsage () const {
-    return this-> _entity-> getPool (this-> _pool).getCurrentAllocSize ();
+  MemorySize CacheEntity::getCurrentMemoryUsage () const {
+    if (this-> _entity == nullptr) return MemorySize::B (0);
+    return MemorySize::B (this-> _entity-> getPool (this-> _pool).getCurrentAllocSize ());
   }
 
-  size_t CacheEntity::getMaxSize () const {
+  MemorySize CacheEntity::getMaxSize () const {
     return this-> _maxSize;
+  }
+
+  MemorySize CacheEntity::getSlabSize () {
+    return MemorySize::B (cachelib::Slab::kSize);
   }
 
   /**
@@ -167,14 +185,15 @@ namespace cachecache::instance {
 
   void CacheEntity::insert (const std::string & key, rd_utils::net::TcpSession & session) {
     auto valLen = session-> receiveI32 ();
-    if (valLen > this-> _maxValueSize) {
+    if (valLen > this-> _maxValueSize.bytes ()) {
       LOG_ERROR ("Value for key : ", key, " too large : ", valLen);
       session-> close ();
       return;
     }
 
     try {
-      auto handle = this-> _entity-> allocate (this-> _pool, key.c_str (), valLen + sizeof (int) + sizeof (char), this-> _ttl);
+      auto toAlloc = valLen + sizeof (int) + sizeof (char);
+      auto handle = this-> _entity-> allocate (this-> _pool, key.c_str (), toAlloc, this-> _ttl);
       if (!handle) {
         LOG_ERROR ("Cannot allocate, cache is full");
         session-> sendI32 (0);
@@ -224,8 +243,9 @@ namespace cachecache::instance {
       this-> _entity.reset ();
       this-> _entity = nullptr;
       this-> _pool = 0;
-      this-> _maxValueSize = 0;
-      this-> _maxSize = 0;
+      this-> _maxValueSize = MemorySize::B (0);
+      this-> _maxSize = MemorySize::B (0);
+      this-> _requested = MemorySize::B (0);
       this-> _name = "";
     }
   }
