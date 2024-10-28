@@ -1,0 +1,36 @@
+[auth]
+secret = "password"
+issuer = "auth0"
+
+[sys]
+port = 9098
+iface = "lo"
+
+[registry]
+name = "registry"
+addr = "localhost"
+port = 9090
+
+[db]
+name = "socialNet"
+addr = "localhost"
+user = "root"
+pass = "root"
+
+[services.user]
+nb = 1
+
+[services.timeline]
+nb = 1
+
+[services.short]
+nb = 1
+
+[services.text]
+nb = 1
+
+[services.social]
+nb = 1
+
+[services.compose]
+nb = 1
