@@ -55,6 +55,7 @@ auto main(int argc, char *argv[]) -> int {
     __GLOBAL_SYSTEM__-> start ();
 
     LOG_INFO ("On port : ", __GLOBAL_SYSTEM__-> port ());
+    rd_utils::utils::write_file ("registry_port", std::to_string ( __GLOBAL_SYSTEM__-> port ()));
 
     __GLOBAL_SYSTEM__-> add <socialNet::RegistryService> ("registry");
 

@@ -7,6 +7,8 @@
 #include "submit.hh"
 #include "home.hh"
 #include "user.hh"
+#include "subs.hh"
+#include "follow.hh"
 
 namespace socialNet {
 
@@ -28,8 +30,26 @@ namespace socialNet {
     // The resource to get the length of the timeline
     HomeTimelineLenRoute _homeTimelineLen;
 
+    // The resource to get the length of the timeline
+    HomeTimelineRoute _homeTimeline;
+
     // The resource to get the length of the timeline of user posts
     UserTimelineLenRoute _userTimelineLen;
+
+    // The resource to get the length of the timeline of user posts
+    UserTimelineRoute _userTimeline;
+
+    // Resource to get the number of subscirptions of a user
+    SubscriptionLenRoute _subLen;
+
+    // Resource to get the subscirptions of a user
+    SubscriptionRoute _subs;
+
+    // Resource to get the number of followers of a user
+    FollowerLenRoute _followerLen;
+
+    // Resource to get the followers of a user
+    FollowerRoute _followers;
 
     // The actor system used by the front to communicate with registry
     std::shared_ptr <rd_utils::concurrency::actor::ActorSystem> _sys;

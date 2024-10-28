@@ -34,11 +34,8 @@ namespace socialNet::timeline {
 
     std::shared_ptr <utils::MysqlClient::Statement> prepareInsertHomeTimeline (uint32_t * uid, uint32_t pid);
 
-    std::shared_ptr <utils::MysqlClient::Statement> prepareFindHome (uint32_t * pid, uint32_t uid, int32_t page, uint32_t nb);
-    std::shared_ptr <utils::MysqlClient::Statement> prepareFindPosts (uint32_t * pid, uint32_t uid, int32_t page, uint32_t nb);
-
-    std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > findPosts (uint32_t id, uint32_t page, uint32_t nb);
-    std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > findHome (uint32_t id, uint32_t page, uint32_t nb);
+    std::shared_ptr <utils::MysqlClient::Statement> prepareFindHome (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb);
+    std::shared_ptr <utils::MysqlClient::Statement> prepareFindPosts (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb);
 
     uint32_t countPosts (uint32_t id);
     uint32_t countHome (uint32_t id);

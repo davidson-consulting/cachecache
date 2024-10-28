@@ -203,21 +203,20 @@ namespace socialNet::compose {
     if (type == "home_t") {
       if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
         this-> streamTimeline (msg, stream, "home");
-      }
+      } else stream.close ();
     } else if (type == "user_t") {
       this-> streamTimeline (msg, stream, "posts");
-      return;
     } else if (type == "subs") {
       if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
         this-> streamSubscriptions (msg, stream, "subscriptions");
-      }
-      return;
+      } else stream.close ();
     } else if (type == "followers") {
       this-> streamSubscriptions (msg, stream, "followers");
-      return;
+    } else {
+      stream.close ();
     }
 
-    stream.writeU8 (0);
+
   }
 
   void ComposeService::streamTimeline (const config::ConfigNode & msg, actor::ActorStream & stream, const std::string & kind) {
@@ -254,11 +253,11 @@ namespace socialNet::compose {
       socialNet::post::Post p;
 
       while (timelineStream-> isOpen () && postStream-> isOpen ()) {
-        if (timelineStream-> readOr (0) != 0) {
+        if (timelineStream-> readOr ((uint8_t) 0) != 0) {
           auto pid = timelineStream-> readU32 ();
           postStream-> writeU8 (1);
           postStream-> writeU32 (pid);
-          if (postStream-> readOr (0) != 0) {;
+          if (postStream-> readOr ((uint8_t) 0) != 0) {;
             postStream-> readRaw (p);
             stream.writeU8 (1);
             stream.writeRaw (p);

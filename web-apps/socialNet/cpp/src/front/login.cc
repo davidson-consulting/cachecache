@@ -40,6 +40,10 @@ namespace socialNet {
 
         return std::make_shared <httpserver::string_response> (j.dump (), 200, "text/json");
       }
+
+      if (result != nullptr) {
+        return std::make_shared <httpserver::string_response> ("", result-> getOr ("code", 500), "text/plain");
+      }
     } catch (...) {}
 
     return std::make_shared <httpserver::basic_auth_fail_response> ("FAIL", "test@example.com");

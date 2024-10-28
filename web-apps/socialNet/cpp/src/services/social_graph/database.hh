@@ -58,19 +58,9 @@ namespace socialNet::social_graph {
      *    - page: the page index
      *    - nbPerPage: the number of subs per page
      */
-    std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList<uint32_t> > findSubscriptions (uint32_t userId, uint32_t page, uint32_t nbPerPage);
 
     std::shared_ptr <utils::MysqlClient::Statement> prepareFindSubscriptions (uint32_t * resId, uint32_t uid, int32_t page, uint32_t nb);
     std::shared_ptr <utils::MysqlClient::Statement> prepareFindFollowers (uint32_t * resId, uint32_t uid, int32_t page, uint32_t nb);
-
-    /**
-     * Find the followers of a user
-     * @params:
-     *    - userId: the user being followed
-     *    - page: the page index
-     *    - nbPerPage: the number of subs per page
-     */
-    std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList<uint32_t> > findFollowers (uint32_t userId, uint32_t page, uint32_t nbPerPage);
 
     /**
      * Count the number of subscriptions of a user

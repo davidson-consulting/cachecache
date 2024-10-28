@@ -78,93 +78,43 @@ namespace socialNet::timeline {
     return req;
   }
 
-  std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareFindHome (uint32_t * pid, uint32_t uid, int32_t page, uint32_t nb) {
-    if (page != -1) {
+  std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareFindHome (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb) {
+    if (*page >= 0) {
       auto req = this-> _client-> prepare ("SELECT post_id from home_timeline where user_id = ? order by id DESC limit ? offset ?");
-      req-> setParam (0, &uid);
-      req-> setParam (1, &nb);
-      uint32_t z = page * nb;
-      req-> setParam (2, &z);
-
+      req-> setParam (0, uid);
+      req-> setParam (1, nb);
+      req-> setParam (2, page);
       req-> setResult (0, pid);
       req-> finalize ();
       
       return req;
     } else {
       auto req = this-> _client-> prepare ("SELECT post_id from home_timeline where user_id = ? order by id DESC");
-      req-> setParam (0, &uid);
+      req-> setParam (0, uid);
       req-> setResult (0, pid);
       req-> finalize ();
       return req;
     }
   }
 
-  std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareFindPosts (uint32_t * pid, uint32_t uid, int32_t page, uint32_t nb) {
-    if (page != -1) {
+  std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareFindPosts (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb) {
+    if (*page >= 0) {
       auto req = this-> _client-> prepare ("SELECT post_id from post_timeline where user_id = ? order by id DESC limit ? offset ?");
-      req-> setParam (0, &uid);
-      req-> setParam (1, &nb);
-      uint32_t z = page * nb;
-      req-> setParam (2, &z);
+
+      req-> setParam (0, uid);
+      req-> setParam (1, nb);
+      req-> setParam (2, page);
       req-> setResult (0, pid);
       req-> finalize ();
 
       return req;
     } else {
       auto req = this-> _client-> prepare ("SELECT post_id from post_timeline where user_id = ? order by id DESC");
-      req-> setParam (0, &uid);
+      req-> setParam (0, uid);
       req-> setResult (0, pid);
       req-> finalize ();
       return req;
     }
-  }
-
-  std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > TimelineDatabase::findHome (uint32_t userId, uint32_t page, uint32_t nbPerPage) {
-    auto res = std::make_shared <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > ();
-    auto req = this-> _client-> prepare ("SELECT post_id from home_timeline where user_id = ? order by id DESC limit ? offset ?");
-    req-> setParam (0, &userId);
-    req-> setParam (1, &nbPerPage);
-    uint32_t z = page * nbPerPage;
-    req-> setParam (2, &z);
-
-    uint32_t id = 0;
-    req-> setResult (0, &id);
-    req-> finalize ();
-    req-> execute ();
-
-    uint32_t * buffer = new uint32_t [32];
-    {
-      auto pusher = res-> pusher (0, buffer, 32);
-      while (req-> next ()) {
-        pusher.push (id);
-      }
-    }
-    delete [] buffer;
-    return res;
-  }
-
-  std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > TimelineDatabase::findPosts (uint32_t userId, uint32_t page, uint32_t nbPerPage) {
-    auto res = std::make_shared <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > ();
-    auto req = this-> _client-> prepare ("SELECT post_id from post_timeline where user_id = ? order by id DESC limit ? offset ?");
-    req-> setParam (0, &userId);
-    req-> setParam (1, &nbPerPage);
-    uint32_t z = page * nbPerPage;
-    req-> setParam (2, &z);
-
-    uint32_t id = 0;
-    req-> setResult (0, &id);
-    req-> finalize ();
-    req-> execute ();
-
-    uint32_t * buffer = new uint32_t [32];
-    {
-      auto pusher = res-> pusher (0, buffer, 32);
-      while (req-> next ()) {
-        pusher.push (id);
-      }
-    }
-    delete [] buffer;
-    return res;
   }
 
   uint32_t TimelineDatabase::countPosts (uint32_t id) {

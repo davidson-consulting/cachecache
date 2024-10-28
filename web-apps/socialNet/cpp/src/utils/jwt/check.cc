@@ -17,7 +17,7 @@ namespace socialNet::utils {
       verif.verify (jwt_tok);
 
       return true;
-    } catch (std::runtime_error & err) {}
+    } catch (...) {}
 
     return false;
   }

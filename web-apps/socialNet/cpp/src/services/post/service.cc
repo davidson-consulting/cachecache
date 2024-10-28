@@ -61,8 +61,14 @@ namespace socialNet::post {
 
       Post post;
       post.userId = msg ["userId"].getI ();
-      post.userLogin = msg ["userLogin"].getStr ();
-      post.text = msg ["text"].getStr ();
+      auto userLogin = msg ["userLogin"].getStr ();
+      auto text = msg ["text"].getStr ();
+
+      memcpy (post.userLogin, userLogin.c_str (), 15);
+      memcpy (post.text, text.c_str (), 511);
+
+      post.userLogin [std::min ((size_t) 15, userLogin.length ())] = 0;
+      post.text [std::min ((size_t) 511, text.length ())] = 0;
 
       match (msg ["tags"]) {
         of (config::Array, a) {
@@ -97,8 +103,8 @@ namespace socialNet::post {
       if (this-> _db.findPost (msg ["post_id"].getI (), p)) {
         auto result = std::make_shared<config::Dict> ();
         result-> insert ("userId", std::make_shared <config::Int> (p.userId));
-        result-> insert ("userLogin", std::make_shared <config::String> (p.userLogin.c_str ()));
-        result-> insert ("text", std::make_shared <config::String> (p.text.c_str ()));
+        result-> insert ("userLogin", std::string (p.userLogin));
+        result-> insert ("text", std::string (p.text));
 
         auto tags = std::make_shared <config::Array> ();
         for (uint32_t i = 0 ; i < p.nbTags && i < 16 ; i++) {
@@ -134,7 +140,7 @@ namespace socialNet::post {
   void PostStorageService::streamPosts (rd_utils::concurrency::actor::ActorStream & stream) {
     Post p;
     while (stream.isOpen ()) {
-      if (stream.readOr (0) != 0) {
+      if (stream.readOr ((uint8_t) 0) != 0) {
         auto id = stream.readU32 ();
         if (this-> _db.findPost (id, p)) {
           stream.writeU8 (1);

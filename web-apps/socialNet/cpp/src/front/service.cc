@@ -28,7 +28,13 @@ namespace socialNet {
     , _logon (this)
     , _submit (this)
     , _homeTimelineLen (this)
+    , _homeTimeline (this)
     , _userTimelineLen (this)
+    , _userTimeline (this)
+    , _subLen (this)
+    , _subs (this)
+    , _followerLen (this)
+    , _followers (this)
   {}
 
   void FrontServer::configure (const config::ConfigNode & cfg) {
@@ -70,6 +76,30 @@ namespace socialNet {
     this-> _userTimelineLen.disallow_all ();
     this-> _userTimelineLen.set_allowing ("GET", true);
     this-> _server-> register_resource ("/user-timeline-len", &this-> _userTimelineLen);
+
+    this-> _userTimeline.disallow_all ();
+    this-> _userTimeline.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/user-timeline", &this-> _userTimeline);
+
+    this-> _homeTimeline.disallow_all ();
+    this-> _homeTimeline.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/home-timeline", &this-> _homeTimeline);
+
+    this-> _subs.disallow_all ();
+    this-> _subs.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/subscriptions", &this-> _subs);
+
+    this-> _subLen.disallow_all ();
+    this-> _subLen.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/subscriptions-len", &this-> _subLen);
+
+    this-> _followers.disallow_all ();
+    this-> _followers.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/followers", &this-> _followers);
+
+    this-> _followerLen.disallow_all ();
+    this-> _followerLen.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/followers-len", &this-> _followerLen);
 
 
     LOG_INFO ("Web service ready on port ", webPort);

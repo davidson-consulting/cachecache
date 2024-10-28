@@ -167,11 +167,11 @@ namespace socialNet::timeline {
   void TimelineService::streamHome (const config::ConfigNode & msg, actor::ActorStream & stream) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      uint32_t page = msg.getOr ("page", -1);
-      uint32_t nb = msg.getOr ("nb", -1);
+      int32_t nb = msg.getOr ("nb", -1);
+      int32_t page = msg.getOr ("page", -1) * nb;
 
       uint32_t pid;
-      auto statement = this-> _db.prepareFindHome (&pid, uid, page, nb);
+      auto statement = this-> _db.prepareFindHome (&pid, &uid, &page, &nb);
       statement-> execute ();
       while (statement-> next () && stream.isOpen ()) {
         stream.writeU8 (1);
@@ -190,11 +190,11 @@ namespace socialNet::timeline {
   void TimelineService::streamPosts (const config::ConfigNode & msg, actor::ActorStream & stream) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      uint32_t page = msg.getOr ("page", -1);
-      uint32_t nb = msg.getOr ("nb", -1);
+      int32_t nb = msg.getOr ("nb", -1);
+      int32_t page = msg.getOr ("page", -1) * nb;
 
       uint32_t pid;
-      auto statement = this-> _db.prepareFindPosts (&pid, uid, page, nb);
+      auto statement = this-> _db.prepareFindPosts (&pid, &uid, &page, &nb);
       statement-> execute ();
       while (statement-> next () && stream.isOpen ()) {
         stream.writeU8 (1);
@@ -203,8 +203,7 @@ namespace socialNet::timeline {
 
       stream.writeU8 (0);
     } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR : ", err.what ());
-    } catch (...) {
+      LOG_ERROR ("ERROR : ", err.what ());
     }
 
     if (stream.isOpen ()) {

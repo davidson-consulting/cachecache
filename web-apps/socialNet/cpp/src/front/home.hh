@@ -6,7 +6,12 @@ namespace socialNet {
 
   class FrontServer;
   class HomeTimelineRoute : public httpserver::http_resource {
+
+    FrontServer * _context;
+
   public:
+    HomeTimelineRoute (FrontServer*);
+
     std::shared_ptr <httpserver::http_response> render (const httpserver::http_request & req);
   };
 

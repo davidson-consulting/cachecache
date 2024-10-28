@@ -66,55 +66,6 @@ namespace socialNet::social_graph {
     return false;
   }
 
-  std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList<uint32_t> > SocialGraphDatabase::findSubscriptions (uint32_t userId, uint32_t page, uint32_t nbPerPage) {
-    auto res = std::make_shared <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > ();
-    auto req = this-> _client-> prepare ("SELECT to_whom from subs where user_id = ? order by id DESC limit ? offset ?");
-    req-> setParam (0, &userId);
-    req-> setParam (1, &nbPerPage);
-    uint32_t z = page * nbPerPage;
-    req-> setParam (2, &z);
-
-    uint32_t id = 0;
-    req-> setResult (0, &id);
-    req-> finalize ();
-    req-> execute ();
-
-    uint32_t * buffer = new uint32_t [32];
-    {
-      auto pusher = res-> pusher (0, buffer, 32);
-      while (req-> next ()) {
-        pusher.push (id);
-      }
-    }
-    delete [] buffer;
-    return res;
-  }
-
-
-  std::shared_ptr <rd_utils::memory::cache::collection::CacheArrayList<uint32_t> > SocialGraphDatabase::findFollowers (uint32_t userId, uint32_t page, uint32_t nbPerPage) {
-    auto res = std::make_shared <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > ();
-    auto req = this-> _client-> prepare ("SELECT user_id from subs where to_whom = ? order by id DESC limit ? offset ?");
-    req-> setParam (0, &userId);
-    req-> setParam (1, &nbPerPage);
-    uint32_t z = page * nbPerPage;
-    req-> setParam (2, &z);
-
-    uint32_t id = 0;
-    req-> setResult (0, &id);
-    req-> finalize ();
-    req-> execute ();
-
-    uint32_t * buffer = new uint32_t [32];
-    {
-      auto pusher = res-> pusher (0, buffer, 32);
-      while (req-> next ()) {
-        pusher.push (id);
-      }
-    }
-    delete [] buffer;
-    return res;
-  }
-
   std::shared_ptr <utils::MysqlClient::Statement> SocialGraphDatabase::prepareFindSubscriptions (uint32_t * rid, uint32_t uid, int32_t page, uint32_t nb) {
     if (page != -1) {
       auto req = this-> _client-> prepare ("SELECT user_id from subs where subs = ? order by id DESC limit ? offset ?");
@@ -158,7 +109,7 @@ namespace socialNet::social_graph {
   }
 
   uint32_t SocialGraphDatabase::countNbSubs (uint32_t id) {
-    auto req = this-> _client-> prepare ("SELECT count (*) from subs where user_id=?");
+    auto req = this-> _client-> prepare ("SELECT COUNT(user_id) from subs where user_id=?");
     req-> setParam (0, &id);
 
     uint32_t nb = 0;
@@ -173,7 +124,7 @@ namespace socialNet::social_graph {
   }
 
   uint32_t SocialGraphDatabase::countNbFollowers (uint32_t id) {
-    auto req = this-> _client-> prepare ("SELECT count (*) from subs where to_whom=?");
+    auto req = this-> _client-> prepare ("SELECT COUNT(user_id) from subs where to_whom=?");
     req-> setParam (0, &id);
 
     uint32_t nb = 0;

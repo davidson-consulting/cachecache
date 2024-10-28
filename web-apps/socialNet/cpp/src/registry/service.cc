@@ -116,7 +116,11 @@ namespace socialNet {
     try {
       auto name = conf ["registry"].getOr ("name", "registry");
       auto addr = conf ["registry"].getOr ("addr", "127.0.0.1");
-      uint32_t port = conf ["registry"].getOr ("port", 9090);
+      uint32_t port = conf ["registry"].getOr ("port", 0);
+
+      if (port == 0) {
+        port = std::atoi (rd_utils::utils::read_file ("./registry_port").c_str ());
+      }
 
       act = sys-> remoteActor (name, net::SockAddrV4 (addr, port), false);
     } catch (std::runtime_error & err) {

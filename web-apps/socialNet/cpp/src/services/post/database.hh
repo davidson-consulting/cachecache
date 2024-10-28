@@ -12,8 +12,8 @@ namespace socialNet::post {
 
   struct Post {
     uint32_t userId;
-    rd_utils::memory::cache::collection::FlatString <16> userLogin;
-    rd_utils::memory::cache::collection::FlatString <512> text;
+    char userLogin [16];
+    char text [512];
     uint32_t tags [16];
     uint8_t nbTags;
   };

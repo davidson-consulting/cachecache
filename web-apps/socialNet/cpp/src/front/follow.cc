@@ -1,7 +1,7 @@
 #define LOG_LEVEL 10
 #define __PROJECT__ "HOME"
 
-#include "login.hh"
+#include "follow.hh"
 #include "service.hh"
 #include <nlohmann/json.hpp>
 #include "../registry/service.hh"
@@ -14,74 +14,63 @@ using namespace rd_utils::utils;
 
 namespace socialNet {
 
-  HomeTimelineLenRoute::HomeTimelineLenRoute (FrontServer * context) :
+  FollowerLenRoute::FollowerLenRoute (FrontServer * context) :
     _context (context)
   {}
 
-  std::shared_ptr <http_response> HomeTimelineLenRoute::render (const http_request & req) {
+  std::shared_ptr <http_response> FollowerLenRoute::render (const http_request & req) {
     try {
       int64_t userId = std::atoi (std::string (req.get_arg ("userId")).c_str ());
-      std::string jwt = std::string (req.get_arg ("jwt_token"));
 
-      LOG_INFO ("Try get home timeline len : ", userId);
+      LOG_INFO ("Try get followers len : ", userId);
 
-      auto timelineService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "timeline");
+      auto socialGraphService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "social_graph");
       auto msg = config::Dict ()
-        .insert ("type", "count-home")
-        .insert ("userId", userId)
-        .insert ("jwt_token", jwt);
+        .insert ("type", "count-foll")
+        .insert ("userId", userId);
 
-      auto result = timelineService-> request (msg).wait ();
-
+      auto result = socialGraphService-> request (msg).wait ();
+      std::cout << result-> getOr ("code", -1) << std::endl;
       if (result != nullptr && result-> getOr ("code", -1) == 200) {
         std::string res = std::to_string ((*result)["content"].getI ());
         return std::make_shared <httpserver::string_response> (res, 200, "text/plain");
+      }
+
+      if (result != nullptr) {
+        return std::make_shared <httpserver::string_response> ("", result-> getOr ("code", 500), "text/plain");
       }
     } catch (...) {}
 
     return std::make_shared <httpserver::string_response> ("", 404, "text/plain");
   }
 
-
-  HomeTimelineRoute::HomeTimelineRoute (FrontServer * context) :
+  FollowerRoute::FollowerRoute (FrontServer * context) :
     _context (context)
   {}
 
-  std::shared_ptr <http_response> HomeTimelineRoute::render (const http_request & req) {
+  std::shared_ptr <http_response> FollowerRoute::render (const http_request & req) {
     try {
       int64_t userId = std::atoi (std::string (req.get_arg ("userId")).c_str ());
       int64_t page = std::atoi (std::string (req.get_arg ("page")).c_str ());
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
-      std::string jwt = std::string (req.get_arg ("jwt_token"));
 
-      LOG_INFO ("Try get user posts : ", userId, " ", page, " ", nb);
+      LOG_INFO ("Try get user followers : ", userId, " ", page, " ", nb);
 
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
-        .insert ("type", "home_t")
+        .insert ("type", "followers")
         .insert ("userId", userId)
         .insert ("page", page)
-        .insert ("nb", nb)
-        .insert ("jwt_token", jwt);
+        .insert ("nb", nb);
 
       auto resultStream = composeService-> requestStream (msg).wait ();
-      socialNet::post::Post p;
       if (resultStream != nullptr) {
         json result;
 
         while (resultStream-> isOpen ()) {
           if (resultStream-> readOr (0) == 0) break;
-          resultStream-> readRaw (p);
-
-          json post;
-          post ["userId"] = p.userId;
-          post ["userLogin"] = std::string (p.userLogin);
-          post ["text"] = std::string (p.text);
-          for (uint32_t i = 0 ; i < p.nbTags ; i++) {
-            post["tags"].push_back (p.tags [i]);
-          }
-
-          result.push_back (post);
+          auto rid = resultStream-> readU32 ();
+          result.push_back (rid);
         }
 
         auto finalResult = result.dump ();

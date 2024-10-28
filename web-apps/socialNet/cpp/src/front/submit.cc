@@ -38,6 +38,10 @@ namespace socialNet {
       if (result != nullptr && result-> getOr ("code", -1) == 200) {
         return std::make_shared <httpserver::string_response> ("OK", 200, "text/plain");
       }
+
+      if (result != nullptr) {
+        return std::make_shared <httpserver::string_response> ("", result-> getOr ("code", 500), "text/plain");
+      }
     } catch (...) {}
 
     return std::make_shared <httpserver::string_response> ("OK", 400, "text/plain");

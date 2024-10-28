@@ -41,19 +41,25 @@ namespace socialNet::social_graph {
 
   std::shared_ptr<config::ConfigNode> SocialGraphService::onRequest (const config::ConfigNode & msg) {
     auto type = msg.getOr ("type", "none");
-    if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
-      if (type == "sub") {
+    if (type == "count-foll") {
+      return this-> countFollows (msg);
+    }
+
+    if (type == "sub") {
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
         return this-> subscribe (msg);
-      } else if (type == "unsub") {
+      } else return ResponseCode (403);
+    } else if (type == "unsub") {
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
         return this-> deleteSub (msg);
-      } else if (type == "count-sub") {
+      } else return ResponseCode (403);
+    } else if (type == "count-sub") {
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
         return this-> countSubs (msg);
-      } else if (type == "count-foll") {
-        return this-> countFollows (msg);
-      } else {
-        return ResponseCode (404);
-      }
-    } else return ResponseCode (403);
+      } else return ResponseCode (403);
+    }
+
+    return ResponseCode (404);
   }
 
   std::shared_ptr <rd_utils::utils::config::ConfigNode> SocialGraphService::subscribe (const rd_utils::utils::config::ConfigNode & msg) {
@@ -107,7 +113,6 @@ namespace socialNet::social_graph {
       return ResponseCode (200, std::make_shared <config::Int> (cnt));
     } catch (std::runtime_error & err) {
       LOG_INFO ("ERROR : ", err.what ());
-    } catch (...) {
     }
 
     return ResponseCode (400);
@@ -120,7 +125,6 @@ namespace socialNet::social_graph {
       return ResponseCode (200, std::make_shared <config::Int> (cnt));
     } catch (std::runtime_error & err) {
       LOG_INFO ("ERROR : ", err.what ());
-    } catch (...) {
     }
 
     return ResponseCode (400);

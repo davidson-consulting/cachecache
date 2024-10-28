@@ -58,13 +58,15 @@ namespace socialNet::post {
   uint32_t PostDatabase::insertPost (Post & p) {
     auto req = this-> _client-> prepare ("INSERT INTO post (user_id, user_login, text) values (?, ?, ?)");
     req-> setParam (0, &p.userId);
-    req-> setParam (1, p.userLogin.data (), p.userLogin.len ());
-    req-> setParam (2, p.text.data (), p.text.len ());
+    req-> setParam (1, p.userLogin, strnlen (p.userLogin, 16));
+    req-> setParam (2, p.text, strnlen (p.text, 512));
 
     req-> finalize ();
     req-> execute ();
 
     auto postId = req-> getGeneratedId ();
+    req = nullptr;
+
     this-> insertTags (postId, p.tags, p.nbTags);
     return postId;
   }
@@ -73,14 +75,16 @@ namespace socialNet::post {
     auto req = this-> _client-> prepare ("SELECT user_id, user_login, text FROM post where id=?");
     req-> setParam (0, &id);
     req-> setResult (0, &p.userId);
-    req-> setResult (1, p.userLogin.data (), 16);
-    req-> setResult (2, p.text.data (), 255);
+    req-> setResult (1, p.userLogin, 16);
+    req-> setResult (2, p.text, 511);
 
     req-> finalize ();
     req-> execute ();
     if (req-> next ()) {
-      p.userLogin.forceLen (req-> getResultLen (1));
-      p.text.forceLen (req-> getResultLen (2));
+      p.userLogin [req-> getResultLen (1)] = 0;
+      p.text [req-> getResultLen (2)] = 0;
+      req = nullptr;
+
       this-> findTags (id, p.tags, p.nbTags);
 
       return true;
@@ -113,13 +117,14 @@ namespace socialNet::post {
   void PostDatabase::findTags (uint32_t postId, uint32_t * tags, uint8_t & nbTags) {
     auto req = this-> _client-> prepare ("SELECT user_id FROM tags where post_id=?");
     uint32_t tagId;
+
     req-> setParam (0, &postId);
     req-> setResult (0, &tagId);
     req-> finalize ();
 
     nbTags = 0;
     req-> execute ();
-    while (req-> next () && nbTags < 16) {
+    while (req-> next () && nbTags < 1) {
       tags [nbTags] = tagId;
       nbTags += 1;
     }
