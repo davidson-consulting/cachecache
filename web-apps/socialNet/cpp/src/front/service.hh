@@ -3,6 +3,7 @@
 #include <httpserver.hpp>
 #include <rd_utils/_.hh>
 #include "login.hh"
+#include "newuser.hh"
 
 namespace socialNet {
 
@@ -14,6 +15,15 @@ namespace socialNet {
 
     // The login resource
     LoginRoute _login;
+
+    // The logon resource
+    NewUserRoute _logon;
+
+    // The actor system used by the front to communicate with registry
+    std::shared_ptr <rd_utils::concurrency::actor::ActorSystem> _sys;
+
+    // The connection to the registry
+    std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
 
   public:
 
@@ -33,6 +43,16 @@ namespace socialNet {
      * Dispose the web server resources
      */
     void dispose ();
+
+    /**
+     * @returns: the actor sytem used by the front end
+     */
+    rd_utils::concurrency::actor::ActorSystem* getSystem ();
+
+    /**
+     * @returns: the actor reference to the registry
+     */
+    std::shared_ptr <rd_utils::concurrency::actor::ActorRef> getRegistry ();
 
     /**
      * this-> dispose ();

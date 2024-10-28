@@ -9,7 +9,7 @@ iface = "lo"
 [registry]
 name = "registry"
 addr = "localhost"
-port = 9090
+port = 9099
 
 [db]
 name = "socialNet"

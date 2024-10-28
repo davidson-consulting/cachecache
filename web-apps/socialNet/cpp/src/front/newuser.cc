@@ -1,4 +1,4 @@
-#include "login.hh"
+#include "newuser.hh"
 #include "service.hh"
 #include <nlohmann/json.hpp>
 #include "../registry/service.hh"
@@ -10,35 +10,31 @@ using namespace rd_utils::utils;
 
 namespace socialNet {
 
-  LoginRoute::LoginRoute (FrontServer * context) :
+  NewUserRoute::NewUserRoute (FrontServer * context) :
     _context (context)
   {}
 
-  std::shared_ptr <http_response> LoginRoute::render (const http_request & req) {
+  std::shared_ptr <http_response> NewUserRoute::render (const http_request & req) {
     std::cout << req.get_content () << std::endl;
     auto js = json::parse (req.get_content ());
+    std::cout << js << std::endl;
 
     auto login = js ["login"].get <std::string> ();
     auto pass = js ["password"].get <std::string> ();
-    LOG_INFO ("Try login : ", login, " ", pass);
+    LOG_INFO ("Try new user : ", login, " ", pass);
 
     auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
     auto msg = config::Dict ()
-      .insert ("type", "login")
+      .insert ("type", "register")
       .insert ("login", login)
       .insert ("password", pass);
 
     auto result = userService-> request (msg).wait ();
     if (result != nullptr && result-> getOr ("code", -1) == 200) {
-      std::cout << *result << std::endl;
-      json j;
-      j ["jwt"] = (*result)["content"]["jwt_token"].getStr ();
-      j ["userId"] = (*result)["content"]["userId"].getI ();
-
-      return std::make_shared <httpserver::string_response> (j.dump (), 200, "text/plain");
+      return std::make_shared <httpserver::string_response> ("OK", 200, "text/plain");
     }
 
-    return std::make_shared <httpserver::basic_auth_fail_response> ("FAIL", "test@example.com");
+    return std::make_shared <httpserver::string_response> ("OK", 400, "text/plain");
   }
 
 }

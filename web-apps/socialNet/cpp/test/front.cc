@@ -7,15 +7,12 @@
 #include <rd_utils/_.hh>
 #include <rd_utils/foreign/CLI11.hh>
 
-socialNet::FrontServer server;
+socialNet::FrontServer * server;
 
 void ctrlCHandler (int signum) {
   LOG_INFO ("Signal ", strsignal(signum), " received");
-  server.dispose ();
-
   ::exit (0);
 }
-
 
 auto main(int argc, char *argv[]) -> int {
   try {
@@ -34,8 +31,9 @@ auto main(int argc, char *argv[]) -> int {
 
     auto cfg = rd_utils::utils::toml::parseFile (filename);
 
-    server.configure (*cfg);
-    server.start ();
+    server = new socialNet::FrontServer ();
+    server-> configure (*cfg);
+    server-> start ();
   } catch (std::runtime_error & err) {
     LOG_ERROR ("Error : ", err.what ());
   }

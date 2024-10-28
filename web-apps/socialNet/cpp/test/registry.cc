@@ -41,17 +41,22 @@ auto main(int argc, char *argv[]) -> int {
     }
 
     auto cfg = rd_utils::utils::toml::parseFile (filename);
-    auto port = (*cfg)["sys"]["port"].getI ();
+    int32_t port = 0;
+    std::string addr = "0.0.0.0";
+    int32_t threads = -1;
 
-    __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (rd_utils::net::SockAddrV4 ("0.0.0.0:" + std::to_string (port)), 8);
+    if (cfg-> contains ("sys")) {
+      port = (*cfg)["sys"].getOr ("port", port);
+      addr = (*cfg)["sys"].getOr ("addr", addr);
+      threads = (*cfg)["sys"].getOr ("threads", threads);
+    }
+
+    __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (rd_utils::net::SockAddrV4 (addr, port), threads);
     __GLOBAL_SYSTEM__-> start ();
 
     LOG_INFO ("On port : ", __GLOBAL_SYSTEM__-> port ());
 
     __GLOBAL_SYSTEM__-> add <socialNet::RegistryService> ("registry");
-
-    // Deployer deployer;
-    // deployer.deploy (*cfg);
 
     __GLOBAL_SYSTEM__-> join ();
     __GLOBAL_SYSTEM__-> dispose ();
