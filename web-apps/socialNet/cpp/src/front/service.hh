@@ -4,6 +4,9 @@
 #include <rd_utils/_.hh>
 #include "login.hh"
 #include "newuser.hh"
+#include "submit.hh"
+#include "home.hh"
+#include "user.hh"
 
 namespace socialNet {
 
@@ -18,6 +21,15 @@ namespace socialNet {
 
     // The logon resource
     NewUserRoute _logon;
+
+    // The submit resource
+    SubmitNewPostRoute _submit;
+
+    // The resource to get the length of the timeline
+    HomeTimelineLenRoute _homeTimelineLen;
+
+    // The resource to get the length of the timeline of user posts
+    UserTimelineLenRoute _userTimelineLen;
 
     // The actor system used by the front to communicate with registry
     std::shared_ptr <rd_utils::concurrency::actor::ActorSystem> _sys;

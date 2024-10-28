@@ -1,3 +1,6 @@
+#define LOG_LEVEL 10
+#define __PROJECT__ "USER"
+
 #include "service.hh"
 #include "../../registry/service.hh"
 
@@ -34,6 +37,8 @@ namespace socialNet::user {
 
   std::shared_ptr<config::ConfigNode> UserService::onRequest (const config::ConfigNode & msg) {
     auto type = msg.getOr ("type", "none");
+    LOG_INFO ("type : ", type);
+
     if (type == "register") {
       return this-> registerUser (msg);
     } else if (type == "login") {
@@ -62,7 +67,6 @@ namespace socialNet::user {
       return ResponseCode (200, std::make_shared <config::Int> (id));
     } catch (std::runtime_error & err) {
       LOG_INFO ("ERROR UserService::registerUser : ", err.what ());
-    } catch (...) {
     }
 
     return ResponseCode (400);
@@ -75,16 +79,6 @@ namespace socialNet::user {
    * ====================================================================================================
    * ====================================================================================================
    */
-
-
-  std::shared_ptr <collection::ArrayListBase> UserService::onRequestList (const config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "find") {
-      return this-> findUsers (msg);
-    } else {
-      return nullptr;
-    }
-  }
 
   std::shared_ptr <rd_utils::utils::config::ConfigNode> UserService::login (const rd_utils::utils::config::ConfigNode & msg) {
     try {
@@ -108,7 +102,6 @@ namespace socialNet::user {
       }
     } catch (std::runtime_error & err) {
       LOG_ERROR ("UserService::login : ", err.what ());
-    } catch (...) {
     }
 
     return ResponseCode (400);
@@ -132,76 +125,9 @@ namespace socialNet::user {
       }
     }  catch (std::runtime_error & err) {
       LOG_INFO ("ERROR UserService::find : ", err.what ());
-    } catch (...) {
     }
 
     return ResponseCode (400);
-  }
-
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> UserService::findUsers (const rd_utils::utils::config::ConfigNode & msg) {
-    try {
-      User u;
-      if (msg.contains ("ids")) {
-        return this-> findUserLogins (msg);
-      } else {
-        return this-> findUserIds (msg);
-      }
-
-    } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR UserService::findUsers : ", err.what ());
-    } catch (...) {
-    }
-
-    return nullptr;
-  }
-
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> UserService::findUserLogins (const rd_utils::utils::config::ConfigNode & msg) {
-    auto res = std::make_shared <rd_utils::memory::cache::collection::CacheArrayList <rd_utils::memory::cache::collection::FlatString <16> > > ();
-    rd_utils::memory::cache::collection::FlatString <16> * buffer = new rd_utils::memory::cache::collection::FlatString <16> [16];
-    {
-      User u;
-      auto pusher = res-> pusher (0, buffer, 16);
-      match (msg ["ids"]) {
-        of (config::Array, arr) {
-          for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
-            uint32_t id = (*arr) [i].getI ();
-            if (this-> _db.findById (id, u)) {
-              pusher.push (u.login);
-            }
-          }
-        } elfo {
-          res = nullptr;
-        }
-      }
-    }
-
-    delete [] buffer;
-    return res;
-  }
-
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> UserService::findUserIds (const rd_utils::utils::config::ConfigNode & msg) {
-    auto res = std::make_shared <rd_utils::memory::cache::collection::CacheArrayList <uint32_t> > ();
-    uint32_t * buffer = new uint32_t [16];
-    {
-      User u;
-      auto pusher = res-> pusher (0, buffer, 16);
-      match (msg ["logins"]) {
-        of (config::Array, arr) {
-          for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
-            auto login = (*arr) [i].getStr ();
-            rd_utils::memory::cache::collection::FlatString <16> lg = login;
-            if (this-> _db.findByLogin (lg, u)) {
-              pusher.push (u.id);
-            }
-          }
-        } elfo {
-          res = nullptr;
-        }
-      }
-    }
-
-    delete[] buffer;
-    return res;
   }
 
   /**

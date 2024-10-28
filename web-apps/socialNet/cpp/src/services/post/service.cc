@@ -1,3 +1,7 @@
+#define LOG_LEVEL 10
+#define __PROJECT__ "POST"
+
+#include "../../utils/jwt/check.hh"
 #include "service.hh"
 #include "../../registry/service.hh"
 
@@ -16,6 +20,9 @@ namespace socialNet::post {
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
+    this-> _secret = conf ["auth"]["secret"].getStr ();
+    this-> _issuer = conf ["auth"].getOr ("issuer", "auth0");
+
     socialNet::registerService (this-> _registry, "post", name, sys-> port (), this-> _iface);
   }
 
@@ -35,7 +42,11 @@ namespace socialNet::post {
   std::shared_ptr<config::ConfigNode> PostStorageService::onRequest (const config::ConfigNode & msg) {
     auto type = msg.getOr ("type", "none");
     if (type == "store") {
-      return this-> store (msg);
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
+        return this-> store (msg);
+      }
+
+      return ResponseCode (403);
     } else if (type == "read") {
       return this-> readOne (msg);
     } else {
@@ -45,9 +56,12 @@ namespace socialNet::post {
 
   std::shared_ptr<config::ConfigNode> PostStorageService::store (const config::ConfigNode & msg) {
     try {
+      auto timeline = socialNet::findService (this-> _system, this-> _registry, "timeline");
+      if (timeline == nullptr) return ResponseCode (500);
+
       Post post;
-      post.userId = msg ["user_id"].getI ();
-      post.userLogin = msg ["user_login"].getStr ();
+      post.userId = msg ["userId"].getI ();
+      post.userLogin = msg ["userLogin"].getStr ();
       post.text = msg ["text"].getStr ();
 
       match (msg ["tags"]) {
@@ -59,44 +73,22 @@ namespace socialNet::post {
         } fo;
       }
 
-      this-> _db.insertPost (post);
+      auto pid = this-> _db.insertPost (post);
+      auto req = config::Dict ()
+        .insert ("type", "update")
+        .insert ("userId", (int64_t) post.userId)
+        .insert ("jwt_token", msg ["jwt_token"].getStr ())
+        .insert ("tags", msg.get ("tags"))
+        .insert ("postId", (int64_t) pid);
+
+      auto res = timeline-> request (req).wait ();
+      if (res == nullptr || res-> getOr ("code", -1) != 200) return ResponseCode (500);
+
       return ResponseCode (200);
-    } catch (...) {
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("PostStorageService::store : ", err.what ());
       return ResponseCode (400);
     }
-  }
-
-  /**
-   * ====================================================================================================
-   * ====================================================================================================
-   * ==================================          FINDING         ========================================
-   * ====================================================================================================
-   * ====================================================================================================
-   */
-
-  std::shared_ptr <collection::ArrayListBase> PostStorageService::onRequestList (const config::ConfigNode & msg) {
-    try {
-      match (msg ["ids"]) {
-        of (config::Array, a) {
-          auto res = std::make_shared <collection::CacheArrayList<Post> > ();
-          Post * resBuf = new Post[128];
-          {
-            auto pusher = res-> pusher (0, resBuf, 128);
-            Post tmp;
-            for (uint32_t i = 0 ; i < a-> getLen () ; i++) {
-              if (this-> _db.findPost ((*a)[i].getI (), tmp)) {
-                pusher.push (tmp);
-              }
-            }
-          }
-
-          delete[] resBuf;
-          return res;
-        } fo;
-      }
-    } catch (...) {}
-
-    return nullptr;
   }
 
   std::shared_ptr <config::ConfigNode> PostStorageService::readOne (const config::ConfigNode & msg) {
@@ -104,8 +96,8 @@ namespace socialNet::post {
       Post p;
       if (this-> _db.findPost (msg ["post_id"].getI (), p)) {
         auto result = std::make_shared<config::Dict> ();
-        result-> insert ("user_id", std::make_shared <config::Int> (p.userId));
-        result-> insert ("user_login", std::make_shared <config::String> (p.userLogin.c_str ()));
+        result-> insert ("userId", std::make_shared <config::Int> (p.userId));
+        result-> insert ("userLogin", std::make_shared <config::String> (p.userLogin.c_str ()));
         result-> insert ("text", std::make_shared <config::String> (p.text.c_str ()));
 
         auto tags = std::make_shared <config::Array> ();
@@ -122,6 +114,7 @@ namespace socialNet::post {
       return ResponseCode (400);
     }
   }
+
 
   /**
    * ====================================================================================================

@@ -23,9 +23,12 @@ namespace socialNet {
     return std::make_shared<string_response> ("not allowed ", 405, "text/plain");
   }
 
-  FrontServer::FrontServer () :
-    _login (this)
+  FrontServer::FrontServer ()
+    : _login (this)
     , _logon (this)
+    , _submit (this)
+    , _homeTimelineLen (this)
+    , _userTimelineLen (this)
   {}
 
   void FrontServer::configure (const config::ConfigNode & cfg) {
@@ -55,6 +58,19 @@ namespace socialNet {
     this-> _logon.disallow_all ();
     this-> _logon.set_allowing ("POST", true);
     this-> _server-> register_resource ("/new", &this-> _logon);
+
+    this-> _submit.disallow_all ();
+    this-> _submit.set_allowing ("POST", true);
+    this-> _server-> register_resource ("/submit", &this-> _submit);
+
+    this-> _homeTimelineLen.disallow_all ();
+    this-> _homeTimelineLen.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/home-timeline-len", &this-> _homeTimelineLen);
+
+    this-> _userTimelineLen.disallow_all ();
+    this-> _userTimelineLen.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/user-timeline-len", &this-> _userTimelineLen);
+
 
     LOG_INFO ("Web service ready on port ", webPort);
   }

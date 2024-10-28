@@ -1,3 +1,6 @@
+#define LOG_LEVEL 10
+#define __PROJECT__ "TEXT"
+
 #include "service.hh"
 #include "../../registry/service.hh"
 #include <regex>

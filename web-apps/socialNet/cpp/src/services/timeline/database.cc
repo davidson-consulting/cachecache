@@ -168,7 +168,7 @@ namespace socialNet::timeline {
   }
 
   uint32_t TimelineDatabase::countPosts (uint32_t id) {
-    auto req = this-> _client-> prepare ("SELECT count (*) from post_timeline where user_id=?");
+    auto req = this-> _client-> prepare ("SELECT COUNT(post_id) from post_timeline where user_id=?");
     req-> setParam (0, &id);
 
     uint32_t nb = 0;
@@ -183,7 +183,7 @@ namespace socialNet::timeline {
   }
 
   uint32_t TimelineDatabase::countHome (uint32_t id) {
-    auto req = this-> _client-> prepare ("SELECT count (*) from home_timeline where user_id=?");
+    auto req = this-> _client-> prepare ("SELECT COUNT(post_id) from home_timeline where user_id=?");
     req-> setParam (0, &id);
 
     uint32_t nb = 0;

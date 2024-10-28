@@ -1,3 +1,6 @@
+#define LOG_LEVEL 10
+#define __PROJECT__ "SHORT_URL"
+
 #include "service.hh"
 #include <cstdlib>
 #include <unordered_set>

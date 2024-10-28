@@ -138,7 +138,7 @@ namespace socialNet::social_graph {
 
   std::shared_ptr <utils::MysqlClient::Statement> SocialGraphDatabase::prepareFindFollowers (uint32_t * rid, uint32_t uid, int32_t page, uint32_t nb) {
     if (page != -1) {
-      auto req = this-> _client-> prepare ("SELECT user_id from to_whom where subs = ? order by id DESC limit ? offset ?");
+      auto req = this-> _client-> prepare ("SELECT user_id from subs where to_whom = ? order by id DESC limit ? offset ?");
       req-> setParam (0, &uid);
       req-> setParam (1, &nb);
       uint32_t z = page * nb;
@@ -148,7 +148,7 @@ namespace socialNet::social_graph {
       req-> finalize ();
       return req;
     } else {
-      auto req = this-> _client-> prepare ("SELECT user_id from to_whom where subs = ? order by id DESC");
+      auto req = this-> _client-> prepare ("SELECT user_id from subs where to_whom = ? order by id DESC");
       req-> setParam (0, &uid);
 
       req-> setResult (0, rid);

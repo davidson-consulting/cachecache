@@ -1,3 +1,7 @@
+#define LOG_LEVEL 10
+#define __PROJECT__ "SOCIAL_GRAPH"
+
+#include "../../utils/jwt/check.hh"
 #include "service.hh"
 #include "../../registry/service.hh"
 
@@ -16,6 +20,9 @@ namespace socialNet::social_graph {
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
+    this-> _secret = conf ["auth"]["secret"].getStr ();
+    this-> _issuer = conf ["auth"].getOr ("issuer", "auth0");
+
     socialNet::registerService (this-> _registry, "social_graph", name, sys-> port (), this-> _iface);
   }
 
@@ -34,17 +41,19 @@ namespace socialNet::social_graph {
 
   std::shared_ptr<config::ConfigNode> SocialGraphService::onRequest (const config::ConfigNode & msg) {
     auto type = msg.getOr ("type", "none");
-    if (type == "sub") {
-      return this-> subscribe (msg);
-    } else if (type == "unsub") {
-      return this-> deleteSub (msg);
-    } else if (type == "count-sub") {
-      return this-> countSubs (msg);
-    } else if (type == "count-foll") {
-      return this-> countFollows (msg);
-    } else {
-      return ResponseCode (404);
-    }
+    if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
+      if (type == "sub") {
+        return this-> subscribe (msg);
+      } else if (type == "unsub") {
+        return this-> deleteSub (msg);
+      } else if (type == "count-sub") {
+        return this-> countSubs (msg);
+      } else if (type == "count-foll") {
+        return this-> countFollows (msg);
+      } else {
+        return ResponseCode (404);
+      }
+    } else return ResponseCode (403);
   }
 
   std::shared_ptr <rd_utils::utils::config::ConfigNode> SocialGraphService::subscribe (const rd_utils::utils::config::ConfigNode & msg) {
@@ -91,17 +100,6 @@ namespace socialNet::social_graph {
    */
 
 
-  std::shared_ptr <collection::ArrayListBase> SocialGraphService::onRequestList (const config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "subscriptions") {
-      return this-> findSubs (msg);
-    } else if (type == "followers") {
-      return this-> findFollowers (msg);
-    } else {
-      return nullptr;
-    }
-  }
-
   std::shared_ptr <rd_utils::utils::config::ConfigNode> SocialGraphService::countSubs (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       auto userId = msg ["userId"].getI ();
@@ -126,36 +124,6 @@ namespace socialNet::social_graph {
     }
 
     return ResponseCode (400);
-  }
-
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> SocialGraphService::findSubs (const rd_utils::utils::config::ConfigNode & msg) {
-    try {
-      auto userId = msg ["userId"].getI ();
-      auto page = msg ["page"].getI ();
-      auto nb = msg ["nb"].getI ();
-
-      return this-> _db.findSubscriptions (userId, page, nb);
-    } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR : ", err.what ());
-    } catch (...) {
-    }
-
-    return nullptr;
-  }
-
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> SocialGraphService::findFollowers (const rd_utils::utils::config::ConfigNode & msg) {
-    try {
-      auto userId = msg ["userId"].getI ();
-      auto page = msg ["page"].getI ();
-      auto nb = msg ["nb"].getI ();
-
-      return this-> _db.findFollowers (userId, page, nb);
-    } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR : ", err.what ());
-    } catch (...) {
-    }
-
-    return nullptr;
   }
 
   /**

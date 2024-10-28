@@ -73,6 +73,8 @@ auto main(int argc, char *argv[]) -> int {
                   __GLOBAL_SYSTEM__->  add <text::TextService> (ser + "_" + std::to_string (i + j), *cfg);
                 } else if (ser == "social") {
                   __GLOBAL_SYSTEM__->  add <social_graph::SocialGraphService> (ser + "_" + std::to_string (i + j), *cfg);
+                } else if (ser == "post") {
+                  __GLOBAL_SYSTEM__->  add <post::PostStorageService> (ser + "_" + std::to_string (i + j), *cfg);
                 } else if (ser == "compose") {
                   __GLOBAL_SYSTEM__->  add <compose::ComposeService> (ser + "_" + std::to_string (i + j), *cfg);
                 } else {

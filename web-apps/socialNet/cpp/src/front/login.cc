@@ -1,3 +1,6 @@
+#define LOG_LEVEL 10
+#define __PROJECT__ "LOGIN"
+
 #include "login.hh"
 #include "service.hh"
 #include <nlohmann/json.hpp>
@@ -15,28 +18,29 @@ namespace socialNet {
   {}
 
   std::shared_ptr <http_response> LoginRoute::render (const http_request & req) {
-    std::cout << req.get_content () << std::endl;
-    auto js = json::parse (req.get_content ());
+    try {
+      auto js = json::parse (req.get_content ());
 
-    auto login = js ["login"].get <std::string> ();
-    auto pass = js ["password"].get <std::string> ();
-    LOG_INFO ("Try login : ", login, " ", pass);
+      auto login = js ["login"].get <std::string> ();
+      auto pass = js ["password"].get <std::string> ();
+      LOG_INFO ("Try login : ", login, " ", pass);
 
-    auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
-    auto msg = config::Dict ()
-      .insert ("type", "login")
-      .insert ("login", login)
-      .insert ("password", pass);
+      auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
+      auto msg = config::Dict ()
+        .insert ("type", "login")
+        .insert ("login", login)
+        .insert ("password", pass);
 
-    auto result = userService-> request (msg).wait ();
-    if (result != nullptr && result-> getOr ("code", -1) == 200) {
-      std::cout << *result << std::endl;
-      json j;
-      j ["jwt"] = (*result)["content"]["jwt_token"].getStr ();
-      j ["userId"] = (*result)["content"]["userId"].getI ();
+      auto result = userService-> request (msg).wait ();
+      if (result != nullptr && result-> getOr ("code", -1) == 200) {
+        std::cout << *result << std::endl;
+        json j;
+        j ["jwt_token"] = (*result)["content"]["jwt_token"].getStr ();
+        j ["userId"] = (*result)["content"]["userId"].getI ();
 
-      return std::make_shared <httpserver::string_response> (j.dump (), 200, "text/plain");
-    }
+        return std::make_shared <httpserver::string_response> (j.dump (), 200, "text/json");
+      }
+    } catch (...) {}
 
     return std::make_shared <httpserver::basic_auth_fail_response> ("FAIL", "test@example.com");
   }

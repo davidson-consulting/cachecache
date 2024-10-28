@@ -76,7 +76,7 @@ namespace socialNet::user {
   bool UserDatabase::findById (uint32_t & id, User & u) {
     auto req = this-> _client-> prepare ("SELECT login, password from users where id=?");
     req-> setParam (0, &id);
-    req-> setParam (0, u.login.data (), 16);
+    req-> setResult (0, u.login.data (), 16);
     req-> setResult (1, u.password.data (), 64);
 
     req-> finalize ();
@@ -86,6 +86,7 @@ namespace socialNet::user {
       u.password.forceLen (req-> getResultLen (1));
       return true;
     }
+    std::cout << "Not found" << std::endl;
 
     return false;
   }

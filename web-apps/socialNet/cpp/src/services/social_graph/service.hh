@@ -15,6 +15,9 @@ namespace socialNet::social_graph {
 
     SocialGraphDatabase _db;
 
+    std::string _issuer;
+    std::string _secret;
+
   public:
 
     /**
@@ -26,8 +29,6 @@ namespace socialNet::social_graph {
     SocialGraphService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf);
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
-
-     std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> onRequestList (const rd_utils::utils::config::ConfigNode & msg);
 
     void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
 
@@ -42,10 +43,6 @@ namespace socialNet::social_graph {
     std::shared_ptr <rd_utils::utils::config::ConfigNode> countSubs (const rd_utils::utils::config::ConfigNode & msg);
 
     std::shared_ptr <rd_utils::utils::config::ConfigNode> countFollows (const rd_utils::utils::config::ConfigNode & msg);
-
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> findSubs (const rd_utils::utils::config::ConfigNode & msg);
-
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> findFollowers (const rd_utils::utils::config::ConfigNode & msg);
 
     void streamFollowers (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
 

@@ -5,4 +5,4 @@ iface = "lo"
 [registry]
 name = "registry"
 addr = "localhost"
-port = 9099
+port = 9090

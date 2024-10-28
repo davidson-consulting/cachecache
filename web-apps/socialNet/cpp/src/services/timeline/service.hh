@@ -15,6 +15,9 @@ namespace socialNet::timeline {
 
     TimelineDatabase _db;
 
+    std::string _issuer;
+    std::string _secret;
+
   public:
 
     /**
@@ -27,8 +30,6 @@ namespace socialNet::timeline {
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> onRequestList (const rd_utils::utils::config::ConfigNode & msg);
-
     void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
 
     void onQuit () override;
@@ -40,9 +41,6 @@ namespace socialNet::timeline {
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> countPosts (const rd_utils::utils::config::ConfigNode & msg);
     std::shared_ptr<rd_utils::utils::config::ConfigNode> countHome (const rd_utils::utils::config::ConfigNode & msg);
-
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> findHome (const rd_utils::utils::config::ConfigNode & msg);
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> findPosts (const rd_utils::utils::config::ConfigNode & msg);
 
     void streamHome (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
     void streamPosts (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);

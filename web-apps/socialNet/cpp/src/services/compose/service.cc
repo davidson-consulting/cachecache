@@ -1,5 +1,7 @@
-#include <jwt-cpp/jwt.h>
+#define LOG_LEVEL 10
+#define __PROJECT__ "COMPOSE"
 
+#include "../../utils/jwt/check.hh"
 #include "service.hh"
 #include "../../registry/service.hh"
 #include "../post/database.hh"
@@ -42,7 +44,7 @@ namespace socialNet::compose {
   std::shared_ptr<config::ConfigNode> ComposeService::onRequest (const config::ConfigNode & msg) {
     auto type = msg.getOr ("type", "none");
     if (type == "submit") {
-      if (this-> checkConnected (msg)) {
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
         return this-> submitNewPost (msg);
       } else return ResponseCode (403);
     } else if (type == "register") {
@@ -50,7 +52,7 @@ namespace socialNet::compose {
     } else if (type == "login") {
       return this-> login (msg);
     } else if (type == "check") {
-      if (this-> checkConnected (msg)) {
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
         return ResponseCode (200);
       } else {
         return ResponseCode (403);
@@ -83,12 +85,11 @@ namespace socialNet::compose {
       if (result && result-> getOr ("code", -1) == 200) {
         auto resp = config::Dict ()
           .insert ("userId", (*result) ["content"].getI ())
-          .insert ("jwt_token", this-> createJWTToken ((*result) ["content"].getI ()));
+          .insert ("jwt_token", utils::createJWTToken ((*result) ["content"].getI (), this-> _issuer, this-> _secret));
 
         return ResponseCode (200, resp);
       } else {
         LOG_ERROR ("No response, or wrong code ?");
-        std::cout << *result << std::endl;
         return ResponseCode (403);
       }
     } catch (std::runtime_error & err) {
@@ -120,31 +121,6 @@ namespace socialNet::compose {
     return ResponseCode (400);
   }
 
-  bool ComposeService::checkConnected (const rd_utils::utils::config::ConfigNode & msg) {
-    try {
-      auto jwt_tok = jwt::decode (msg ["jwt_token"].getStr ());
-      auto uid = msg ["userId"].getI ();
-
-      auto verif = jwt::verify ()
-        .with_issuer (this-> _issuer)
-        .with_claim ("userId", jwt::claim (std::to_string (uid)))
-        .allow_algorithm (jwt::algorithm::hs256 {this-> _secret});
-
-      verif.verify (jwt_tok);
-
-      return true;
-    } catch (std::runtime_error & err) {}
-
-    return false;
-  }
-
-  std::string ComposeService::createJWTToken (uint32_t uid) {
-    return jwt::create ()
-      .set_type ("JWS")
-      .set_issuer (this-> _issuer)
-      .set_payload_claim ("userId", jwt::claim (std::to_string (uid)))
-      .sign (jwt::algorithm::hs256 {this-> _secret});
-  }
 
   /**
    * ====================================================================================================
@@ -179,32 +155,35 @@ namespace socialNet::compose {
       auto userResReq = userService-> request (userReq);
 
       auto textResult = textResReq.wait ();
+
+      if (textResult == nullptr || textResult-> getOr ("code", -1) != 200) throw std::runtime_error ("Text incorrect");
+
+      auto arr = std::make_shared <config::Array> ();
+      match ((*textResult) ["content"]["tags"]) {
+        of (config::Array, a) {
+          for (uint32_t i = 0 ; i < a-> getLen () && i < 16 ; i++) {
+            arr-> insert ((*a) [i].getI ());
+          }
+        } fo;
+      }
+
       auto userResult = userResReq.wait ();
+      if (userResult == nullptr || userResult-> getOr ("code", -1) != 200) throw std::runtime_error ("User not found");
 
-      if (textResult && textResult-> getOr ("code", -1) == 200 && userResult && userResult-> getOr ("code", -1) == 200) {
-        auto arr = std::make_shared <config::Array> ();
-        match ((*textResult) ["content"]["tags"]) {
-          of (config::Array, a) {
-            for (uint32_t i = 0 ; i < a-> getLen () && i < 16 ; i++) {
-              arr-> insert ((*a) [i].getI ());
-            }
-          } fo;
-        }
+      auto postReq = config::Dict ()
+        .insert ("type", "store")
+        .insert ("userLogin", (*userResult) ["content"].getStr ())
+        .insert ("userId", msg ["userId"].getI ())
+        .insert ("text", (*textResult) ["content"]["text"].getStr ())
+        .insert ("jwt_token", msg ["jwt_token"].getStr ())
+        .insert ("tags", arr);
 
-        auto postReq = config::Dict ()
-          .insert ("type", "store")
-          .insert ("user_login", (*userResult) ["content"].getStr ())
-          .insert ("text", (*textResult) ["content"]["text"].getStr ())
-          .insert ("tags", arr);
+      auto result = postService-> request (postReq).wait ();
+      if (result == nullptr || result-> getOr ("code", -1) != 200) throw std::runtime_error ("Failed to store");
 
-        auto result = postService-> request (postReq).wait ();
-        if (result && result-> getOr ("code", -1) == 200) {
-          return ResponseCode (200);
-        } else return ResponseCode (500);
-      } else return ResponseCode (500);
+      return ResponseCode (200);
     } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR UserService::registerUser : ", err.what ());
-    } catch (...) {
+      LOG_INFO ("ERROR ComposeService::submitNewPost : ", err.what ());
     }
 
     return ResponseCode (400);
@@ -222,16 +201,23 @@ namespace socialNet::compose {
   void ComposeService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
     auto type = msg.getOr ("type", "none");
     if (type == "home_t") {
-      this-> streamTimeline (msg, stream, "home");
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
+        this-> streamTimeline (msg, stream, "home");
+      }
     } else if (type == "user_t") {
       this-> streamTimeline (msg, stream, "posts");
+      return;
     } else if (type == "subs") {
-      this-> streamSubscriptions (msg, stream, "subscriptions");
+      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
+        this-> streamSubscriptions (msg, stream, "subscriptions");
+      }
+      return;
     } else if (type == "followers") {
       this-> streamSubscriptions (msg, stream, "followers");
-    } else {
-      stream.writeU8 (0);
+      return;
     }
+
+    stream.writeU8 (0);
   }
 
   void ComposeService::streamTimeline (const config::ConfigNode & msg, actor::ActorStream & stream, const std::string & kind) {

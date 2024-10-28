@@ -1,3 +1,7 @@
+#define LOG_LEVEL 10
+#define __PROJECT__ "TIMELINE"
+
+#include "../../utils/jwt/check.hh"
 #include "service.hh"
 #include "../../registry/service.hh"
 
@@ -16,6 +20,9 @@ namespace socialNet::timeline {
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
+    this-> _secret = conf ["auth"]["secret"].getStr ();
+    this-> _issuer = conf ["auth"].getOr ("issuer", "auth0");
+
     socialNet::registerService (this-> _registry, "timeline", name, sys-> port (), this-> _iface);
   }
 
@@ -34,14 +41,19 @@ namespace socialNet::timeline {
 
   std::shared_ptr<config::ConfigNode> TimelineService::onRequest (const config::ConfigNode & msg) {
     auto type = msg.getOr ("type", "none");
-    if (type == "update") {
-      return this-> updatePosts (msg);
-    } else if (type == "count-posts") {
-      return this-> countPosts (msg);
-    } else if (type == "count-home") {
-      return this-> countHome (msg);
-    } else {
+    if (type == "count-posts") {
+        return this-> countPosts (msg);
+    }
+
+    if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
+      if (type == "update") {
+        return this-> updatePosts (msg);
+      } else if (type == "count-home") {
+        return this-> countHome (msg);
+      }
       return ResponseCode (404);
+    } else {
+      return ResponseCode (403);
     }
   }
 
@@ -53,6 +65,15 @@ namespace socialNet::timeline {
       this-> _db.insertOnePost (uid, pid);
 
       this-> updateForFollowers (uid, pid);
+      match (msg ["tags"]) {
+        of (config::Array, a) {
+          for (uint32_t i = 0 ; i < a-> getLen () ; i++) {
+            this-> _db.insertOneHome ((*a)[i].getI (), pid);
+          }
+        } fo;
+      }
+
+
       return ResponseCode (200);
     } catch (std::runtime_error & err) {
       LOG_INFO ("ERROR : ", err.what ());
@@ -98,32 +119,7 @@ namespace socialNet::timeline {
    * ====================================================================================================
    */
 
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> TimelineService::onRequestList (const rd_utils::utils::config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "home") {
-      return this-> findHome (msg);
-    } else if (type == "posts") {
-      return this-> findPosts (msg);
-    } else {
-      return nullptr;
-    }
-  }
-
   std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::countPosts (const rd_utils::utils::config::ConfigNode & msg) {
-    try {
-      uint32_t uid = msg ["userId"].getI ();
-      auto nb = this-> _db.countHome (uid);
-
-      return ResponseCode (200, std::make_shared <config::Int> (nb));
-    } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR : ", err.what ());
-    } catch (...) {
-    }
-
-    return ResponseCode (400);
-  }
-
-  std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::countHome (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
       auto nb = this-> _db.countPosts (uid);
@@ -137,34 +133,18 @@ namespace socialNet::timeline {
     return ResponseCode (400);
   }
 
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> TimelineService::findHome (const rd_utils::utils::config::ConfigNode & msg) {
+  std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::countHome (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      uint32_t page = msg ["page"].getI ();
-      uint32_t nb = msg ["nb"].getI ();
+      auto nb = this-> _db.countHome (uid);
 
-      return this-> _db.findHome (uid, page, nb);
+      return ResponseCode (200, std::make_shared <config::Int> (nb));
     } catch (std::runtime_error & err) {
       LOG_INFO ("ERROR : ", err.what ());
     } catch (...) {
     }
 
-    return nullptr;
-  }
-
-  std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> TimelineService::findPosts (const rd_utils::utils::config::ConfigNode & msg) {
-    try {
-      uint32_t uid = msg ["userId"].getI ();
-      uint32_t page = msg ["page"].getI ();
-      uint32_t nb = msg ["nb"].getI ();
-
-      return this-> _db.findPosts (uid, page, nb);
-    } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR : ", err.what ());
-    } catch (...) {
-    }
-
-    return nullptr;
+    return ResponseCode (400);
   }
 
   /**

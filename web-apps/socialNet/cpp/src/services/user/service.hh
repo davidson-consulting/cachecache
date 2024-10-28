@@ -29,8 +29,6 @@ namespace socialNet::user {
 
     void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream) override;
 
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> onRequestList (const rd_utils::utils::config::ConfigNode & msg);
-
     void onQuit () override;
 
   private:
@@ -43,12 +41,6 @@ namespace socialNet::user {
     std::shared_ptr<rd_utils::utils::config::ConfigNode> login (const rd_utils::utils::config::ConfigNode & node);
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> find (const rd_utils::utils::config::ConfigNode & node);
-
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> findUsers (const rd_utils::utils::config::ConfigNode & node);
-
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> findUserLogins (const rd_utils::utils::config::ConfigNode & node);
-
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> findUserIds (const rd_utils::utils::config::ConfigNode & node);
   };
 
 }

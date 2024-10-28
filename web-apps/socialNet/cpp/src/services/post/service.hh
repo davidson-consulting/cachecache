@@ -15,6 +15,9 @@ namespace socialNet::post {
 
     PostDatabase _db;
 
+    std::string _issuer;
+    std::string _secret;
+
   public:
 
     /**
@@ -29,11 +32,6 @@ namespace socialNet::post {
      * Request for insertions
      */
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
-
-    /**
-     * Request for data retreival
-     */
-    std::shared_ptr<rd_utils::memory::cache::collection::ArrayListBase> onRequestList (const rd_utils::utils::config::ConfigNode & msg);
 
     void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
 
