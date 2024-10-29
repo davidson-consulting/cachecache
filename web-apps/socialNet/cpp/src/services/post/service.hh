@@ -2,6 +2,7 @@
 
 #include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
+#include <utils/codes/requests.hh>
 #include "database.hh"
 
 namespace socialNet::post {
@@ -34,6 +35,8 @@ namespace socialNet::post {
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
     void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
+
+    void onMessage (const rd_utils::utils::config::ConfigNode & msg);
 
     void onQuit () override;
 

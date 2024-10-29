@@ -2,6 +2,7 @@
 
 #include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
+#include <utils/codes/requests.hh>
 #include "database.hh"
 
 namespace socialNet::social_graph {
@@ -32,6 +33,8 @@ namespace socialNet::social_graph {
 
     void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
 
+    void onMessage (const rd_utils::utils::config::ConfigNode& msg);
+
     void onQuit () override;
 
   private :
@@ -39,6 +42,8 @@ namespace socialNet::social_graph {
     std::shared_ptr <rd_utils::utils::config::ConfigNode> subscribe (const rd_utils::utils::config::ConfigNode & msg);
 
     std::shared_ptr <rd_utils::utils::config::ConfigNode> deleteSub (const rd_utils::utils::config::ConfigNode & msg);
+
+    std::shared_ptr <rd_utils::utils::config::ConfigNode> isFollowing (const rd_utils::utils::config::ConfigNode & msg);
 
     std::shared_ptr <rd_utils::utils::config::ConfigNode> countSubs (const rd_utils::utils::config::ConfigNode & msg);
 

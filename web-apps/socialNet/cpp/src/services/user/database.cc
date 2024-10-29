@@ -49,24 +49,26 @@ namespace socialNet::user {
 
   uint32_t UserDatabase::insertUser (User & p) {
     auto req = this-> _client-> prepare ("INSERT INTO users (login, password) values (?, ?)");
-    req-> setParam (0, p.login.data (), p.login.len ());
-    req-> setParam (1, p.password.data (), p.password.len ());
+    req-> setParam (0, p.login, strnlen (p.login, 15));
+    req-> setParam (1, p.password, strnlen (p.password, 63));
 
     req-> finalize ();
     req-> execute ();
     return req-> getGeneratedId ();
   }
 
-  bool UserDatabase::findByLogin (rd_utils::memory::cache::collection::FlatString <16> & login, User & u) {
+  bool UserDatabase::findByLogin (const char * login, User & u) {
+    memcpy (u.login, login, strnlen (login, 16));
+
     auto req = this-> _client-> prepare ("SELECT id, password from users where login=?");
-    req-> setParam (0, login.data (), login.len ());
+    req-> setParam (0, u.login, strnlen (u.login, 15));
     req-> setResult (0, &u.id);
-    req-> setResult (1, u.password.data (), 64);
+    req-> setResult (1, u.password, 63);
 
     req-> finalize ();
     req-> execute ();
     if (req-> next ()) {
-      u.password.forceLen (req-> getResultLen (1));
+      u.password [req-> getResultLen (1)] = 0;
       return true;
     }
 
@@ -76,17 +78,16 @@ namespace socialNet::user {
   bool UserDatabase::findById (uint32_t & id, User & u) {
     auto req = this-> _client-> prepare ("SELECT login, password from users where id=?");
     req-> setParam (0, &id);
-    req-> setResult (0, u.login.data (), 16);
-    req-> setResult (1, u.password.data (), 64);
+    req-> setResult (0, u.login, 15);
+    req-> setResult (1, u.password, 63);
 
     req-> finalize ();
     req-> execute ();
     if (req-> next ()) {
-      u.login.forceLen (req-> getResultLen (0));
-      u.password.forceLen (req-> getResultLen (1));
+      u.login [req-> getResultLen (0)] = 0;
+      u.password [req-> getResultLen (1)] = 0;
       return true;
     }
-    std::cout << "Not found" << std::endl;
 
     return false;
   }

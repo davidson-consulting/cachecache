@@ -12,8 +12,8 @@ namespace socialNet::user {
 
   struct User {
     uint32_t id;
-    rd_utils::memory::cache::collection::FlatString<16> login;
-    rd_utils::memory::cache::collection::FlatString<64> password;
+    char login [16];
+    char password [64];
   };
 
   class UserDatabase {
@@ -43,7 +43,7 @@ namespace socialNet::user {
     /**
      * Find a user by its login
      */
-    bool findByLogin (rd_utils::memory::cache::collection::FlatString <16> & login, User & u);
+    bool findByLogin (const char * login, User & u);
 
     /**
      * Find a user by its id

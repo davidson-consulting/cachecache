@@ -6,11 +6,13 @@
 #include <nlohmann/json.hpp>
 #include "../registry/service.hh"
 #include "../services/post/database.hh"
+#include "../utils/codes/requests.hh"
 #include <rd_utils/_.hh>
 
 using namespace httpserver;
 using namespace nlohmann;
 using namespace rd_utils::utils;
+using namespace socialNet::utils;
 
 namespace socialNet {
 
@@ -21,19 +23,17 @@ namespace socialNet {
   std::shared_ptr <http_response> HomeTimelineLenRoute::render (const http_request & req) {
     try {
       int64_t userId = std::atoi (std::string (req.get_arg ("userId")).c_str ());
-      std::string jwt = std::string (req.get_arg ("jwt_token"));
 
       LOG_INFO ("Try get home timeline len : ", userId);
 
       auto timelineService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "timeline");
       auto msg = config::Dict ()
-        .insert ("type", "count-home")
-        .insert ("userId", userId)
-        .insert ("jwt_token", jwt);
+        .insert ("type", RequestCode::HOME_TIMELINE_LEN)
+        .insert ("userId", userId);
 
       auto result = timelineService-> request (msg).wait ();
 
-      if (result != nullptr && result-> getOr ("code", -1) == 200) {
+      if (result != nullptr && result-> getOr ("code", -1) == ResponseCode::OK) {
         std::string res = std::to_string ((*result)["content"].getI ());
         return std::make_shared <httpserver::string_response> (res, 200, "text/plain");
       }
@@ -49,24 +49,22 @@ namespace socialNet {
 
   std::shared_ptr <http_response> HomeTimelineRoute::render (const http_request & req) {
     try {
-      int64_t userId = std::atoi (std::string (req.get_arg ("userId")).c_str ());
+      int64_t userId = std::atoi (std::string (req.get_arg ("user_id")).c_str ());
       int64_t page = std::atoi (std::string (req.get_arg ("page")).c_str ());
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
-      std::string jwt = std::string (req.get_arg ("jwt_token"));
 
       LOG_INFO ("Try get user posts : ", userId, " ", page, " ", nb);
 
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
-        .insert ("type", "home_t")
+        .insert ("type", RequestCode::HOME_TIMELINE)
         .insert ("userId", userId)
         .insert ("page", page)
-        .insert ("nb", nb)
-        .insert ("jwt_token", jwt);
+        .insert ("nb", nb);
 
       auto resultStream = composeService-> requestStream (msg).wait ();
       socialNet::post::Post p;
-      if (resultStream != nullptr) {
+      if (resultStream != nullptr && resultStream-> readU32 () == 200) {
         json result;
 
         while (resultStream-> isOpen ()) {
@@ -74,8 +72,8 @@ namespace socialNet {
           resultStream-> readRaw (p);
 
           json post;
-          post ["userId"] = p.userId;
-          post ["userLogin"] = std::string (p.userLogin);
+          post ["user_id"] = p.userId;
+          post ["user_login"] = std::string (p.userLogin);
           post ["text"] = std::string (p.text);
           for (uint32_t i = 0 ; i < p.nbTags ; i++) {
             post["tags"].push_back (p.tags [i]);

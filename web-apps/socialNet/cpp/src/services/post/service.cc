@@ -26,9 +26,22 @@ namespace socialNet::post {
     socialNet::registerService (this-> _registry, "post", name, sys-> port (), this-> _iface);
   }
 
+  void PostStorageService::onMessage (const config::ConfigNode & msg) {
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::POISON_PILL) {
+        LOG_INFO ("Registry exit");
+        this-> _registry = nullptr;
+        this-> exit ();
+      }
+
+      fo;
+    }
+  }
 
   void PostStorageService::onQuit () {
-    socialNet::closeService (this-> _registry, "post", this-> _name, this-> _system-> port (), this-> _iface);
+    if (this-> _registry != nullptr) {
+      socialNet::closeService (this-> _registry, "post", this-> _name, this-> _system-> port (), this-> _iface);
+    }
   }
 
   /**
@@ -40,24 +53,29 @@ namespace socialNet::post {
    */
 
   std::shared_ptr<config::ConfigNode> PostStorageService::onRequest (const config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "store") {
-      if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
-        return this-> store (msg);
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::STORE) {
+        if (utils::checkConnected (msg, this-> _issuer, this-> _secret)) {
+          return this-> store (msg);
+        } else {
+          return response (ResponseCode::FORBIDDEN);
+        }
       }
 
-      return ResponseCode (403);
-    } else if (type == "read") {
-      return this-> readOne (msg);
-    } else {
-      return ResponseCode (404);
+      elof_v (RequestCode::READ_POST) {
+        return this-> readOne (msg);
+      }
+
+      elfo {
+        return response (ResponseCode::NOT_FOUND);
+      }
     }
   }
 
   std::shared_ptr<config::ConfigNode> PostStorageService::store (const config::ConfigNode & msg) {
     try {
       auto timeline = socialNet::findService (this-> _system, this-> _registry, "timeline");
-      if (timeline == nullptr) return ResponseCode (500);
+      if (timeline == nullptr) return response (ResponseCode::SERVER_ERROR);
 
       Post post;
       post.userId = msg ["userId"].getI ();
@@ -81,19 +99,19 @@ namespace socialNet::post {
 
       auto pid = this-> _db.insertPost (post);
       auto req = config::Dict ()
-        .insert ("type", "update")
+        .insert ("type", RequestCode::UPDATE_TIMELINE)
         .insert ("userId", (int64_t) post.userId)
         .insert ("jwt_token", msg ["jwt_token"].getStr ())
         .insert ("tags", msg.get ("tags"))
         .insert ("postId", (int64_t) pid);
 
       auto res = timeline-> request (req).wait ();
-      if (res == nullptr || res-> getOr ("code", -1) != 200) return ResponseCode (500);
+      if (res == nullptr || res-> getOr ("code", -1) != ResponseCode::OK) return response (ResponseCode::SERVER_ERROR);
 
-      return ResponseCode (200);
+      return response (ResponseCode::OK);
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("PostStorageService::store : ", err.what ());
-      return ResponseCode (400);
+      return response (ResponseCode::MALFORMED);
     }
   }
 
@@ -112,12 +130,12 @@ namespace socialNet::post {
         }
         result-> insert ("tags", tags);
 
-        return ResponseCode (200, result);
+        return response (ResponseCode::OK, result);
       } else {
-        return ResponseCode (404);
+        return response (ResponseCode::NOT_FOUND);
       }
     } catch (...) {
-      return ResponseCode (400);
+      return response (ResponseCode::MALFORMED);
     }
   }
 
@@ -131,25 +149,32 @@ namespace socialNet::post {
    */
 
   void PostStorageService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "posts") {
-      this-> streamPosts (stream);
-    } else stream.writeU8 (0);
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::READ_POST) {
+        stream.writeU32 (ResponseCode::OK);
+        this-> streamPosts (stream);
+      }
+
+      elfo {
+        stream.writeU32 (ResponseCode::NOT_FOUND);
+      }
+    }
   }
 
   void PostStorageService::streamPosts (rd_utils::concurrency::actor::ActorStream & stream) {
-    Post p;
-    while (stream.isOpen ()) {
-      if (stream.readOr ((uint8_t) 0) != 0) {
+    try {
+      Post p;
+      while (stream.readOr ((uint8_t) 0) != 0) {
         auto id = stream.readU32 ();
         if (this-> _db.findPost (id, p)) {
           stream.writeU8 (1);
           stream.writeRaw (p);
         } else {
           stream.writeU8 (0);
-          break;
         }
       }
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("PostStorageService::streamPosts ", err.what ());
     }
   }
 

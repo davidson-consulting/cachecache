@@ -16,16 +16,47 @@ namespace socialNet {
     actor::ActorBase (name, sys)
   {}
 
+
+  void RegistryService::onQuit () {
+    auto msg = config::Dict ()
+      .insert ("type", RequestCode::POISON_PILL);
+
+    for (auto & it : this-> _services) {
+      for (auto & jt : it.second.second) {
+        auto act = this-> _system-> remoteActor (jt.id, net::SockAddrV4 (jt.addr, jt.port));
+        if (act != nullptr) {
+          LOG_INFO ("Killing : ", jt.id);
+          act-> send (msg);
+        }
+      }
+    }
+  }
+
+  /*!
+   * ====================================================================================================
+   * ====================================================================================================
+   * ====================================          REQUESTS          ====================================
+   * ====================================================================================================
+   * ====================================================================================================
+   */
+
   std::shared_ptr<rd_utils::utils::config::ConfigNode> RegistryService::onRequest (const rd_utils::utils::config::ConfigNode & msg) {
-    auto req = msg.getOr ("type", "none");
-    if (req == "register") {
-      return this-> registerService (msg);
-    } else if (req == "close") {
-      return this-> closeService (msg);
-    } else if (req == "get") {
-      return this-> findService (msg);
-    } else {
-      return ResponseCode (404);
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::REGISTER_SERVICE) {
+        return this-> registerService (msg);
+      }
+
+      elof_v (RequestCode::CLOSE_SERVICE) {
+        return this-> closeService (msg);
+      }
+
+      elof_v (RequestCode::FIND) {
+        return this-> findService (msg);
+      }
+
+      elfo {
+        return response (ResponseCode::NOT_FOUND);
+      }
     }
   }
 
@@ -44,10 +75,11 @@ namespace socialNet {
         it-> second.second.push_back ({.id = id, .addr = addr, .port = port});
       }
 
-      return ResponseCode (200);
-    } catch (...) {}
-
-    return ResponseCode (400);
+      return response (ResponseCode::OK);
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("RegistryService::registerService ", err.what ());
+      return response (ResponseCode::MALFORMED);
+    }
   }
 
   std::shared_ptr<rd_utils::utils::config::ConfigNode> RegistryService::findService (const rd_utils::utils::config::ConfigNode & msg) {
@@ -61,7 +93,7 @@ namespace socialNet {
           it-> second.first = 0;
         }
 
-        LOG_INFO ("Find service : ", kind);
+        LOG_INFO ("Found service : ", kind);
         auto src = it-> second.second [index];
 
         auto res = config::Dict ()
@@ -69,13 +101,15 @@ namespace socialNet {
           .insert ("id", std::make_shared <config::String> (src.id))
           .insert ("port", std::make_shared <config::Int> (src.port));
 
-        return ResponseCode (200, res);
+        return response (ResponseCode::OK, res);
       }
 
-      return ResponseCode (404);
-    } catch (...) {}
-
-    return ResponseCode (400);
+      LOG_WARN ("No service : ", kind);
+      return response (ResponseCode::NOT_FOUND);
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("RegistryService::findService ", err.what ());
+      return response (ResponseCode::MALFORMED);
+    }
   }
 
   std::shared_ptr<rd_utils::utils::config::ConfigNode> RegistryService::closeService (const rd_utils::utils::config::ConfigNode & msg) {
@@ -104,16 +138,25 @@ namespace socialNet {
         }
       }
 
-      return ResponseCode (200);
-    } catch (...) {}
-
-    return ResponseCode (400);
+      return response (ResponseCode::OK);
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("RegistryService::closeService ", err.what ());
+      return response (ResponseCode::MALFORMED);
+    }
   }
 
+  /*!
+   * ====================================================================================================
+   * ====================================================================================================
+   * ===================================          CONNECTING          ===================================
+   * ====================================================================================================
+   * ====================================================================================================
+   */
 
   std::shared_ptr <rd_utils::concurrency::actor::ActorRef> connectRegistry (rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & conf) {
-    std::shared_ptr <rd_utils::concurrency::actor::ActorRef> act = nullptr;
     try {
+      std::shared_ptr <rd_utils::concurrency::actor::ActorRef> act = nullptr;
+
       auto name = conf ["registry"].getOr ("name", "registry");
       auto addr = conf ["registry"].getOr ("addr", "127.0.0.1");
       uint32_t port = conf ["registry"].getOr ("port", 0);
@@ -122,79 +165,89 @@ namespace socialNet {
         port = std::atoi (rd_utils::utils::read_file ("./registry_port").c_str ());
       }
 
-      act = sys-> remoteActor (name, net::SockAddrV4 (addr, port), false);
-    } catch (std::runtime_error & err) {
-      LOG_ERROR ("Error : ", err.what ());
-    }
+      act = sys-> remoteActor (name, net::SockAddrV4 (addr, port));
+      if (act == nullptr) {
+        throw std::runtime_error ("Failed to connect to registry");
+      }
 
-    if (act == nullptr) {
+      return act;
+    } catch (std::runtime_error & err) {
+      LOG_ERROR ("connectRegistry ", err.what ());
       throw std::runtime_error ("Failed to connect to registry");
     }
-
-    return act;
   }
 
   void registerService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface) {
-    std::string addr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
-    auto req = config::Dict ()
-      .insert ("type", "register")
-      .insert ("kind", kind)
-      .insert ("id", name)
-      .insert ("addr", addr)
-      .insert ("port", (int64_t) port);
+    try {
+      std::string addr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
+      auto req = config::Dict ()
+        .insert ("type", RequestCode::REGISTER_SERVICE)
+        .insert ("kind", kind)
+        .insert ("id", name)
+        .insert ("addr", addr)
+        .insert ("port", (int64_t) port);
 
-    LOG_INFO ("Registering to registry : ", kind, " ", name, " ", addr, " ", port);
+      LOG_INFO ("Registering to registry : ", kind, " ", name, " ", addr, " ", port);
 
-    auto resp = registry-> request (req).wait ();
-    if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
+      auto resp = registry-> request (req).wait ();
+      if (resp == nullptr || resp-> getOr ("code", 0) != ResponseCode::OK) {
+        throw std::runtime_error ("Failed to register service : " + kind + "/" + name);
+      }
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("registerService ", err.what ());
       throw std::runtime_error ("Failed to register service : " + kind + "/" + name);
     }
   }
 
   std::shared_ptr <rd_utils::concurrency::actor::ActorRef> findService (rd_utils::concurrency::actor::ActorSystem * sys, std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind) {
-    auto req = config::Dict ()
-      .insert ("type", "get")
-      .insert ("kind", kind);
+    try {
+      auto req = config::Dict ()
+        .insert ("type", RequestCode::FIND)
+        .insert ("kind", kind);
 
-    LOG_INFO ("Finding in registry : ", kind);
+      LOG_INFO ("Finding in registry : ", kind);
 
-    auto resp = registry-> request (req).wait ();
-    if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
+      auto resp = registry-> request (req).wait ();
+      if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
+        throw std::runtime_error ("Failed to find service : " + kind + "/");
+      }
+
+      auto addr = (*resp) ["content"]["addr"].getStr ();
+      auto id = (*resp) ["content"]["id"].getStr ();
+      uint32_t port = (*resp) ["content"]["port"].getI ();
+
+      auto act = sys-> remoteActor (id, net::SockAddrV4 (addr, port));
+      if (act == nullptr) {
+        throw std::runtime_error ("Failed to find service : " + kind + "/");
+      }
+
+      return act;
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("findService ", err.what ());
       throw std::runtime_error ("Failed to find service : " + kind + "/");
     }
-
-    auto addr = (*resp) ["content"]["addr"].getStr ();
-    auto id = (*resp) ["content"]["id"].getStr ();
-    uint32_t port = (*resp) ["content"]["port"].getI ();
-
-    auto act = sys-> remoteActor (id, net::SockAddrV4 (addr, port), false);
-    if (act == nullptr) {
-      throw std::runtime_error ("Failed to find service : " + kind + "/");
-    }
-
-    return act;
   }
 
   void closeService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface) {
-    auto addr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
-    auto req = config::Dict ()
-      .insert ("type", "close")
-      .insert ("kind", kind)
-      .insert ("id", name)
-      .insert ("addr", addr)
-      .insert ("port", (int64_t) port);
+    try {
+      auto addr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
+      auto req = config::Dict ()
+        .insert ("type", RequestCode::CLOSE_SERVICE)
+        .insert ("kind", kind)
+        .insert ("id", name)
+        .insert ("addr", addr)
+        .insert ("port", (int64_t) port);
 
-    LOG_INFO ("Closing to registry : ", kind, " ", name, " ", addr, " ", port);
+      LOG_INFO ("Closing to registry : ", kind, " ", name, " ", addr, " ", port);
 
-    auto resp = registry-> request (req).wait ();
-    if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
-      if (resp != nullptr) {
-        std::cout << *resp << std::endl;
+      auto resp = registry-> request (req).wait ();
+      if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
+        throw std::runtime_error ("Failed to close service : " + kind + "/" + name);
       }
-
-      throw std::runtime_error ("Failed to unregister service : " + kind + "/" + name);
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("closeService ", err.what ());
+      throw std::runtime_error ("Failed to close service : " + kind + "/" + name);
     }
   }
-
 
 }

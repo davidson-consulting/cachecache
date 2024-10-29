@@ -22,31 +22,49 @@ namespace socialNet::user {
     socialNet::registerService (this-> _registry, "user", name, sys-> port (), this-> _iface);
   }
 
+  void UserService::onMessage (const config::ConfigNode & msg) {
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::POISON_PILL) {
+        LOG_INFO ("Registry exit");
+        this-> _registry = nullptr;
+        this-> exit ();
+      }
 
-  void UserService::onQuit () {
-    socialNet::closeService (this-> _registry, "user", this-> _name, this-> _system-> port (), this-> _iface);
+      fo;
+    }
   }
 
-  /**
+  void UserService::onQuit () {
+    if (this-> _registry != nullptr) {
+      socialNet::closeService (this-> _registry, "user", this-> _name, this-> _system-> port (), this-> _iface);
+    }
+  }
+
+  /*!
    * ====================================================================================================
    * ====================================================================================================
-   * =================================          INSERTING         =======================================
+   * ====================================          REQUESTS          ====================================
    * ====================================================================================================
    * ====================================================================================================
    */
 
   std::shared_ptr<config::ConfigNode> UserService::onRequest (const config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", "none");
-    LOG_INFO ("type : ", type);
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::REGISTER_USER) {
+        return this-> registerUser (msg);
+      }
 
-    if (type == "register") {
-      return this-> registerUser (msg);
-    } else if (type == "login") {
-      return this-> login (msg);
-    } else if (type == "find") {
-      return this-> find (msg);
-    } else {
-      return ResponseCode (404);
+      elof_v (RequestCode::LOGIN_USER) {
+        return this-> login (msg);
+      }
+
+      elof_v (RequestCode::FIND) {
+        return this-> find (msg);
+      }
+
+      elfo {
+        return response (ResponseCode::NOT_FOUND);
+      }
     }
   }
 
@@ -55,21 +73,20 @@ namespace socialNet::user {
       auto login = msg ["login"].getStr ();
       auto password = msg ["password"].getStr ();
 
-      rd_utils::memory::cache::collection::FlatString <16> lg = login;
       User u;
-      if (this-> _db.findByLogin (lg, u)) {
-        return ResponseCode (403);
+      if (this-> _db.findByLogin (login.c_str (), u)) {
+        return response (ResponseCode::FORBIDDEN);
       }
 
-      u.login = login;
-      u.password = password;
-      auto id = this-> _db.insertUser (u);
-      return ResponseCode (200, std::make_shared <config::Int> (id));
-    } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR UserService::registerUser : ", err.what ());
-    }
+      memcpy (u.login, login.c_str (), strnlen (login.c_str (), 16));
+      memcpy (u.password, password.c_str (), strnlen (password.c_str (), 64));
 
-    return ResponseCode (400);
+      auto id = this-> _db.insertUser (u);
+      return response (ResponseCode::OK, std::make_shared <config::Int> (id));
+    } catch (std::runtime_error & err) {
+      LOG_ERROR ("ERROR UserService::registerUser : ", err.what ());
+      return response (ResponseCode::MALFORMED);
+    }
   }
 
   /**
@@ -88,23 +105,25 @@ namespace socialNet::user {
       LOG_INFO ("Trying to connect : ", login, "@", password);
 
       User u;
-      rd_utils::memory::cache::collection::FlatString <16> lg = login;
-      if (this-> _db.findByLogin (lg, u)) {
-        if (u.password == password) {
-          return ResponseCode (200, std::make_shared <config::Int> (u.id));
-        } else {
-          LOG_ERROR ("Wrong password");
-          return ResponseCode (403);
+      if (this-> _db.findByLogin (login.c_str (), u)) {
+        std::cout << strnlen (u.password, 64) << " " << password.length () << std::endl;
+        if (strnlen (u.password, 64) == password.length ()) {
+          if (strncmp (u.password, password.c_str (), password.length ()) == 0) {
+            LOG_INFO ("User connected");
+            return response (ResponseCode::OK, std::make_shared <config::Int> (u.id));
+          }
         }
+
+        LOG_ERROR ("Wrong password");
+        return response (ResponseCode::FORBIDDEN);
       } else {
         LOG_ERROR ("Wrong username");
-        return ResponseCode (403);
+        return response (ResponseCode::FORBIDDEN);
       }
     } catch (std::runtime_error & err) {
       LOG_ERROR ("UserService::login : ", err.what ());
+      return response (ResponseCode::MALFORMED);
     }
-
-    return ResponseCode (400);
   }
 
 
@@ -114,70 +133,82 @@ namespace socialNet::user {
       if (msg.contains ("id")) {
         uint32_t id = msg ["id"].getI ();
         if (this-> _db.findById (id, u)) {
-          return ResponseCode (200, std::make_shared <config::String> (u.login.data ()));
+          return response (ResponseCode::OK, std::make_shared <config::String> (u.login));
         }
       } else {
         auto login = msg ["login"].getStr ();
-        rd_utils::memory::cache::collection::FlatString <16> lg = login;
-        if (this-> _db.findByLogin (lg, u)) {
-          return ResponseCode (200, std::make_shared <config::Int> (u.id));
+        std::cout << "Getting : " << login << std::endl;
+        if (this-> _db.findByLogin (login.c_str (), u)) {
+          std::cout << "Ok" << std::endl;
+          return response (ResponseCode::OK, std::make_shared <config::Int> (u.id));
         }
       }
-    }  catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR UserService::find : ", err.what ());
-    }
 
-    return ResponseCode (400);
+      return response (ResponseCode::NOT_FOUND);
+
+    }  catch (std::runtime_error & err) {
+      LOG_ERROR ("ERROR UserService::find : ", err.what ());
+      return response (ResponseCode::MALFORMED);
+    }
   }
 
-  /**
+  /*!
    * ====================================================================================================
    * ====================================================================================================
-   * =================================          STREAMING         =======================================
+   * ===================================          STREAMING          ====================================
    * ====================================================================================================
    * ====================================================================================================
    */
 
   void UserService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "find_by_login") {
-      this-> streamFindByLogin (stream);
-    } else if (type == "find_by_id") {
-      this-> streamFindById (stream);
-    } else {
-      stream.writeU8 (0);
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::FIND_BY_LOGIN) {
+        this-> streamFindByLogin (stream);
+      }
+
+      elof_v (RequestCode::FIND_BY_ID) {
+        this-> streamFindById (stream);
+      }
+
+      elfo {
+        stream.writeU32 (ResponseCode::NOT_FOUND);
+      }
     }
   }
 
   void UserService::streamFindByLogin (actor::ActorStream & stream) {
-    User u;
-    while (stream.isOpen ()) {
-      auto n = stream.readOr (0);
-      if (n != 0) {
+    try {
+      User u;
+      stream.writeU32 (200);
+      while (stream.readOr (0) == 1) {
         auto login = stream.readStr ();
-        rd_utils::memory::cache::collection::FlatString <16> lg = login;
-        if (this-> _db.findByLogin (lg, u)) {
+        if (this-> _db.findByLogin (login.c_str (), u)) {
           stream.writeU8 (1);
           stream.writeU32 (u.id);
         } else {
           stream.writeU8 (0);
         }
-      } else break;
+      }
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("UserService::streamFindByLogin ", err.what ());
     }
   }
 
   void UserService::streamFindById (actor::ActorStream & stream) {
-    User u;
-    while (stream.isOpen ()) {
-      if (stream.readOr (0) != 0) {
+    try {
+      User u;
+      stream.writeU32 (200);
+      while (stream.readOr (0) == 1) {
         auto id = stream.readU32 ();
         if (this-> _db.findById (id, u)) {
           stream.writeU8 (1);
-          stream.writeStr (std::string (u.login.data ()));
+          stream.writeStr (std::string (u.login));
         } else {
           stream.writeU8 (0);
         }
-      } else break;
+      }
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("UserService::streamFindById ", err.what ());
     }
   }
 

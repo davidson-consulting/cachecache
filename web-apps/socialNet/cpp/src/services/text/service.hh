@@ -2,6 +2,7 @@
 
 #include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
+#include <utils/codes/requests.hh>
 
 namespace socialNet::text {
 
@@ -23,6 +24,8 @@ namespace socialNet::text {
     TextService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf);
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
+
+    void onMessage (const rd_utils::utils::config::ConfigNode&);
 
     void onQuit () override;
 

@@ -5,11 +5,13 @@
 #include "service.hh"
 #include <nlohmann/json.hpp>
 #include "../registry/service.hh"
+#include "../utils/codes/requests.hh"
 #include <rd_utils/_.hh>
 
 using namespace httpserver;
 using namespace nlohmann;
 using namespace rd_utils::utils;
+using namespace socialNet::utils;
 
 namespace socialNet {
 
@@ -21,15 +23,15 @@ namespace socialNet {
     try {
       auto js = json::parse (req.get_content ());
 
-      auto jwt = js ["jwt_token"].get <std::string> ();
-      auto uid = js ["userId"].get <int64_t> ();
-      auto content = js ["content"].get <std::string> ();
+      auto jwt = js ["token"].get <std::string> ();
+      auto uid = js ["user_id"].get <int64_t> ();
+      auto content = js ["text"].get <std::string> ();
 
       LOG_INFO ("User : ", uid, " submitting post : ", content);
 
       auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
-        .insert ("type", "submit")
+        .insert ("type", RequestCode::SUBMIT_POST)
         .insert ("jwt_token", jwt)
         .insert ("userId", (int64_t) uid)
         .insert ("content", content);

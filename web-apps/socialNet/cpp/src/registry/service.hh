@@ -2,6 +2,7 @@
 
 #include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
+#include <utils/codes/requests.hh>
 
 namespace socialNet {
 
@@ -19,6 +20,8 @@ namespace socialNet {
 
     RegistryService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys);
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
+
+    void onQuit () override;
 
   private:
 

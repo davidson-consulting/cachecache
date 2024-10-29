@@ -5,11 +5,13 @@
 #include "service.hh"
 #include <nlohmann/json.hpp>
 #include "../registry/service.hh"
+#include "../utils/codes/requests.hh"
 #include <rd_utils/_.hh>
 
 using namespace httpserver;
 using namespace nlohmann;
 using namespace rd_utils::utils;
+using namespace socialNet::utils;
 
 namespace socialNet {
 
@@ -27,7 +29,7 @@ namespace socialNet {
 
       auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
-        .insert ("type", "login")
+        .insert ("type", RequestCode::LOGIN_USER)
         .insert ("login", login)
         .insert ("password", pass);
 
@@ -35,8 +37,8 @@ namespace socialNet {
       if (result != nullptr && result-> getOr ("code", -1) == 200) {
         std::cout << *result << std::endl;
         json j;
-        j ["jwt_token"] = (*result)["content"]["jwt_token"].getStr ();
-        j ["userId"] = (*result)["content"]["userId"].getI ();
+        j ["token"] = (*result)["content"]["jwt_token"].getStr ();
+        j ["user_id"] = (*result)["content"]["userId"].getI ();
 
         return std::make_shared <httpserver::string_response> (j.dump (), 200, "text/json");
       }

@@ -5,11 +5,13 @@
 #include "service.hh"
 #include <nlohmann/json.hpp>
 #include "../registry/service.hh"
+#include "../utils/codes/requests.hh"
 #include <rd_utils/_.hh>
 
 using namespace httpserver;
 using namespace nlohmann;
 using namespace rd_utils::utils;
+using namespace socialNet::utils;
 
 namespace socialNet {
 
@@ -27,7 +29,7 @@ namespace socialNet {
 
       auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
-        .insert ("type", "register")
+        .insert ("type", RequestCode::REGISTER_USER)
         .insert ("login", login)
         .insert ("password", pass);
 

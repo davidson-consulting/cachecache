@@ -56,7 +56,7 @@ namespace socialNet::timeline {
    */
 
   void TimelineDatabase::insertOneHome (uint32_t uid, uint32_t pid) {
-    auto req = this-> prepareInsertHomeTimeline (&uid, pid);
+    auto req = this-> prepareInsertHomeTimeline (&uid, &pid);
     req-> execute ();
   }
 
@@ -69,10 +69,10 @@ namespace socialNet::timeline {
     req-> execute ();
   }
 
-  std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareInsertHomeTimeline (uint32_t * uid, uint32_t pid) {
+  std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareInsertHomeTimeline (uint32_t * uid, uint32_t * pid) {
     auto req = this-> _client-> prepare ("INSERT INTO home_timeline (user_id, post_id) values (?, ?)");
     req-> setParam (0, uid);
-    req-> setParam (1, &pid);
+    req-> setParam (1, pid);
     req-> finalize ();
 
     return req;

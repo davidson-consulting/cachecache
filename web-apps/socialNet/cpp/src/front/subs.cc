@@ -6,11 +6,13 @@
 #include <nlohmann/json.hpp>
 #include "../registry/service.hh"
 #include "../services/post/database.hh"
+#include "../utils/codes/requests.hh"
 #include <rd_utils/_.hh>
 
 using namespace httpserver;
 using namespace nlohmann;
 using namespace rd_utils::utils;
+using namespace socialNet::utils;
 
 namespace socialNet {
 
@@ -20,16 +22,14 @@ namespace socialNet {
 
   std::shared_ptr <http_response> SubscriptionLenRoute::render (const http_request & req) {
     try {
-      int64_t userId = std::atoi (std::string (req.get_arg ("userId")).c_str ());
-      std::string jwt = std::string (req.get_arg ("jwt_token"));
+      int64_t userId = std::atoi (std::string (req.get_arg ("user_id")).c_str ());
 
       LOG_INFO ("Try get subs len : ", userId);
 
       auto socialGraphService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "social_graph");
       auto msg = config::Dict ()
-        .insert ("type", "count-sub")
-        .insert ("userId", userId)
-        .insert ("jwt_token", jwt);
+        .insert ("type", RequestCode::SUBS_LEN)
+        .insert ("userId", userId);
 
       auto result = socialGraphService-> request (msg).wait ();
       std::cout << result-> getOr ("code", -1) << std::endl;
@@ -52,29 +52,32 @@ namespace socialNet {
 
   std::shared_ptr <http_response> SubscriptionRoute::render (const http_request & req) {
     try {
-      int64_t userId = std::atoi (std::string (req.get_arg ("userId")).c_str ());
+      int64_t userId = std::atoi (std::string (req.get_arg ("user_id")).c_str ());
       int64_t page = std::atoi (std::string (req.get_arg ("page")).c_str ());
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
-      std::string jwt = std::string (req.get_arg ("jwt_token"));
 
       LOG_INFO ("Try get user subs : ", userId, " ", page, " ", nb);
 
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
-        .insert ("type", "subs")
+        .insert ("type", RequestCode::SUBSCIRPTIONS)
         .insert ("userId", userId)
         .insert ("page", page)
-        .insert ("nb", nb)
-        .insert ("jwt_token", jwt);
+        .insert ("nb", nb);
 
       auto resultStream = composeService-> requestStream (msg).wait ();
-      if (resultStream != nullptr) {
+      if (resultStream != nullptr && resultStream-> readU32 () == 200) {
         json result;
 
         while (resultStream-> isOpen ()) {
           if (resultStream-> readOr (0) == 0) break;
           auto rid = resultStream-> readU32 ();
-          result.push_back (rid);
+          auto name = resultStream-> readStr ();
+
+          json sub;
+          sub ["user_id"] = rid;
+          sub ["login"] = name;
+          result.push_back (sub);
         }
 
         auto finalResult = result.dump ();

@@ -32,9 +32,22 @@ namespace socialNet::short_url {
     socialNet::registerService (this-> _registry, "short_url", name, sys-> port (), this-> _iface);
   }
 
+  void ShortUrlService::onMessage (const config::ConfigNode & msg) {
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::POISON_PILL) {
+        LOG_INFO ("Registry exit");
+        this-> _registry = nullptr;
+        this-> exit ();
+      }
+
+      fo;
+    }
+  }
 
   void ShortUrlService::onQuit () {
-    socialNet::closeService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
+    if (this-> _registry != nullptr) {
+      socialNet::closeService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
+    }
   }
 
 
@@ -47,13 +60,18 @@ namespace socialNet::short_url {
    */
 
   std::shared_ptr<config::ConfigNode> ShortUrlService::onRequest (const config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "create") {
-      return this-> readOrGenerate (msg);
-    } else if (type == "find") {
-      return ResponseCode (500);
-    } else {
-      return ResponseCode (404);
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::CREATE) {
+        return this-> readOrGenerate (msg);
+      }
+
+      elof_v (RequestCode::FIND) {
+        return this-> find (msg);
+      }
+
+      elfo {
+        return response (ResponseCode::NOT_FOUND);
+      }
     }
   }
 
@@ -65,15 +83,15 @@ namespace socialNet::short_url {
       ShortUrl shUrl = {.sh = url, .ln = ""};
       if (this-> _db.findUrlFromShort (shUrl)) {
         auto res = std::make_shared <config::String> (shUrl.ln.data ());
-        return ResponseCode (200, res);
+        return response (ResponseCode::OK, res);
       } else {
-        return ResponseCode (404);
+        return response (ResponseCode::NOT_FOUND);
       }
     } catch (std::runtime_error & err) {
       LOG_ERROR ("Error : ", err.what ());
     }
 
-    return ResponseCode (400);
+    return response (ResponseCode::MALFORMED);
   }
 
 
@@ -97,12 +115,12 @@ namespace socialNet::short_url {
       }
 
       auto res = std::make_shared <config::String> (shUrl.sh.data ());
-      return ResponseCode (200, res);
+      return response (ResponseCode::OK, res);
     } catch (std::runtime_error & err) {
       LOG_ERROR ("Error : ", err.what ());
     }
 
-    return ResponseCode (400);
+    return response (ResponseCode::MALFORMED);
   }
 
   rd_utils::memory::cache::collection::FlatString<16> ShortUrlService::createShort () {
@@ -125,10 +143,16 @@ namespace socialNet::short_url {
    */
 
   void ShortUrlService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    auto type = msg.getOr ("type", "none");
-    if (type == "create") {
-      this-> streamCreate (stream);
-    } else stream.writeU8 (0);
+    match_v (msg.getOr ("type", RequestCode::NONE)) {
+      of_v (RequestCode::CREATE) {
+        stream.writeU32 (ResponseCode::OK);
+        this-> streamCreate (stream);
+      }
+
+      elfo {
+        stream.writeU32 (ResponseCode::NOT_FOUND);
+      }
+    }
   }
 
   void ShortUrlService::streamCreate (actor::ActorStream & stream) {
@@ -140,7 +164,6 @@ namespace socialNet::short_url {
         if (!this-> _db.findUrl (shUrl)) {
           auto sh = this-> createShort ();
           shUrl.sh = sh;
-          std::cout << shUrl.sh << std::endl;
           this-> _db.insertUrl (shUrl);
         }
 

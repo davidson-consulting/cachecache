@@ -1,8 +1,10 @@
 #pragma once
 
 
-#include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
+#include <utils/codes/requests.hh>
+#include <rd_utils/_.hh>
+
 
 namespace socialNet::compose {
 
@@ -25,6 +27,8 @@ namespace socialNet::compose {
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
+    void onMessage (const rd_utils::utils::config::ConfigNode & msg);
+
     void onQuit () override;
 
   private:
@@ -36,8 +40,28 @@ namespace socialNet::compose {
     bool checkConnected (const rd_utils::utils::config::ConfigNode & node);
     std::string createJWTToken (uint32_t uid);
 
-    void streamTimeline (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream, const std::string & kind);
-    void streamSubscriptions (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream, const std::string & kind);
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          STREAMING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    void streamTimeline (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream, socialNet::utils::RequestCode kind);
+    void streamSubscriptions (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream, socialNet::utils::RequestCode kind);
+
+    bool openTimelineStreams (const rd_utils::utils::config::ConfigNode & msg,
+                              socialNet::utils::RequestCode kind,
+                              rd_utils::concurrency::actor::ActorStream & stream,
+                              std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & timelineStream,
+                              std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & userStream);
+
+    bool openSubStreams (const rd_utils::utils::config::ConfigNode & msg,
+                         socialNet::utils::RequestCode kind,
+                         rd_utils::concurrency::actor::ActorStream & stream,
+                         std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & socialStream,
+                         std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & userStream);
 
   };
 

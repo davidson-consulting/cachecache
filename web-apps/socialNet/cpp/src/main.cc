@@ -54,6 +54,8 @@ auto main(int argc, char *argv[]) -> int {
         }
 
         __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (rd_utils::net::SockAddrV4 (addr, port), threads);
+        __GLOBAL_SYSTEM__-> joinOnEmpty (true);
+
         __GLOBAL_SYSTEM__-> start ();
         LOG_INFO ("On port : ", __GLOBAL_SYSTEM__-> port ());
 

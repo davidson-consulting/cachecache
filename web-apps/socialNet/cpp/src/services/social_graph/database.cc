@@ -66,20 +66,19 @@ namespace socialNet::social_graph {
     return false;
   }
 
-  std::shared_ptr <utils::MysqlClient::Statement> SocialGraphDatabase::prepareFindSubscriptions (uint32_t * rid, uint32_t uid, int32_t page, uint32_t nb) {
-    if (page != -1) {
-      auto req = this-> _client-> prepare ("SELECT user_id from subs where subs = ? order by id DESC limit ? offset ?");
-      req-> setParam (0, &uid);
-      req-> setParam (1, &nb);
-      uint32_t z = page * nb;
-      req-> setParam (2, &z);
+  std::shared_ptr <utils::MysqlClient::Statement> SocialGraphDatabase::prepareFindSubscriptions (uint32_t * rid, uint32_t * uid, int32_t * page, int32_t * nb) {
+    if (*page >= 0) {
+      auto req = this-> _client-> prepare ("SELECT to_whom from subs where user_id = ? order by id DESC limit ? offset ?");
+      req-> setParam (0, uid);
+      req-> setParam (1, nb);
+      req-> setParam (2, page);
 
       req-> setResult (0, rid);
       req-> finalize ();
       return req;
     } else {
-      auto req = this-> _client-> prepare ("SELECT user_id from subs where subs = ? order by id DESC");
-      req-> setParam (0, &uid);
+      auto req = this-> _client-> prepare ("SELECT to_whom from subs where user_id = ? order by id DESC");
+      req-> setParam (0, uid);
 
       req-> setResult (0, rid);
       req-> finalize ();
@@ -87,20 +86,19 @@ namespace socialNet::social_graph {
     }
   }
 
-  std::shared_ptr <utils::MysqlClient::Statement> SocialGraphDatabase::prepareFindFollowers (uint32_t * rid, uint32_t uid, int32_t page, uint32_t nb) {
-    if (page != -1) {
+  std::shared_ptr <utils::MysqlClient::Statement> SocialGraphDatabase::prepareFindFollowers (uint32_t * rid, uint32_t * uid, int32_t * page, int32_t * nb) {
+    if (*page >= 0) {
       auto req = this-> _client-> prepare ("SELECT user_id from subs where to_whom = ? order by id DESC limit ? offset ?");
-      req-> setParam (0, &uid);
-      req-> setParam (1, &nb);
-      uint32_t z = page * nb;
-      req-> setParam (2, &z);
+      req-> setParam (0, uid);
+      req-> setParam (1, nb);
+      req-> setParam (2, page);
 
       req-> setResult (0, rid);
       req-> finalize ();
       return req;
     } else {
       auto req = this-> _client-> prepare ("SELECT user_id from subs where to_whom = ? order by id DESC");
-      req-> setParam (0, &uid);
+      req-> setParam (0, uid);
 
       req-> setResult (0, rid);
       req-> finalize ();

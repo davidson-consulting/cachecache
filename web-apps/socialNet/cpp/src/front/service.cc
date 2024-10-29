@@ -35,15 +35,22 @@ namespace socialNet {
     , _subs (this)
     , _followerLen (this)
     , _followers (this)
+    , _newFollow (this)
+    , _rmFollow (this)
+    , _isFollow (this)
   {}
 
   void FrontServer::configure (const config::ConfigNode & cfg) {
     int32_t sysPort = cfg ["sys"].getOr ("port", 9010);
     std::string sysAddr = cfg ["sys"].getOr ("addr", "0.0.0.0");
+
     this-> _sys = std::make_shared <concurrency::actor::ActorSystem> (net::SockAddrV4 (sysAddr, sysPort));
     this-> _sys-> start ();
 
     this-> _registry = socialNet::connectRegistry (&(*this-> _sys), cfg);
+    if (this-> _registry == nullptr) {
+      throw std::runtime_error ("Failed to connect to registry");
+    }
 
     int32_t webPort = 8080;
     if (cfg.contains ("server")) {
@@ -101,6 +108,17 @@ namespace socialNet {
     this-> _followerLen.set_allowing ("GET", true);
     this-> _server-> register_resource ("/followers-len", &this-> _followerLen);
 
+    this-> _newFollow.disallow_all ();
+    this-> _newFollow.set_allowing ("POST", true);
+    this-> _server-> register_resource ("/follow", &this-> _newFollow);
+
+    this-> _rmFollow.disallow_all ();
+    this-> _rmFollow.set_allowing ("POST", true);
+    this-> _server-> register_resource ("/unfollow", &this-> _rmFollow);
+
+    this-> _isFollow.disallow_all ();
+    this-> _isFollow.set_allowing ("GET", true);
+    this-> _server-> register_resource ("/is-following", &this-> _isFollow);
 
     LOG_INFO ("Web service ready on port ", webPort);
   }
