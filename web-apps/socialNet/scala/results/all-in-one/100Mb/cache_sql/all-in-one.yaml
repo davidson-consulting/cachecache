@@ -1,0 +1,80 @@
+nodes:
+  ptero:
+    addr: 192.168.1.13
+    user: root
+
+registry:
+  node: ptero
+  port: 7564
+
+front:
+  node: ptero
+  actorPort: 9000
+  httpPort: 8080
+
+actors:
+  all-in-one:
+    node: ptero
+    port: 9001
+    gc:
+      min-ratio: 10
+      max-ratio: 40
+      max: 4g
+
+    services:
+      text:
+        type: TextService
+        db: none
+        replicate: 12
+      compose:
+        type: ComposeService
+        db: none
+        replicate: 12
+        rqt-cache: none
+      posts:
+        type: PostStorageService
+        db: mysql-1
+        cache: redis-1
+        replicate: 12
+      users:
+        type: UserService
+        db: mysql-1
+        cache: redis-1
+        replicate: 12
+      urls:
+        type: ShortUrlService
+        db: mysql-1
+        replicate: 12
+        cache: redis-1
+      subs:
+        type: SocialGraphService
+        db: mysql-1
+        replicate: 12
+        cache: redis-1
+      timeline:
+        type: TimelineService
+        db: mysql-1
+        cache: redis-1
+        replicate: 12
+        params:
+          type: sync
+          batch-speed: 5000
+          followers-per-page: 10000
+
+dbs:
+  mysql-1:
+    type: mysql
+    node: ptero
+    port: 3306
+    # dump: restore
+    scripts:
+      - users
+      - socialgraph
+
+caches:
+  redis-1:
+    type: redis
+    node: ptero
+    port: 9874
+    size: 100mb # maximum size of the cache
+    TTL: 60 # time to live of inserted objects

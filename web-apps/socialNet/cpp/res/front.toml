@@ -1,0 +1,8 @@
+[sys]
+port = 0
+iface = "lo"
+
+[registry]
+name = "registry"
+addr = "localhost"
+port = 0
