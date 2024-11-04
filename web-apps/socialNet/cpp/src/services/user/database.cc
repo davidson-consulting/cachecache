@@ -24,16 +24,16 @@ namespace socialNet::user {
     auto dbUser = conf ["db"].getOr ("user", "root");
     auto dbPass = conf ["db"].getOr ("pass", "root");
 
-    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbName);
-    this-> _client-> connect (dbPass);
+    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbPass, dbName);
+    this-> _client-> connect ();
     this-> createTables ();
   }
 
   void UserDatabase::createTables () {
     auto reqUser = this-> _client-> prepare ("CREATE TABLE IF NOT EXISTS users (\n"
                                              "id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n"
-                                             "login VARCHAR(16) NOT NULL,\n"
-                                             "password VARCHAR(64) NOT NULL\n)"
+                                             "login VARCHAR(" + std::to_string (LOGIN_LEN) + ") NOT NULL,\n"
+                                             "password VARCHAR(" + std::to_string (PASSWORD_LEN) + ") NOT NULL\n)"
                                              );
     reqUser-> finalize ();
     reqUser-> execute ();
@@ -49,26 +49,29 @@ namespace socialNet::user {
 
   uint32_t UserDatabase::insertUser (User & p) {
     auto req = this-> _client-> prepare ("INSERT INTO users (login, password) values (?, ?)");
-    req-> setParam (0, p.login, strnlen (p.login, 15));
-    req-> setParam (1, p.password, strnlen (p.password, 63));
+    auto logLen = strnlen (p.login, LOGIN_LEN);
+    auto pasLen = strnlen (p.password, PASSWORD_LEN);
+    req-> setParam (0, p.login, logLen);
+    req-> setParam (1, p.password, pasLen);
 
     req-> finalize ();
     req-> execute ();
     return req-> getGeneratedId ();
   }
 
-  bool UserDatabase::findByLogin (const char * login, User & u) {
-    memcpy (u.login, login, strnlen (login, 16));
+  bool UserDatabase::findByLogin (const std::string & login, User & u) {
+    ::memset (&u, 0, sizeof (User));
+    auto logLen = std::min (login.length (), (uint64_t) LOGIN_LEN);
+    ::memcpy (u.login, login.c_str (), logLen);
 
     auto req = this-> _client-> prepare ("SELECT id, password from users where login=?");
-    req-> setParam (0, u.login, strnlen (u.login, 15));
+    req-> setParam (0, u.login, logLen);
     req-> setResult (0, &u.id);
-    req-> setResult (1, u.password, 63);
+    req-> setResult (1, u.password, PASSWORD_LEN);
 
     req-> finalize ();
     req-> execute ();
     if (req-> next ()) {
-      u.password [req-> getResultLen (1)] = 0;
       return true;
     }
 
@@ -76,16 +79,16 @@ namespace socialNet::user {
   }
 
   bool UserDatabase::findById (uint32_t & id, User & u) {
+    ::memset (&u, 0, sizeof (User));
+
     auto req = this-> _client-> prepare ("SELECT login, password from users where id=?");
     req-> setParam (0, &id);
-    req-> setResult (0, u.login, 15);
-    req-> setResult (1, u.password, 63);
+    req-> setResult (0, u.login, LOGIN_LEN);
+    req-> setResult (1, u.password, PASSWORD_LEN);
 
     req-> finalize ();
     req-> execute ();
     if (req-> next ()) {
-      u.login [req-> getResultLen (0)] = 0;
-      u.password [req-> getResultLen (1)] = 0;
       return true;
     }
 

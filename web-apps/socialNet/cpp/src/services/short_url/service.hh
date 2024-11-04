@@ -49,7 +49,7 @@ namespace socialNet::short_url {
     /**
      * Create a short url
      */
-    rd_utils::memory::cache::collection::FlatString<16> createShort ();
+    void createShort (char * sh);
 
     void streamCreate (rd_utils::concurrency::actor::ActorStream &);
 

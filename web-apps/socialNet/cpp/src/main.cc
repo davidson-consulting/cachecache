@@ -1,7 +1,6 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "SERVICES"
 
-
+#include <rd_utils/utils/_.hh>
 #include <iostream>
 #include <rd_utils/concurrency/actor/_.hh>
 #include <services/_.hh>
@@ -46,13 +45,16 @@ auto main(int argc, char *argv[]) -> int {
         int32_t port = 0;
         std::string addr = "0.0.0.0";
         int32_t threads = -1;
+        std::string log_level = "info";
 
         if (cfg-> contains ("sys")) {
           port = (*cfg)["sys"].getOr ("port", port);
           addr = (*cfg)["sys"].getOr ("addr", addr);
           threads = (*cfg)["sys"].getOr ("threads", threads);
+          log_level = (*cfg)["sys"].getOr ("log-lvl", log_level);
         }
 
+        rd_utils::utils::Logger::globalInstance ().changeLevel (log_level);
         __GLOBAL_SYSTEM__ = std::make_shared <actor::ActorSystem> (rd_utils::net::SockAddrV4 (addr, port), threads);
         __GLOBAL_SYSTEM__-> joinOnEmpty (true);
 

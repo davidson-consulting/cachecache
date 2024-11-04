@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "SUBMIT"
 
 #include "submit.hh"
@@ -22,21 +21,20 @@ namespace socialNet {
   std::shared_ptr <http_response> SubmitNewPostRoute::render (const http_request & req) {
     try {
       auto js = json::parse (req.get_content ());
-
       auto jwt = js ["token"].get <std::string> ();
       auto uid = js ["user_id"].get <int64_t> ();
       auto content = js ["text"].get <std::string> ();
 
-      LOG_INFO ("User : ", uid, " submitting post : ", content);
+      LOG_DEBUG ("User : ", uid, " submitting post");
 
-      auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
+      auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
         .insert ("type", RequestCode::SUBMIT_POST)
         .insert ("jwt_token", jwt)
         .insert ("userId", (int64_t) uid)
         .insert ("content", content);
 
-      auto result = userService-> request (msg).wait ();
+      auto result = composeService-> request (msg).wait ();
       if (result != nullptr && result-> getOr ("code", -1) == 200) {
         return std::make_shared <httpserver::string_response> ("OK", 200, "text/plain");
       }

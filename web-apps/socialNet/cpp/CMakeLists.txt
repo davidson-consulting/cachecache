@@ -39,6 +39,7 @@ file(
 
 list (FILTER SRC_REG_LIB EXCLUDE REGEX "src/main.cc")
 
+add_compile_definitions(LOG_LEVEL=3) # error = 1, warn = 2, info = 3, debug = 6
 add_executable (services ${SRC})
 add_executable (reg ${SRC_REG} ${SRC_REG_LIB})
 add_executable (front ${SRC_FRONT} ${SRC_REG_LIB})

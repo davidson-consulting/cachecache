@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "NEW_USER"
 
 #include "newuser.hh"
@@ -25,7 +24,7 @@ namespace socialNet {
 
       auto login = js ["login"].get <std::string> ();
       auto pass = js ["password"].get <std::string> ();
-      LOG_INFO ("Try new user : ", login, " ", pass);
+      LOG_DEBUG ("Try new user : ", login, " ", pass);
 
       auto userService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()

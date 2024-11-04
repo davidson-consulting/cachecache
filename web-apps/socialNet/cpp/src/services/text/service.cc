@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "TEXT"
 
 #include "service.hh"
@@ -14,7 +13,7 @@ using namespace socialNet::utils;
 namespace socialNet::text {
 
   TextService::TextService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
-    actor::ActorBase (name, sys)
+    actor::ActorBase (name, sys, false)
   {
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
@@ -63,21 +62,18 @@ namespace socialNet::text {
   std::shared_ptr <config::ConfigNode> TextService::constructText (const config::ConfigNode & msg) {
     try {
       auto text = msg ["text"].getStr ();
-      if (text.length () > 280) return response (ResponseCode::MALFORMED);
+      if (text.length () > 560) throw std::runtime_error ("Too long");
 
       auto users = this-> findUserMentions (text);
       auto urlMentions = this-> findUrlMentions (text);
 
-      std::cout << "Users : " << users << std::endl;
-
       uint32_t tags [16];
       bool succeed = true;
       auto mentions = this-> transformUserTags (users, tags, succeed);
-      if (!succeed) return response (ResponseCode::SERVER_ERROR);
+      if (!succeed) throw std::runtime_error ("failed to find user mentions");
 
-      std::cout << mentions << std::endl;
       auto shorts = this-> transformUrls (urlMentions, succeed);
-      if (!succeed) return response (ResponseCode::SERVER_ERROR);
+      if (!succeed) throw std::runtime_error ("failed to transform urls");
 
       auto finalText = rd_utils::utils::findAndReplaceAll (text, mentions);
       finalText = rd_utils::utils::findAndReplaceAll (finalText, shorts);
@@ -159,7 +155,7 @@ namespace socialNet::text {
 
         auto req = config::Dict ().insert ("type", RequestCode::CREATE);
         auto stream = urlService-> requestStream (req).wait ();
-        if (stream != nullptr || stream-> readU32 () != ResponseCode::OK) {
+        if (stream == nullptr || stream-> readU32 () != ResponseCode::OK) {
           succeed = false;
           return result;
         }

@@ -7,14 +7,17 @@
 #include <utils/mysql/client.hh>
 #include <vector>
 
+#define MAX_TAGS 16
+#define LOGIN_LEN 16
+#define TEXT_LEN 560
 
 namespace socialNet::post {
 
   struct Post {
     uint32_t userId;
-    char userLogin [16];
-    char text [512];
-    uint32_t tags [16];
+    char userLogin [LOGIN_LEN];
+    char text [TEXT_LEN];
+    uint32_t tags [MAX_TAGS];
     uint8_t nbTags;
   };
 
@@ -43,7 +46,7 @@ namespace socialNet::post {
      *    - post: the post to insert
      * @returns: the uniq id of the post
      */
-    uint32_t insertPost (Post & p);
+    uint32_t insertPost (uint32_t id, const std::string & login, const std::string & message, uint32_t * tags, uint32_t nbTags);
 
     /**
      * Find a post from its uniq Id

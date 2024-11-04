@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "COMPOSE"
 
 #include "../../utils/jwt/check.hh"
@@ -17,7 +16,7 @@ using namespace socialNet::utils;
 namespace socialNet::compose {
 
   ComposeService::ComposeService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & conf) :
-    actor::ActorBase (name, sys)
+    actor::ActorBase (name, sys, false)
   {
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
@@ -204,7 +203,7 @@ namespace socialNet::compose {
 
       return response (ResponseCode::OK);
     } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR ComposeService::submitNewPost : ", __FILE__, __LINE__, err.what ());
+      LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, __LINE__, err.what ());
       return response (ResponseCode::MALFORMED);
     }
   }

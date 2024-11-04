@@ -24,8 +24,8 @@ namespace socialNet::post {
     auto dbUser = conf ["db"].getOr ("user", "root");
     auto dbPass = conf ["db"].getOr ("pass", "root");
 
-    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbName);
-    this-> _client-> connect (dbPass);
+    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbPass, dbName);
+    this-> _client-> connect ();
     this-> createTables ();
   }
 
@@ -33,8 +33,8 @@ namespace socialNet::post {
     auto reqPost = this-> _client-> prepare ("CREATE TABLE IF NOT EXISTS post (\n"
                                              "id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n"
                                              "user_id INT NOT NULL,\n"
-                                             "user_login VARCHAR (16) NOT NULL,\n"
-                                             "text VARCHAR (280) NOT NULL\n)");
+                                             "user_login VARCHAR (" + std::to_string (LOGIN_LEN) + ") NOT NULL,\n"
+                                             "text VARCHAR (" + std::to_string (TEXT_LEN) + ") NOT NULL\n)");
     reqPost-> finalize ();
     reqPost-> execute ();
 
@@ -55,11 +55,16 @@ namespace socialNet::post {
    * ====================================================================================================
    */
 
-  uint32_t PostDatabase::insertPost (Post & p) {
+  uint32_t PostDatabase::insertPost (uint32_t id, const std::string & userLogin, const std::string & text, uint32_t * tags, uint32_t nbTags) {
+    Post p;
+    ::memset (&p, 0, sizeof (Post));
+    ::memcpy (p.userLogin, userLogin.c_str (), std::min (userLogin.length (), (uint64_t) (LOGIN_LEN - 1)));
+    ::memcpy (p.text, text.c_str (), std::min (text.length (), (uint64_t) (TEXT_LEN - 1)));
+
     auto req = this-> _client-> prepare ("INSERT INTO post (user_id, user_login, text) values (?, ?, ?)");
-    req-> setParam (0, &p.userId);
-    req-> setParam (1, p.userLogin, strnlen (p.userLogin, 16));
-    req-> setParam (2, p.text, strnlen (p.text, 512));
+    req-> setParam (0, &id);
+    req-> setParam (1, p.userLogin, strnlen (p.userLogin, LOGIN_LEN));
+    req-> setParam (2, p.text, strnlen (p.text, TEXT_LEN));
 
     req-> finalize ();
     req-> execute ();
@@ -67,24 +72,23 @@ namespace socialNet::post {
     auto postId = req-> getGeneratedId ();
     req = nullptr;
 
-    this-> insertTags (postId, p.tags, p.nbTags);
+    this-> insertTags (postId, tags, nbTags);
     return postId;
   }
 
   bool PostDatabase::findPost (uint32_t id, Post & p) {
+    ::memset (&p, 0, sizeof (Post));
+
     auto req = this-> _client-> prepare ("SELECT user_id, user_login, text FROM post where id=?");
     req-> setParam (0, &id);
     req-> setResult (0, &p.userId);
-    req-> setResult (1, p.userLogin, 16);
-    req-> setResult (2, p.text, 511);
+    req-> setResult (1, p.userLogin, LOGIN_LEN);
+    req-> setResult (2, p.text, TEXT_LEN);
 
     req-> finalize ();
     req-> execute ();
     if (req-> next ()) {
-      p.userLogin [req-> getResultLen (1)] = 0;
-      p.text [req-> getResultLen (2)] = 0;
-      req = nullptr;
-
+      req.reset ();
       this-> findTags (id, p.tags, p.nbTags);
 
       return true;
@@ -108,7 +112,7 @@ namespace socialNet::post {
     req-> setParam (1, &tagId);
     req-> finalize ();
 
-    for (uint32_t i = 0 ; i < nbTags && i < 16; i++) {
+    for (uint32_t i = 0 ; i < nbTags && i < MAX_TAGS; i++) {
       tagId = tags [i];
       req-> execute ();
     }
@@ -124,7 +128,7 @@ namespace socialNet::post {
 
     nbTags = 0;
     req-> execute ();
-    while (req-> next () && nbTags < 1) {
+    while (req-> next () && nbTags < MAX_TAGS) {
       tags [nbTags] = tagId;
       nbTags += 1;
     }

@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "HOME"
 
 #include "user.hh"
@@ -23,7 +22,7 @@ namespace socialNet {
   std::shared_ptr <http_response> UserTimelineLenRoute::render (const http_request & req) {
     try {
       int64_t userId = std::atoi (std::string (req.get_arg ("user_id")).c_str ());
-      LOG_INFO ("Try get user posts len : ", userId);
+      LOG_DEBUG ("Try get user posts len : ", userId);
 
       auto timelineService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "timeline");
       auto msg = config::Dict ()
@@ -53,7 +52,7 @@ namespace socialNet {
       int64_t userId = std::atoi (std::string (req.get_arg ("user_id")).c_str ());
       int64_t page = std::atoi (std::string (req.get_arg ("page")).c_str ());
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
-      LOG_INFO ("Try get user posts : ", userId, " ", page, " ", nb);
+      LOG_DEBUG ("Try get user posts : ", userId, " ", page, " ", nb);
 
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()

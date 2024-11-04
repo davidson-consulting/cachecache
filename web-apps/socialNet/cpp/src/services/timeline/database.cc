@@ -24,8 +24,8 @@ namespace socialNet::timeline {
     auto dbTimeline = conf ["db"].getOr ("user", "root");
     auto dbPass = conf ["db"].getOr ("pass", "root");
 
-    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbTimeline, dbName);
-    this-> _client-> connect (dbPass);
+    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbTimeline, dbPass, dbName);
+    this-> _client-> connect ();
     this-> createTables ();
   }
 
@@ -76,6 +76,24 @@ namespace socialNet::timeline {
     req-> finalize ();
 
     return req;
+  }
+
+  void TimelineDatabase::executeBuffered (uint32_t* uids, uint32_t* pids, uint32_t nb) {
+    std::stringstream ss;
+    ss << "INSERT INTO home_timeline (user_id, post_id) values ";
+    for (uint32_t i = 0 ; i < nb; i++) {
+      if (i != 0) ss << ", ";
+      ss << "(?, ?)";
+    }
+
+    auto req = this-> _client-> prepare (ss.str ());
+    for (uint32_t i = 0, j = 0 ; i < nb ; j += 2, i++) {
+      req-> setParam (j, &uids [i]);
+      req-> setParam (j + 1, &pids [i]);
+    }
+
+    req-> finalize ();
+    req-> execute ();
   }
 
   std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareFindHome (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb) {
