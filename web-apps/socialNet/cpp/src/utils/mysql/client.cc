@@ -205,6 +205,18 @@ namespace socialNet::utils {
     }
   }
 
+  void MysqlClient::autocommit (bool set) {
+    if (!set) {
+      mysql_autocommit (this-> _conn, 0);
+    } else {
+      mysql_autocommit (this-> _conn, 1);
+    }
+  }
+
+  void MysqlClient::commit () {
+    mysql_commit (this-> _conn);
+  }
+
   std::shared_ptr <MysqlClient::Statement> MysqlClient::prepare (const std::string & query) {
     if (this-> _conn == nullptr)  this-> connect ();
 

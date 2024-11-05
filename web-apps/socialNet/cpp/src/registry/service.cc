@@ -12,7 +12,7 @@ using namespace socialNet::utils;
 namespace socialNet {
 
   RegistryService::RegistryService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode&) :
-    actor::ActorBase (name, sys, false) // registry is not atomic
+    actor::ActorBase (name, sys) // registry is not atomic
   {}
 
   void RegistryService::onQuit () {
@@ -68,13 +68,11 @@ namespace socialNet {
       uint32_t port = msg ["port"].getI ();
 
       LOG_INFO ("Registering service : ", kind, " ", id, " ", addr, " ", port);
-      WITH_LOCK (this-> getMutex ()) {
-        auto it = this-> __services__.find (kind);
-        if (it == this-> __services__.end ()) {
-          this-> __services__.emplace (kind, std::make_pair<int, std::vector <Service> > (0, {Service {.id = id, .addr = addr, .port = port}}));
-        } else {
-          it-> second.second.push_back ({.id = id, .addr = addr, .port = port});
-        }
+      auto it = this-> __services__.find (kind);
+      if (it == this-> __services__.end ()) {
+        this-> __services__.emplace (kind, std::make_pair<int, std::vector <Service> > (0, {Service {.id = id, .addr = addr, .port = port}}));
+      } else {
+        it-> second.second.push_back ({.id = id, .addr = addr, .port = port});
       }
 
       return response (ResponseCode::OK);
@@ -88,19 +86,17 @@ namespace socialNet {
     try {
       auto kind = msg ["kind"].getStr ();
       Service src;
-      WITH_LOCK (this-> getMutex ()) {
-        auto it = this-> __services__.find (kind);
-        if (it != this-> __services__.end ()) {
-          auto index = it-> second.first;
-          it-> second.first += 1;
-          if (it-> second.first >= it-> second.second.size ()) {
-            it-> second.first = 0;
-          }
-          src = it-> second.second [index];
-        } else {
-          LOG_WARN ("No service : ", kind);
-          return response (ResponseCode::NOT_FOUND);
+      auto it = this-> __services__.find (kind);
+      if (it != this-> __services__.end ()) {
+        auto index = it-> second.first;
+        it-> second.first += 1;
+        if (it-> second.first >= it-> second.second.size ()) {
+          it-> second.first = 0;
         }
+        src = it-> second.second [index];
+      } else {
+        LOG_WARN ("No service : ", kind);
+        return response (ResponseCode::NOT_FOUND);
       }
 
       LOG_DEBUG ("Found service : ", kind);
@@ -125,22 +121,20 @@ namespace socialNet {
 
       LOG_INFO ("Closing service : ", kind, " ", id, " ", addr, " ", port);
 
-      WITH_LOCK (this-> getMutex ()) {
-        auto it = this-> __services__.find (kind);
-        if (it != this-> __services__.end ()) {
-          it-> second.first = 0;
-          std::vector <Service> res;
-          for (auto & jt : it-> second.second) {
-            if (jt.addr != addr || jt.id != id || jt.port != port) {
-              res.push_back (jt);
-            }
+      auto it = this-> __services__.find (kind);
+      if (it != this-> __services__.end ()) {
+        it-> second.first = 0;
+        std::vector <Service> res;
+        for (auto & jt : it-> second.second) {
+          if (jt.addr != addr || jt.id != id || jt.port != port) {
+            res.push_back (jt);
           }
+        }
 
-          if (res.size () == 0) {
-            this-> __services__.erase (kind);
-          } else {
-            it-> second.second = res;
-          }
+        if (res.size () == 0) {
+          this-> __services__.erase (kind);
+        } else {
+          it-> second.second = res;
         }
       }
 

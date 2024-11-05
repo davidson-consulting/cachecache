@@ -18,6 +18,8 @@ namespace socialNet::timeline {
     };
 
     std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
+    std::shared_ptr <utils::MysqlClient::Statement> _req100;
+    std::shared_ptr <utils::MysqlClient::Statement> _req10;
 
     rd_utils::concurrency::mutex _m;
     rd_utils::concurrency::Thread _routine;

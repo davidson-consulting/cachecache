@@ -21,6 +21,8 @@ namespace socialNet::timeline {
     , _running (false)
   {
     this-> _db.configure (conf);
+    this-> _req100 = this-> _db.prepareBuffered (MAX_NB_INSERT);
+    this-> _req10 = this-> _db.prepareBuffered (10);
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
@@ -314,19 +316,26 @@ namespace socialNet::timeline {
           pids [nb] = up.pid;
           nb += 1;
 
-          if (nb % MAX_NB_INSERT == 0) { // insert 100 per 100
-            this-> _db.executeBuffered (followers, pids, nb);
+          if (nb == MAX_NB_INSERT) { // insert 100 per 100
+            this-> _db.executeBuffered (this-> _req100, followers, pids, MAX_NB_INSERT);
             nb = 0;
           }
         }
       }
     }
 
-    if (nb != 0) {
-      this-> _db.executeBuffered (followers, pids, nb);
+    uint32_t i = 0;
+    for (; nb >= 10 ; i += 10) {
+      this-> _db.executeBuffered (this-> _req10, &followers[i], &pids[i], 10);
+      nb -= 10;
     }
 
-    LOG_DEBUG ("Finished update : ", uid);
+    for (; nb > 0 ; i++) {
+      this-> _db.insertOneHome (followers [i], pids [i]);
+      nb -= 1;
+    }
+
+    this-> _db.commit ();
   }
 
 

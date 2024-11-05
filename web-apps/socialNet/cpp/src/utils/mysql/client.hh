@@ -139,6 +139,16 @@ namespace socialNet::utils {
     void connect ();
 
     /**
+     * Configure the autocommit of the DB
+     */
+    void autocommit (bool set);
+
+    /**
+     * Commit pending statements
+     */
+    void commit ();
+
+    /**
      * Prepare a statement
      */
     std::shared_ptr<MysqlClient::Statement> prepare (const std::string & query);
