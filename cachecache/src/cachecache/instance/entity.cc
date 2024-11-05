@@ -97,11 +97,7 @@ namespace cachecache::instance {
 
     auto current = MemorySize::B (this-> _entity-> getPool (this-> _pool).getPoolSize ());
 
-    auto div = newSize.megabytes() / CacheEntity::getSlabSize().megabytes();
-    auto mod = newSize.megabytes() % CacheEntity::getSlabSize().megabytes();
-    LOG_INFO("Div ", div, " mod ", mod);
     auto nb_slabs_asked = (newSize.megabytes() / CacheEntity::getSlabSize().megabytes()) + (newSize.megabytes() % CacheEntity::getSlabSize().megabytes() > 0 ? 1 : 0);
-    LOG_INFO("Will use ", nb_slabs_asked, " slabs");
     MemorySize round_up = MemorySize::MB(CacheEntity::getSlabSize ().megabytes() * nb_slabs_asked);
     auto bound = MemorySize::min (MemorySize::max (CacheEntity::getSlabSize (), round_up), this-> _maxSize);
     LOG_INFO ("Asking for a cache resize from ", current.megabytes (), "MB to ~", newSize.megabytes (), "MB. Will resize to ", bound.megabytes (), "MB");
