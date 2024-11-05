@@ -213,8 +213,10 @@ namespace cachecache::instance {
     auto result = std::make_shared <config::Dict> ();
     if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to have a size
       result-> insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
+      result-> insert ("size", (int64_t) this-> _entity-> getSize ().kilobytes ());
     } else {
       result-> insert ("usage", (int64_t) 0);
+      result-> insert ("size", (int64_t) 0);
     }
 
     result-> insert ("unit", (int64_t) MemorySize::Unit::KB);
@@ -251,7 +253,7 @@ namespace cachecache::instance {
         iface = conf ["sys"].getOr ("iface", "lo");
       } else iface = "lo";
 
-      this-> _supervisor = this-> _system-> remoteActor (sName, sAddr + ":" + std::to_string (sPort), false);
+      this-> _supervisor = this-> _system-> remoteActor (sName, sAddr + ":" + std::to_string (sPort));
       this-> _ifaceAddr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
 
       auto msg = config::Dict ()

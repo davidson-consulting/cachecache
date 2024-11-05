@@ -317,7 +317,8 @@ namespace cachecache::supervisor {
 
         auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
         auto usage = MemorySize::unit ((*res)["content"]["usage"].getI (), unit);
-        LOG_INFO ("Current usage of (", inst-> first, " aka ", inst-> second.name, ") = ", usage.megabytes (), " MB");
+        auto size = MemorySize::unit ((*res)["content"]["size"].getI (), unit);
+        LOG_INFO ("Current infos of (", inst-> first, " aka ", inst-> second.name, ") : [Usage ", usage.megabytes (), " MB] [Size ", size.megabytes(), " MB]");
         rests.emplace (inst-> first, CacheInfo {.remote = std::move (inst-> second.remote),
                                               .name = inst-> second.name,
                                               .uid = inst-> second.uid});

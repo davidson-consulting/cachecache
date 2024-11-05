@@ -17,10 +17,11 @@ port = 9090 # its port
 # @optional
 [service]
 addr = "0.0.0.0" # accepted connections
-port = 0 # port of the tcp server
+port = 38287 # port of the tcp server
 
 # Configure cache entity default values
 # @optional
 [cache]
-ttl = 5
-# size = 1024 # the guarantee request size in MB
+ttl = 600
+size = 12
+unit = "MB"
