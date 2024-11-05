@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "HOME"
 
 #include "follow.hh"
@@ -32,7 +31,7 @@ namespace socialNet {
     try {
       int64_t userId = std::atoi (std::string (req.get_arg ("user_id")).c_str ());
 
-      LOG_INFO ("Try get followers len : ", userId);
+      LOG_DEBUG ("Try get followers len : ", userId);
 
       auto socialGraphService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "social_graph");
       auto msg = config::Dict ()
@@ -63,7 +62,7 @@ namespace socialNet {
       int64_t page = std::atoi (std::string (req.get_arg ("page")).c_str ());
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
 
-      LOG_INFO ("Try get user followers : ", userId, " ", page, " ", nb);
+      LOG_DEBUG ("Try get user followers : ", userId, " ", page, " ", nb);
 
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
@@ -119,7 +118,7 @@ namespace socialNet {
       auto who = js ["to_whom"].get <int64_t> ();
       auto token = js ["token"].get <std::string> ();
 
-      LOG_INFO ("Try follow : ", uid, " ", who);
+      LOG_DEBUG ("Try follow : ", uid, " ", who);
 
       auto socialGraphService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "social_graph");
       auto msg = config::Dict ()
@@ -154,7 +153,7 @@ namespace socialNet {
       auto who = js ["to_whom"].get <int64_t> ();
       auto token = js ["token"].get <std::string> ();
 
-      LOG_INFO ("Try unfollow : ", uid, " ", who);
+      LOG_DEBUG ("Try unfollow : ", uid, " ", who);
 
       auto socialGraphService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "social_graph");
       auto msg = config::Dict ()
@@ -185,7 +184,7 @@ namespace socialNet {
       int64_t uid = std::atoi (std::string (req.get_arg ("user_id")).c_str ());
       int64_t who = std::atoi (std::string (req.get_arg ("to_whom")).c_str ());
 
-      LOG_INFO ("Try check follow : ", uid, " ", who);
+      LOG_DEBUG ("Try check follow : ", uid, " ", who);
 
       auto socialGraphService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "social_graph");
       auto msg = config::Dict ()

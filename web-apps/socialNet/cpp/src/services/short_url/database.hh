@@ -8,11 +8,14 @@
 #include <vector>
 
 
+#define SHORT_LEN 16
+#define LONG_LEN 255
+
 namespace socialNet::short_url {
 
   struct ShortUrl {
-    rd_utils::memory::cache::collection::FlatString <16> sh; // short version
-    rd_utils::memory::cache::collection::FlatString <255> ln; // start of the long version
+    char sh[SHORT_LEN]; // short version
+    char ln[LONG_LEN]; // start of the long version
   };
 
   class ShortUrlDatabase {

@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "POST"
 
 #include "../../utils/jwt/check.hh"
@@ -77,36 +76,32 @@ namespace socialNet::post {
       auto timeline = socialNet::findService (this-> _system, this-> _registry, "timeline");
       if (timeline == nullptr) return response (ResponseCode::SERVER_ERROR);
 
-      Post post;
-      post.userId = msg ["userId"].getI ();
+      auto userId = msg ["userId"].getI ();
       auto userLogin = msg ["userLogin"].getStr ();
       auto text = msg ["text"].getStr ();
-
-      memcpy (post.userLogin, userLogin.c_str (), 15);
-      memcpy (post.text, text.c_str (), 511);
-
-      post.userLogin [std::min ((size_t) 15, userLogin.length ())] = 0;
-      post.text [std::min ((size_t) 511, text.length ())] = 0;
+      uint32_t tags [MAX_TAGS];
+      uint32_t nbTags = 0;
 
       match (msg ["tags"]) {
         of (config::Array, a) {
-          post.nbTags = a-> getLen () > 16 ? 16 : a-> getLen ();
-          for (uint32_t i = 0 ; i < a-> getLen () && i < 16 ; i++) {
-            post.tags [i] = (*a) [i].getI ();
+          for (uint32_t i = 0 ; i < a-> getLen () && i < MAX_TAGS ; i++) {
+            tags [i] = (*a) [i].getI ();
+            nbTags += 1;
           }
         } fo;
       }
 
-      auto pid = this-> _db.insertPost (post);
+      auto pid = this-> _db.insertPost (userId, userLogin, text, tags, nbTags);
       auto req = config::Dict ()
         .insert ("type", RequestCode::UPDATE_TIMELINE)
-        .insert ("userId", (int64_t) post.userId)
+        .insert ("userId", (int64_t) userId)
         .insert ("jwt_token", msg ["jwt_token"].getStr ())
         .insert ("tags", msg.get ("tags"))
         .insert ("postId", (int64_t) pid);
 
-      auto res = timeline-> request (req).wait ();
-      if (res == nullptr || res-> getOr ("code", -1) != ResponseCode::OK) return response (ResponseCode::SERVER_ERROR);
+      // Asynchronous timeline update
+      timeline-> send (req);
+
 
       return response (ResponseCode::OK);
     } catch (const std::runtime_error & err) {

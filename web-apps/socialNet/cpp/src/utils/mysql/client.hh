@@ -15,6 +15,8 @@ namespace socialNet::utils {
     class Statement {
     private:
 
+      MysqlClient * _context;
+
       MYSQL_STMT * _stmt;
 
       // MYSQL_RES * _res = nullptr;
@@ -40,7 +42,7 @@ namespace socialNet::utils {
 
     public:
 
-      Statement (MYSQL_STMT * stmt, uint32_t nbParams, uint32_t nbResults);
+      Statement (MYSQL_STMT * stmt, MysqlClient * context, uint32_t nbParams, uint32_t nbResults);
 
       void setParam (uint32_t index, char * value, uint32_t len);
 
@@ -92,7 +94,7 @@ namespace socialNet::utils {
       ~Statement ();
     };
 
-  private:
+  public:
 
     // The address of the server
     std::string _server;
@@ -102,6 +104,8 @@ namespace socialNet::utils {
 
     // The database
     std::string _db;
+
+    std::string _password;
 
     // The connection to mysql
     MYSQL * _conn = nullptr;
@@ -126,13 +130,23 @@ namespace socialNet::utils {
      * Create a mysql client
      * @info: not connected yet
      */
-    MysqlClient (const std::string & addr, const std::string & user, const std::string & db);
+    MysqlClient (const std::string & addr, const std::string & user, const std::string & password, const std::string & db);
 
     /**
      * Connect to the database
      * @throws: if fails
      */
-    void connect (const std::string & password);
+    void connect ();
+
+    /**
+     * Configure the autocommit of the DB
+     */
+    void autocommit (bool set);
+
+    /**
+     * Commit pending statements
+     */
+    void commit ();
 
     /**
      * Prepare a statement

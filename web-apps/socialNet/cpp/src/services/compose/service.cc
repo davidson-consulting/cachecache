@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "COMPOSE"
 
 #include "../../utils/jwt/check.hh"
@@ -204,7 +203,7 @@ namespace socialNet::compose {
 
       return response (ResponseCode::OK);
     } catch (std::runtime_error & err) {
-      LOG_INFO ("ERROR ComposeService::submitNewPost : ", __FILE__, __LINE__, err.what ());
+      LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, __LINE__, err.what ());
       return response (ResponseCode::MALFORMED);
     }
   }

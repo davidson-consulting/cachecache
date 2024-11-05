@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "MAIN"
 
 #include <csignal>

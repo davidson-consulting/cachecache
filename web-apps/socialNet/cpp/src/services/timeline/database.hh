@@ -32,6 +32,10 @@ namespace socialNet::timeline {
     void insertOneHome (uint32_t uid, uint32_t pid);
     void insertOnePost (uint32_t uid, uint32_t pid);
 
+    std::shared_ptr <utils::MysqlClient::Statement> prepareBuffered (uint32_t nb);
+    void executeBuffered (std::shared_ptr <utils::MysqlClient::Statement> req, uint32_t * uid, uint32_t* pid, uint32_t nb);
+    void commit ();
+
     std::shared_ptr <utils::MysqlClient::Statement> prepareInsertHomeTimeline (uint32_t * uid, uint32_t * pid);
 
     std::shared_ptr <utils::MysqlClient::Statement> prepareFindHome (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb);

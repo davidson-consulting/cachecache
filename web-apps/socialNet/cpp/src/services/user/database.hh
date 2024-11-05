@@ -8,12 +8,15 @@
 #include <vector>
 
 
+#define LOGIN_LEN 16
+#define PASSWORD_LEN 64
+
 namespace socialNet::user {
 
   struct User {
     uint32_t id;
-    char login [16];
-    char password [64];
+    char login [LOGIN_LEN];
+    char password [PASSWORD_LEN];
   };
 
   class UserDatabase {
@@ -43,7 +46,7 @@ namespace socialNet::user {
     /**
      * Find a user by its login
      */
-    bool findByLogin (const char * login, User & u);
+    bool findByLogin (const std::string & login, User & u);
 
     /**
      * Find a user by its id

@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "REGISTRY"
 
 #include <iostream>
@@ -57,7 +56,11 @@ auto main(int argc, char *argv[]) -> int {
     LOG_INFO ("On port : ", __GLOBAL_SYSTEM__-> port ());
     rd_utils::utils::write_file ("registry_port", std::to_string ( __GLOBAL_SYSTEM__-> port ()));
 
-    __GLOBAL_SYSTEM__-> add <socialNet::RegistryService> ("registry");
+    match (*cfg) {
+      of (rd_utils::utils::config::Dict, dc) {
+        __GLOBAL_SYSTEM__-> add <socialNet::RegistryService> ("registry", *dc);
+      } fo;
+    }
 
     __GLOBAL_SYSTEM__-> join ();
     __GLOBAL_SYSTEM__-> dispose ();

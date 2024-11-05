@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "SHORT_URL"
 
 #include "service.hh"
@@ -80,9 +79,14 @@ namespace socialNet::short_url {
     try {
       std::string url = msg ["url"].getStr ();
 
-      ShortUrl shUrl = {.sh = url, .ln = ""};
+      ShortUrl shUrl;
+      ::memset (&shUrl, 0, sizeof (ShortUrl));
+
+      auto shLen = std::min (url.length (), (uint64_t) SHORT_LEN);
+      ::memcpy (shUrl.sh, url.c_str (), shLen);
+
       if (this-> _db.findUrlFromShort (shUrl)) {
-        auto res = std::make_shared <config::String> (shUrl.ln.data ());
+        auto res = std::make_shared <config::String> (shUrl.ln);
         return response (ResponseCode::OK, res);
       } else {
         return response (ResponseCode::NOT_FOUND);
@@ -107,14 +111,18 @@ namespace socialNet::short_url {
     try {
       std::string url = msg ["url"].getStr ();
 
-      ShortUrl shUrl = {.sh = "", .ln = url};
+      ShortUrl shUrl;
+      ::memset (&shUrl, 0, sizeof (ShortUrl));
+
+      auto lnLen = std::min (url.length (), (uint64_t) LONG_LEN);
+      ::memcpy (shUrl.ln, url.c_str (), lnLen);
+
       if (!this-> _db.findUrl (shUrl)) {
-        auto sh = this-> createShort ();
-        shUrl.sh = sh;
+        this-> createShort (shUrl.sh);
         this-> _db.insertUrl (shUrl);
       }
 
-      auto res = std::make_shared <config::String> (shUrl.sh.data ());
+      auto res = std::make_shared <config::String> (shUrl.sh);
       return response (ResponseCode::OK, res);
     } catch (std::runtime_error & err) {
       LOG_ERROR ("Error : ", err.what ());
@@ -123,15 +131,12 @@ namespace socialNet::short_url {
     return response (ResponseCode::MALFORMED);
   }
 
-  rd_utils::memory::cache::collection::FlatString<16> ShortUrlService::createShort () {
-    rd_utils::memory::cache::collection::FlatString<16> result;
-    for (uint32_t i = 0 ; i < 15 ; i++) {
-      result.data ()[i] = base64_chars [::rand () % base64_chars.length ()];
+  void ShortUrlService::createShort (char * result) {
+    for (uint32_t i = 0 ; i < SHORT_LEN - 1 ; i++) {
+      result [i] = base64_chars [::rand () % base64_chars.length ()];
     }
 
-    result.data ()[15] = '\0';
-    result.forceLen (16);
-    return result;
+    result [SHORT_LEN - 1] = 0;
   }
 
   /**
@@ -156,19 +161,20 @@ namespace socialNet::short_url {
   }
 
   void ShortUrlService::streamCreate (actor::ActorStream & stream) {
-    while (stream.isOpen ()) {
-      auto n = stream.readOr (0);
-      if (n != 0) {
-        auto url = stream.readStr ();
-        ShortUrl shUrl = {.sh = "", .ln = url};
-        if (!this-> _db.findUrl (shUrl)) {
-          auto sh = this-> createShort ();
-          shUrl.sh = sh;
-          this-> _db.insertUrl (shUrl);
-        }
+    while (stream.readOr (0) == 1) {
+      auto url = stream.readStr ();
+      ShortUrl shUrl;
+      ::memset (&shUrl, 0, sizeof (ShortUrl));
 
-        stream.writeStr (shUrl.sh.data ());
-      } else break;
+      auto lnLen = std::min (url.length (), (uint64_t) LONG_LEN);
+      ::memcpy (shUrl.ln, url.c_str (), lnLen);
+
+      if (!this-> _db.findUrl (shUrl)) {
+        this-> createShort (shUrl.sh);
+        this-> _db.insertUrl (shUrl);
+      }
+
+      stream.writeStr (shUrl.sh);
     }
   }
 

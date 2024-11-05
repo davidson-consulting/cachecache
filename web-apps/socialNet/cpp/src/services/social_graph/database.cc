@@ -24,8 +24,8 @@ namespace socialNet::social_graph {
     auto dbUser = conf ["db"].getOr ("user", "root");
     auto dbPass = conf ["db"].getOr ("pass", "root");
 
-    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbName);
-    this-> _client-> connect (dbPass);
+    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbPass, dbName);
+    this-> _client-> connect ();
     this-> createTables ();
   }
 

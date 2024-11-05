@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define PROJECT "HTTP_SERVER"
 
 #include "service.hh"

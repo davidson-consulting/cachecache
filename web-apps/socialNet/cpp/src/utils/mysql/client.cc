@@ -9,8 +9,9 @@ namespace socialNet::utils {
   rd_utils::concurrency::mutex MysqlClient::__MUTEX__;
   uint32_t MysqlClient::__OPENED__ = 0;
 
-  MysqlClient::Statement::Statement (MYSQL_STMT * i, uint32_t nbParams, uint32_t nbResults) :
-    _stmt (i)
+  MysqlClient::Statement::Statement (MYSQL_STMT * i, MysqlClient * context, uint32_t nbParams, uint32_t nbResults)
+    : _context (context)
+    , _stmt (i)
     , _nbParams (nbParams)
     , _nbResults (nbResults)
   {
@@ -25,7 +26,6 @@ namespace socialNet::utils {
   }
 
   void MysqlClient::Statement::setParam (uint32_t i, char * value, uint32_t len) {
-
     this-> _param_binds [i].buffer_type = MYSQL_TYPE_STRING;
     this-> _param_binds [i].buffer = value;
     this-> _param_binds [i].buffer_length = len;
@@ -104,18 +104,22 @@ namespace socialNet::utils {
   void MysqlClient::Statement::finalize () {
     if (this-> _nbResults != 0) {
       if (mysql_stmt_bind_result (this-> _stmt, this-> _result_binds)) {
-        auto msg = std::string (mysql_stmt_error (this-> _stmt));
         mysql_stmt_close (this-> _stmt);
         this-> _stmt = nullptr;
+
+        std::string msg = mysql_error (this-> _context-> _conn);
+        this-> _context-> dispose ();
         throw std::runtime_error ("Failed to bind result " + msg);
       }
     }
 
     if (this-> _nbParams != 0) {
       if (mysql_stmt_bind_param (this-> _stmt, this-> _param_binds)) {
-        auto msg = std::string (mysql_stmt_error (this-> _stmt));
         mysql_stmt_close (this-> _stmt);
         this-> _stmt = nullptr;
+
+        std::string msg = mysql_error (this-> _context-> _conn);
+        this-> _context-> dispose ();
         throw std::runtime_error ("Failed to bind params " + msg);
       }
     }
@@ -132,23 +136,24 @@ namespace socialNet::utils {
 
   void MysqlClient::Statement::execute () {
     if (mysql_stmt_execute (this-> _stmt)) {
-      std::string err = mysql_stmt_error (this-> _stmt);
       mysql_stmt_close (this-> _stmt);
+      std::string err = mysql_error (this-> _context-> _conn);
       this-> _stmt = nullptr;
+      this-> _context-> dispose ();
       throw std::runtime_error ("Failed to execute stmt : " + err);
     }
   }
 
   bool MysqlClient::Statement::next () {
-    return mysql_stmt_fetch (this-> _stmt) == 0;
+    if (this-> _stmt != nullptr) {
+      return mysql_stmt_fetch (this-> _stmt) == 0;
+    } else {
+      this-> _context-> dispose ();
+      throw std::runtime_error ("Statement is empty");
+    }
   }
 
   MysqlClient::Statement::~Statement () {
-    // if (this-> _res != nullptr) {
-    //   mysql_free_result (this-> _res);
-    //   this-> _res = nullptr;
-    // }
-
     if (this-> _stmt != nullptr) {
       mysql_stmt_close (this-> _stmt);
       this-> _stmt = nullptr;
@@ -172,14 +177,15 @@ namespace socialNet::utils {
     }
   }
 
-  MysqlClient::MysqlClient (const std::string & server, const std::string & user, const std::string & db) :
+  MysqlClient::MysqlClient (const std::string & server, const std::string & user, const std::string & password, const std::string & db) :
     _server (server)
     , _user (user)
     , _db (db)
+    , _password (password)
     , _conn (nullptr)
   {}
 
-  void MysqlClient::connect (const std::string & password) {
+  void MysqlClient::connect () {
     WITH_LOCK (__MUTEX__) {
       __OPENED__ += 1;
       if (__OPENED__ == 1) {
@@ -190,7 +196,7 @@ namespace socialNet::utils {
     }
 
     this-> _conn = mysql_init (nullptr);
-    auto code = mysql_real_connect (this-> _conn, this-> _server.c_str (), this-> _user.c_str (), password.c_str (), this-> _db.c_str (), 0, nullptr, 0);
+    auto code = mysql_real_connect (this-> _conn, this-> _server.c_str (), this-> _user.c_str (), this-> _password.c_str (), this-> _db.c_str (), 0, nullptr, 0);
     if (code == 0) {
       auto msg = std::string (mysql_error (this-> _conn));
       mysql_close (this-> _conn);
@@ -199,18 +205,31 @@ namespace socialNet::utils {
     }
   }
 
+  void MysqlClient::autocommit (bool set) {
+    if (!set) {
+      mysql_autocommit (this-> _conn, 0);
+    } else {
+      mysql_autocommit (this-> _conn, 1);
+    }
+  }
+
+  void MysqlClient::commit () {
+    mysql_commit (this-> _conn);
+  }
+
   std::shared_ptr <MysqlClient::Statement> MysqlClient::prepare (const std::string & query) {
-    if (this-> _conn == nullptr) throw std::runtime_error ("Database not connected");
+    if (this-> _conn == nullptr)  this-> connect ();
 
     MYSQL_STMT * stmt = mysql_stmt_init (this-> _conn);
     if (stmt == nullptr) {
-      throw std::runtime_error ("Failed to prepare stmt");
+      this-> dispose ();
+      throw std::runtime_error ("Failed to init a new stmt");
     }
 
     if (mysql_stmt_prepare (stmt, query.c_str (), query.length ())) {
-      std::string err = std::string (mysql_stmt_error (stmt));
       mysql_stmt_close (stmt);
-      throw std::runtime_error ("Failed to prepare stmt : (" + err + ")");
+      this-> dispose ();
+      throw std::runtime_error ("Failed to prepare stmt from query : " + query);
     }
 
     auto param_count = mysql_stmt_param_count (stmt);
@@ -222,7 +241,7 @@ namespace socialNet::utils {
       mysql_free_result (prepare_meta_result);
     }
 
-    return std::make_shared <MysqlClient::Statement> (stmt, param_count, result_count);
+    return std::make_shared <MysqlClient::Statement> (stmt, this, param_count, result_count);
   }
 
 

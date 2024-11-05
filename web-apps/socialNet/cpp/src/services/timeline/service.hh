@@ -12,8 +12,23 @@ namespace socialNet::timeline {
   class TimelineService : public rd_utils::concurrency::actor::ActorBase {
   private:
 
-    std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
+    struct PostUpdate {
+      uint32_t pid;
+      std::set <uint32_t> tagged;
+    };
 
+    std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
+    std::shared_ptr <utils::MysqlClient::Statement> _req100;
+    std::shared_ptr <utils::MysqlClient::Statement> _req10;
+
+    rd_utils::concurrency::mutex _m;
+    rd_utils::concurrency::Thread _routine;
+    rd_utils::concurrency::semaphore _routineSleeping;
+
+    bool _running;
+    float _freq;
+
+    std::map <uint32_t, std::vector <PostUpdate> > _toUpdates;
     std::string _iface;
 
     TimelineDatabase _db;
@@ -31,6 +46,8 @@ namespace socialNet::timeline {
      */
     TimelineService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf);
 
+    void onStart ();
+
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
     void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
@@ -41,14 +58,17 @@ namespace socialNet::timeline {
 
   private:
 
-    std::shared_ptr<rd_utils::utils::config::ConfigNode> updatePosts (const rd_utils::utils::config::ConfigNode & msg);
-    void updateForFollowers (uint32_t uid, uint32_t postId, const std::set <int64_t> & tagged);
+    void updatePosts (const rd_utils::utils::config::ConfigNode & msg);
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> countPosts (const rd_utils::utils::config::ConfigNode & msg);
     std::shared_ptr<rd_utils::utils::config::ConfigNode> countHome (const rd_utils::utils::config::ConfigNode & msg);
 
     void streamHome (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
     void streamPosts (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
+
+
+    void treatRoutine (rd_utils::concurrency::Thread);
+    void updateForFollowers (uint32_t uid, const std::vector <PostUpdate> & up);
 
   };
 

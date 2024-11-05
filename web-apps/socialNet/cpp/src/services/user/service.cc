@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "USER"
 
 #include "service.hh"
@@ -74,14 +73,20 @@ namespace socialNet::user {
       auto password = msg ["password"].getStr ();
 
       User u;
-      if (this-> _db.findByLogin (login.c_str (), u)) {
-        return response (ResponseCode::FORBIDDEN);
-      }
+      //WITH_LOCK (this-> getMutex ()) {
+        if (this-> _db.findByLogin (login, u)) {
+          return response (ResponseCode::FORBIDDEN);
+        }
+      //}
 
       memcpy (u.login, login.c_str (), strnlen (login.c_str (), 16));
       memcpy (u.password, password.c_str (), strnlen (password.c_str (), 64));
 
-      auto id = this-> _db.insertUser (u);
+      uint32_t id = 0;
+      //WITH_LOCK (this-> getMutex ()) {
+        id = this-> _db.insertUser (u);
+      //}
+
       return response (ResponseCode::OK, std::make_shared <config::Int> (id));
     } catch (std::runtime_error & err) {
       LOG_ERROR ("ERROR UserService::registerUser : ", err.what ());
@@ -102,14 +107,18 @@ namespace socialNet::user {
       auto login = msg ["login"].getStr ();
       auto password = msg ["password"].getStr ();
 
-      LOG_INFO ("Trying to connect : ", login, "@", password);
+      LOG_DEBUG ("Trying to connect : ", login, "@", password);
 
       User u;
-      if (this-> _db.findByLogin (login.c_str (), u)) {
-        std::cout << strnlen (u.password, 64) << " " << password.length () << std::endl;
+      bool found = false;
+      //WITH_LOCK (this-> getMutex ()) {
+        found = this-> _db.findByLogin (login, u);
+      //}
+
+      if (found) {
         if (strnlen (u.password, 64) == password.length ()) {
           if (strncmp (u.password, password.c_str (), password.length ()) == 0) {
-            LOG_INFO ("User connected");
+            LOG_DEBUG ("User connected");
             return response (ResponseCode::OK, std::make_shared <config::Int> (u.id));
           }
         }
@@ -132,14 +141,24 @@ namespace socialNet::user {
       User u;
       if (msg.contains ("id")) {
         uint32_t id = msg ["id"].getI ();
-        if (this-> _db.findById (id, u)) {
+        bool found = false;
+        //WITH_LOCK (this-> getMutex ()) {
+          found = this-> _db.findById (id, u);
+        //}
+
+        if (found) {
           return response (ResponseCode::OK, std::make_shared <config::String> (u.login));
+        } else {
+          LOG_ERROR ("Not found : ", msg);
         }
       } else {
         auto login = msg ["login"].getStr ();
-        std::cout << "Getting : " << login << std::endl;
-        if (this-> _db.findByLogin (login.c_str (), u)) {
-          std::cout << "Ok" << std::endl;
+        bool found = false;
+        //WITH_LOCK (this-> getMutex ()) {
+          found = this-> _db.findByLogin (login, u);
+        //}
+
+        if (found) {
           return response (ResponseCode::OK, std::make_shared <config::Int> (u.id));
         }
       }
@@ -165,7 +184,6 @@ namespace socialNet::user {
       of_v (RequestCode::FIND_BY_LOGIN) {
         this-> streamFindByLogin (stream);
       }
-
       elof_v (RequestCode::FIND_BY_ID) {
         this-> streamFindById (stream);
       }
@@ -182,7 +200,12 @@ namespace socialNet::user {
       stream.writeU32 (200);
       while (stream.readOr (0) == 1) {
         auto login = stream.readStr ();
-        if (this-> _db.findByLogin (login.c_str (), u)) {
+        bool found = false;
+        //WITH_LOCK (this-> getMutex ()) {
+          found = this-> _db.findByLogin (login, u);
+        //}
+
+        if (found) {
           stream.writeU8 (1);
           stream.writeU32 (u.id);
         } else {
@@ -200,7 +223,12 @@ namespace socialNet::user {
       stream.writeU32 (200);
       while (stream.readOr (0) == 1) {
         auto id = stream.readU32 ();
-        if (this-> _db.findById (id, u)) {
+        bool found = false;
+        //WITH_LOCK (this-> getMutex ()) {
+          found = this-> _db.findById (id, u);
+        //}
+
+        if (found) {
           stream.writeU8 (1);
           stream.writeStr (std::string (u.login));
         } else {

@@ -5,6 +5,7 @@ issuer = "auth0"
 [sys]
 port = 0
 iface = "lo"
+log-lvl = "debug"
 
 [registry]
 name = "registry"
@@ -13,27 +14,27 @@ port = 0
 
 [db]
 name = "socialNet"
-addr = "localhost"
+addr = "192.168.1.17"
 user = "root"
-pass = "root"
+pass = ""
 
 [services.user]
-nb = 1
+nb = 10
 
 [services.timeline]
 nb = 1
 
 [services.short]
-nb = 1
+nb = 10
 
 [services.text]
-nb = 1
+nb= 1
 
 [services.social]
-nb = 1
+nb = 10
 
 [services.compose]
 nb = 1
 
 [services.post]
-nb = 1
+nb = 10

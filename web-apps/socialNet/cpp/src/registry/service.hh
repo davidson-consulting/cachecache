@@ -14,11 +14,11 @@ namespace socialNet {
 
   class RegistryService :  public rd_utils::concurrency::actor::ActorBase {
 
-    std::map <std::string, std::pair <uint32_t, std::vector <Service> > > _services;
+    std::map <std::string, std::pair <uint32_t, std::vector <Service> > > __services__;
 
   public:
 
-    RegistryService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys);
+    RegistryService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & conf);
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
     void onQuit () override;

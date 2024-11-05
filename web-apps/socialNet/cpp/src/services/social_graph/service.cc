@@ -1,4 +1,3 @@
-#define LOG_LEVEL 10
 #define __PROJECT__ "SOCIAL_GRAPH"
 
 #include "../../utils/jwt/check.hh"
@@ -217,7 +216,6 @@ namespace socialNet::social_graph {
       stream.writeU32 (ResponseCode::OK);
 
       while (statement-> next () && stream.isOpen ()) {
-        std::cout << rid << std::endl;
         stream.writeU8 (1);
         stream.writeU32 (rid);
       }
