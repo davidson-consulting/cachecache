@@ -264,6 +264,8 @@ namespace socialNet::timeline {
         for (auto & it : cp) {
           this-> updateForFollowers (it.first, it.second);
         }
+
+        this-> _db.commit ();
       } catch (const std::runtime_error & err) {
         LOG_ERROR ("Error in timeline update : ", err.what ());
       }
@@ -334,8 +336,6 @@ namespace socialNet::timeline {
       this-> _db.insertOneHome (followers [i], pids [i]);
       nb -= 1;
     }
-
-    this-> _db.commit ();
   }
 
 

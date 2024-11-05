@@ -16,7 +16,7 @@ using namespace socialNet::utils;
 namespace socialNet::compose {
 
   ComposeService::ComposeService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & conf) :
-    actor::ActorBase (name, sys, false)
+    actor::ActorBase (name, sys)
   {
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");

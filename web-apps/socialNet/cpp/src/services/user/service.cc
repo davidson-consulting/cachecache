@@ -12,7 +12,7 @@ using namespace socialNet::utils;
 namespace socialNet::user {
 
   UserService::UserService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
-    actor::ActorBase (name, sys, false)
+    actor::ActorBase (name, sys)
   {
     this-> _db.configure (conf);
 
@@ -73,19 +73,19 @@ namespace socialNet::user {
       auto password = msg ["password"].getStr ();
 
       User u;
-      WITH_LOCK (this-> getMutex ()) {
+      //WITH_LOCK (this-> getMutex ()) {
         if (this-> _db.findByLogin (login, u)) {
           return response (ResponseCode::FORBIDDEN);
         }
-      }
+      //}
 
       memcpy (u.login, login.c_str (), strnlen (login.c_str (), 16));
       memcpy (u.password, password.c_str (), strnlen (password.c_str (), 64));
 
       uint32_t id = 0;
-      WITH_LOCK (this-> getMutex ()) {
+      //WITH_LOCK (this-> getMutex ()) {
         id = this-> _db.insertUser (u);
-      }
+      //}
 
       return response (ResponseCode::OK, std::make_shared <config::Int> (id));
     } catch (std::runtime_error & err) {
@@ -111,9 +111,9 @@ namespace socialNet::user {
 
       User u;
       bool found = false;
-      WITH_LOCK (this-> getMutex ()) {
+      //WITH_LOCK (this-> getMutex ()) {
         found = this-> _db.findByLogin (login, u);
-      }
+      //}
 
       if (found) {
         if (strnlen (u.password, 64) == password.length ()) {
@@ -142,9 +142,9 @@ namespace socialNet::user {
       if (msg.contains ("id")) {
         uint32_t id = msg ["id"].getI ();
         bool found = false;
-        WITH_LOCK (this-> getMutex ()) {
+        //WITH_LOCK (this-> getMutex ()) {
           found = this-> _db.findById (id, u);
-        }
+        //}
 
         if (found) {
           return response (ResponseCode::OK, std::make_shared <config::String> (u.login));
@@ -154,9 +154,9 @@ namespace socialNet::user {
       } else {
         auto login = msg ["login"].getStr ();
         bool found = false;
-        WITH_LOCK (this-> getMutex ()) {
+        //WITH_LOCK (this-> getMutex ()) {
           found = this-> _db.findByLogin (login, u);
-        }
+        //}
 
         if (found) {
           return response (ResponseCode::OK, std::make_shared <config::Int> (u.id));
@@ -201,9 +201,9 @@ namespace socialNet::user {
       while (stream.readOr (0) == 1) {
         auto login = stream.readStr ();
         bool found = false;
-        WITH_LOCK (this-> getMutex ()) {
+        //WITH_LOCK (this-> getMutex ()) {
           found = this-> _db.findByLogin (login, u);
-        }
+        //}
 
         if (found) {
           stream.writeU8 (1);
@@ -224,9 +224,9 @@ namespace socialNet::user {
       while (stream.readOr (0) == 1) {
         auto id = stream.readU32 ();
         bool found = false;
-        WITH_LOCK (this-> getMutex ()) {
+        //WITH_LOCK (this-> getMutex ()) {
           found = this-> _db.findById (id, u);
-        }
+        //}
 
         if (found) {
           stream.writeU8 (1);
