@@ -56,6 +56,13 @@ namespace socialNet {
       webPort = cfg ["server"].getOr ("port", webPort);
     }
 
+    if (cfg.contains ("cache")) {
+      auto addr = cfg["cache"].getOr ("addr", "localhost");
+      auto port = cfg["cache"].getOr ("port", 6650);
+
+      this-> _cache = std::make_shared <socialNet::utils::CacheClient> (addr, port);
+    }
+
     auto create = create_webserver (webPort)
       .log_access (custom_log_access)
       .not_found_resource (custom_not_found)
@@ -134,6 +141,10 @@ namespace socialNet {
 
   std::shared_ptr <rd_utils::concurrency::actor::ActorRef> FrontServer::getRegistry () {
     return this-> _registry;
+  }
+
+  std::shared_ptr <socialNet::utils::CacheClient> FrontServer::getCache () {
+    return this-> _cache;
   }
 
   void FrontServer::dispose () {

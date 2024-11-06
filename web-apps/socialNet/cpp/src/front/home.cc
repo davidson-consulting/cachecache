@@ -52,7 +52,14 @@ namespace socialNet {
       int64_t page = std::atoi (std::string (req.get_arg ("page")).c_str ());
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
 
-      LOG_DEBUG ("Try get user posts : ", userId, " ", page, " ", nb);
+      std::string rqt;
+      if (this-> _context-> getCache () != nullptr) {
+        rqt = std::string ("home/") + std::string (req.get_arg ("user_id")) + "/" + std::string (req.get_arg ("page")) + "/" + std::string (req.get_arg ("nb"));
+        std::string result;
+        if (this-> _context-> getCache ()-> get (rqt, result)) {
+          return std::make_shared <httpserver::string_response> (result, 200, "text/json");
+        }
+      }
 
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
@@ -83,10 +90,12 @@ namespace socialNet {
 
         auto finalResult = result.dump ();
         if (finalResult == "null") {
-          return std::make_shared <httpserver::string_response> ("{}", 200, "text/json");
-        } else {
-          return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
+          finalResult = "{}";
+        } else if (this-> _context-> getCache () != nullptr) {
+          this-> _context-> getCache ()-> set (rqt, reinterpret_cast <const uint8_t*> (finalResult.c_str ()), finalResult.length ());
         }
+
+        return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
       }
     } catch (...) {}
 

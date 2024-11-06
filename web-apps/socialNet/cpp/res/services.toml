@@ -12,29 +12,41 @@ name = "registry"
 addr = "localhost"
 port = 0
 
-[db]
+[services.user]
+nb = 4
+db = "mysql"
+#cache = "fst"
+
+[services.timeline]
+nb = 4
+db = "mysql"
+
+[services.short]
+nb = 1
+db = "mysql"
+
+[services.social]
+nb = 4
+db = "mysql"
+
+[services.post]
+nb = 4
+db = "mysql"
+#cache = "fst"
+
+[services.compose]
+nb = 4
+#cache = "fst"
+
+[services.text]
+nb = 4
+
+[db.mysql]
 name = "socialNet"
-addr = "192.168.1.17"
+addr = "127.0.0.1"
 user = "root"
 pass = ""
 
-[services.user]
-nb = 10
-
-[services.timeline]
-nb = 1
-
-[services.short]
-nb = 10
-
-[services.text]
-nb= 1
-
-[services.social]
-nb = 10
-
-[services.compose]
-nb = 1
-
-[services.post]
-nb = 10
+# [cache.fst]
+# addr="localhost"
+# port = 6650

@@ -136,7 +136,7 @@ namespace socialNet::utils {
      * Connect to the database
      * @throws: if fails
      */
-    void connect ();
+    void connect (uint32_t timeout = 2);
 
     /**
      * Configure the autocommit of the DB

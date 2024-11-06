@@ -18,15 +18,21 @@ namespace socialNet::post {
    * ====================================================================================================
    */
 
-  void PostDatabase::configure (const rd_utils::utils::config::ConfigNode & conf) {
-    auto dbName = conf ["db"].getOr ("name", "socialNet");
-    auto dbAddr = conf ["db"].getOr ("addr", "localhost");
-    auto dbUser = conf ["db"].getOr ("user", "root");
-    auto dbPass = conf ["db"].getOr ("pass", "root");
+  void PostDatabase::configure (const std::string & db, const std::string & ch, const rd_utils::utils::config::ConfigNode & conf) {
+    auto dbName = conf ["db"][db].getOr ("name", "socialNet");
+    auto dbAddr = conf ["db"][db].getOr ("addr", "localhost");
+    auto dbUser = conf ["db"][db].getOr ("user", "root");
+    auto dbPass = conf ["db"][db].getOr ("pass", "root");
 
     this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbPass, dbName);
     this-> _client-> connect ();
     this-> createTables ();
+
+    if (conf.contains ("cache") && ch != "") {
+      auto cacheAddr = conf["cache"][ch].getOr ("addr", "localhost");
+      auto cachePort = conf["cache"][ch].getOr ("port", 6650);
+      this-> _cache = std::make_shared <socialNet::utils::CacheClient> (cacheAddr, cachePort);
+    }
   }
 
   void PostDatabase::createTables () {
@@ -77,8 +83,9 @@ namespace socialNet::post {
   }
 
   bool PostDatabase::findPost (uint32_t id, Post & p) {
-    ::memset (&p, 0, sizeof (Post));
+    if (this-> findPostInCache (id, p)) return true;
 
+    ::memset (&p, 0, sizeof (Post));
     auto req = this-> _client-> prepare ("SELECT user_id, user_login, text FROM post where id=?");
     req-> setParam (0, &id);
     req-> setResult (0, &p.userId);
@@ -90,6 +97,7 @@ namespace socialNet::post {
     if (req-> next ()) {
       req.reset ();
       this-> findTags (id, p.tags, p.nbTags);
+      this-> insertPostInCache (id, p);
 
       return true;
     }
@@ -97,10 +105,10 @@ namespace socialNet::post {
     return false;
   }
 
-  /**
+  /*!
    * ====================================================================================================
    * ====================================================================================================
-   * ==============================              TAGS             =======================================
+   * ======================================          TAGS          ======================================
    * ====================================================================================================
    * ====================================================================================================
    */
@@ -132,6 +140,34 @@ namespace socialNet::post {
       tags [nbTags] = tagId;
       nbTags += 1;
     }
+  }
+
+  /*!
+   * ====================================================================================================
+   * ====================================================================================================
+   * =====================================          CACHE          ======================================
+   * ====================================================================================================
+   * ====================================================================================================
+   */
+
+  bool PostDatabase::findPostInCache (uint32_t id, Post & p) {
+    if (this-> _cache == nullptr) return false;
+    if (this-> _cache-> get ("post/" + std::to_string (id), reinterpret_cast <uint8_t*> (&p), sizeof (Post))) {
+      this-> _hit += 1;
+      if (this-> _hit % 1000 == 0) LOG_INFO ("Hit : ", this-> _hit, " ", this-> _fail);
+      return true;
+    }
+
+    this-> _fail += 1;
+    if (this-> _fail % 1000 == 0) LOG_INFO ("Hit : ", this-> _hit, " ", this-> _fail);
+    return false;
+  }
+
+  void PostDatabase::insertPostInCache (uint32_t id, Post & p) {
+    if (this-> _cache == nullptr) return;
+
+    auto log = "post/" + std::to_string (id);
+    this-> _cache-> set (log, reinterpret_cast<const uint8_t*> (&p), sizeof (Post));
   }
 
 }
