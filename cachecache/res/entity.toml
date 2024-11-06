@@ -22,5 +22,6 @@ port = 6650 # port of the tcp server
 # Configure cache entity default values
 # @optional
 [cache]
-ttl = 5
-# size = 1024 # the guarantee request size in MB
+ttl = 600
+size = 12
+unit = "MB"

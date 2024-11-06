@@ -85,6 +85,13 @@ namespace cachecache::instance {
                 rd_utils::utils::MemorySize getMaxSize () const;
 
                 /**
+                 * @returns: the current size of the main cache pool
+                 *      (can be lower than maximum size as cache get
+                 *      reconfigured by the supervisor)
+                 */
+                rd_utils::utils::MemorySize getSize () const;
+
+                /**
                  * @returns: the memory actually used by the cache
                  */
                 rd_utils::utils::MemorySize getCurrentMemoryUsage () const;

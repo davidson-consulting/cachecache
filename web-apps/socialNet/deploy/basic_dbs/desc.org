@@ -1,0 +1,14 @@
+#+title: Description
+
+
+* Content
+
+This folder contains default databases used to replicate deployements.
+
+- three_subs_20k.sql: Contains a default social graph with no posts with 20K users,
+  where each user is subscrided exactly to three other users; A user can have
+  more than three followers.
+
+- zip_subs_1k.sql: Contains a default social graph with no posts, with 1K users,
+  where the users subscription follows a zip law. (i.e. all users are subscribed
+  to the first user, half to the seconds, a third to the third, etc.)
