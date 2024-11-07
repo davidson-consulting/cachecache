@@ -14,11 +14,17 @@ namespace socialNet::user {
   UserService::UserService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
     actor::ActorBase (name, sys)
   {
-    this-> _db.configure (conf);
+    CONF_LET (dbName, conf ["services"]["user"]["db"].getStr (), std::string ("mysql"));
+    CONF_LET (chName, conf ["services"]["user"]["cache"].getStr (), std::string (""));
+
+    this-> _db.configure (dbName, chName, conf);
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
-    socialNet::registerService (this-> _registry, "user", name, sys-> port (), this-> _iface);
+  }
+
+  void UserService::onStart () {
+    socialNet::registerService (this-> _registry, "user", this-> _name, this-> _system-> port (), this-> _iface);
   }
 
   void UserService::onMessage (const config::ConfigNode & msg) {

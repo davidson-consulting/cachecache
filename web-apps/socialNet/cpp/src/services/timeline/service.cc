@@ -20,22 +20,26 @@ namespace socialNet::timeline {
     , _routine (0, nullptr)
     , _running (false)
   {
-    this-> _db.configure (conf);
-    this-> _req100 = this-> _db.prepareBuffered (MAX_NB_INSERT);
-    this-> _req10 = this-> _db.prepareBuffered (10);
+    CONF_LET (dbName, conf["services"]["timeline"]["db"].getStr (), std::string ("mysql"));
+    CONF_LET (chName, conf["services"]["timeline"]["cache"].getStr (), std::string (""));
+    this-> _insertDb.configure (dbName, chName, conf);
+    this-> _req100 = this-> _insertDb.prepareBuffered (MAX_NB_INSERT);
+    this-> _req10 = this-> _insertDb.prepareBuffered (10);
+
+    this-> _readDb.configure (dbName, chName, conf);
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
     this-> _secret = conf ["auth"]["secret"].getStr ();
     this-> _issuer = conf ["auth"].getOr ("issuer", "auth0");
     this-> _freq = conf ["services"]["timeline"].getOr ("freq", 1.0f);
-
-    socialNet::registerService (this-> _registry, "timeline", name, sys-> port (), this-> _iface);
   }
 
   void TimelineService::onStart () {
     this-> _running  = true;
     this-> _routine = concurrency::spawn (this, &TimelineService::treatRoutine);
+
+    socialNet::registerService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
   }
 
   void TimelineService::onQuit () {
@@ -147,7 +151,7 @@ namespace socialNet::timeline {
   std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::countPosts (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      auto nb = this-> _db.countPosts (uid);
+      auto nb = this-> _readDb.countPosts (uid);
 
       return response (ResponseCode::OK, std::make_shared <config::Int> (nb));
     } catch (std::runtime_error & err) {
@@ -159,7 +163,7 @@ namespace socialNet::timeline {
   std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::countHome (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      auto nb = this-> _db.countHome (uid);
+      auto nb = this-> _readDb.countHome (uid);
 
       return response (ResponseCode::OK, std::make_shared <config::Int> (nb));
     } catch (std::runtime_error & err) {
@@ -200,7 +204,7 @@ namespace socialNet::timeline {
       if (page >= 0) page *= nb;
 
       uint32_t pid;
-      auto statement = this-> _db.prepareFindHome (&pid, &uid, &page, &nb);
+      auto statement = this-> _readDb.prepareFindHome (&pid, &uid, &page, &nb);
       statement-> execute ();
 
       stream.writeU32 (ResponseCode::OK);
@@ -223,7 +227,7 @@ namespace socialNet::timeline {
       if (page >= 0) page *= nb;
 
       uint32_t pid;
-      auto statement = this-> _db.prepareFindPosts (&pid, &uid, &page, &nb);
+      auto statement = this-> _readDb.prepareFindPosts (&pid, &uid, &page, &nb);
       statement-> execute ();
 
       stream.writeU32 (ResponseCode::OK);
@@ -252,7 +256,7 @@ namespace socialNet::timeline {
     concurrency::timer t;
     while (this-> _running) {
       t.reset ();
-      LOG_INFO ("Timeline iteration");
+      LOG_DEBUG ("Timeline iteration");
       LOG_DEBUG ("Timeline wait lock");
 
       try {
@@ -265,7 +269,7 @@ namespace socialNet::timeline {
           this-> updateForFollowers (it.first, it.second);
         }
 
-        this-> _db.commit ();
+        this-> _insertDb.commit ();
       } catch (const std::runtime_error & err) {
         LOG_ERROR ("Error in timeline update : ", err.what ());
       }
@@ -273,7 +277,7 @@ namespace socialNet::timeline {
       auto took = t.time_since_start ();
       auto suppose = 1.0f / this-> _freq;
       if (took < suppose) {
-        LOG_INFO ("Sleep ", suppose - took);
+        LOG_DEBUG ("Sleep ", suppose - took);
         if (this-> _routineSleeping.wait (suppose - took)) {
           LOG_INFO ("Interupted");
           return;
@@ -294,10 +298,10 @@ namespace socialNet::timeline {
     auto followStreamReq = socialService-> requestStream (req);
 
     for (auto up : updates) {
-      this-> _db.insertOneHome (uid, up.pid);
-      this-> _db.insertOnePost (uid, up.pid);
+      this-> _insertDb.insertOneHome (uid, up.pid);
+      this-> _insertDb.insertOnePost (uid, up.pid);
       for (auto taggedId : up.tagged) {
-        this-> _db.insertOneHome (taggedId, up.pid);
+        this-> _insertDb.insertOneHome (taggedId, up.pid);
       }
     }
 
@@ -319,7 +323,7 @@ namespace socialNet::timeline {
           nb += 1;
 
           if (nb == MAX_NB_INSERT) { // insert 100 per 100
-            this-> _db.executeBuffered (this-> _req100, followers, pids, MAX_NB_INSERT);
+            this-> _insertDb.executeBuffered (this-> _req100, followers, pids, MAX_NB_INSERT);
             nb = 0;
           }
         }
@@ -328,12 +332,12 @@ namespace socialNet::timeline {
 
     uint32_t i = 0;
     for (; nb >= 10 ; i += 10) {
-      this-> _db.executeBuffered (this-> _req10, &followers[i], &pids[i], 10);
+      this-> _insertDb.executeBuffered (this-> _req10, &followers[i], &pids[i], 10);
       nb -= 10;
     }
 
     for (; nb > 0 ; i++) {
-      this-> _db.insertOneHome (followers [i], pids [i]);
+      this-> _insertDb.insertOneHome (followers [i], pids [i]);
       nb -= 1;
     }
   }

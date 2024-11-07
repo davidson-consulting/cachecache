@@ -31,7 +31,8 @@ namespace socialNet::timeline {
     std::map <uint32_t, std::vector <PostUpdate> > _toUpdates;
     std::string _iface;
 
-    TimelineDatabase _db;
+    TimelineDatabase _insertDb;
+    TimelineDatabase _readDb;
 
     std::string _issuer;
     std::string _secret;
@@ -46,7 +47,7 @@ namespace socialNet::timeline {
      */
     TimelineService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf);
 
-    void onStart ();
+    void onStart () override;
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 

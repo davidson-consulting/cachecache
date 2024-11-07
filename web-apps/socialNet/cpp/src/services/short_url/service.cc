@@ -24,11 +24,18 @@ namespace socialNet::short_url {
     actor::ActorBase (name, sys)
   {
     srand (time (NULL));
-    this-> _db.configure (conf);
+
+    CONF_LET (dbName, conf ["services"]["short"]["db"].getStr (), std::string ("mysql"));
+    CONF_LET (chName, conf ["services"]["short"]["cache"].getStr (), std::string (""));
+
+    this-> _db.configure (dbName, chName, conf);
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
-    socialNet::registerService (this-> _registry, "short_url", name, sys-> port (), this-> _iface);
+  }
+
+  void ShortUrlService::onStart () {
+    socialNet::registerService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
   }
 
   void ShortUrlService::onMessage (const config::ConfigNode & msg) {

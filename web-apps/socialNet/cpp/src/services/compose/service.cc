@@ -22,8 +22,10 @@ namespace socialNet::compose {
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
     this-> _secret = conf ["auth"]["secret"].getStr ();
     this-> _issuer = conf ["auth"].getOr ("issuer", "auth0");
+  }
 
-    socialNet::registerService (this-> _registry, "compose", name, sys-> port (), this-> _iface);
+  void ComposeService::onStart () {
+    socialNet::registerService (this-> _registry, "compose", this-> _name, this-> _system-> port (), this-> _iface);
   }
 
   void ComposeService::onMessage (const config::ConfigNode & msg) {

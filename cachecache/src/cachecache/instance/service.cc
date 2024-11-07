@@ -253,7 +253,7 @@ namespace cachecache::instance {
         iface = conf ["sys"].getOr ("iface", "lo");
       } else iface = "lo";
 
-      this-> _supervisor = this-> _system-> remoteActor (sName, sAddr + ":" + std::to_string (sPort));
+      this-> _supervisor = this-> _system-> remoteActor (sName, rd_utils::net::SockAddrV4 (sAddr, sPort));
       this-> _ifaceAddr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
 
       auto msg = config::Dict ()
@@ -333,7 +333,8 @@ namespace cachecache::instance {
   }
 
   void CacheService::onSet (net::TcpSession & session) {
-    uint32_t keyLen = session-> receiveI32 ();
+    rd_utils::concurrency::timer t;
+    uint32_t keyLen = session-> receiveU32 ();
 
     if (keyLen > Limits::MAX_KEY) {
       LOG_ERROR ("Key too large : ", keyLen);
@@ -342,11 +343,16 @@ namespace cachecache::instance {
     }
 
     std::string key = this-> readStr (session, keyLen);
-    this-> _entity-> insert (key, session);
+    if (this-> _entity-> insert (key, session)) {
+      LOG_DEBUG ("INSERT : ", t.time_since_start ());
+    } else {
+      LOG_DEBUG ("FAILED : ", t.time_since_start ());
+    }
   }
 
   void CacheService::onGet (net::TcpSession & session) {
-    uint32_t keyLen = session-> receiveI32 ();
+    rd_utils::concurrency::timer t;
+    uint32_t keyLen = session-> receiveU32 ();
     if (keyLen > Limits::MAX_KEY) {
       LOG_ERROR ("Key too large : ", keyLen);
       session-> close ();
@@ -354,18 +360,23 @@ namespace cachecache::instance {
     }
 
     std::string key = this-> readStr (session, keyLen);
-    this-> _entity-> find (key, session);
+    if (this-> _entity-> find (key, session)) {
+      LOG_DEBUG ("FOUND : ", t.time_since_start ());
+    } else {
+      LOG_DEBUG ("NOT FOUND : ", t.time_since_start ());
+    }
   }
 
   std::string CacheService::readStr (net::TcpSession & session, uint32_t resLen) {
     std::stringstream ss;
     char buffer [1024];
     while (resLen > 0) {
-      uint32_t rest = std::min ((uint32_t) 1024, resLen);
+      uint32_t rest = std::min ((uint32_t) 1023, resLen);
       if (!session-> receiveRaw<char> (buffer, rest)) {
         return "";
       }
 
+      buffer [rest] = 0;
       ss << buffer;
       resLen -= rest;
     }

@@ -4,9 +4,10 @@
 #include <cstdint>
 #include <memory>
 #include <rd_utils/memory/cache/_.hh>
-#include <utils/mysql/client.hh>
 #include <vector>
 
+#include <utils/mysql/client.hh>
+#include <utils/cache/client.hh>
 
 namespace socialNet::social_graph {
 
@@ -21,6 +22,9 @@ namespace socialNet::social_graph {
     // The client connection to the DB
     std::shared_ptr <socialNet::utils::MysqlClient> _client;
 
+    // The connection to the cache
+    std::shared_ptr <socialNet::utils::CacheClient> _cache;
+
   public:
 
     /**
@@ -32,7 +36,7 @@ namespace socialNet::social_graph {
     /**
      * Configure the database
      */
-    void configure (const rd_utils::utils::config::ConfigNode & conf);
+    void configure (const std::string & db, const std::string & ch, const rd_utils::utils::config::ConfigNode & conf);
 
     /**
      * Insert a new post in the DB

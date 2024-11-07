@@ -185,7 +185,7 @@ namespace socialNet::utils {
     , _conn (nullptr)
   {}
 
-  void MysqlClient::connect () {
+  void MysqlClient::connect (uint32_t timeout) {
     WITH_LOCK (__MUTEX__) {
       __OPENED__ += 1;
       if (__OPENED__ == 1) {
@@ -196,6 +196,7 @@ namespace socialNet::utils {
     }
 
     this-> _conn = mysql_init (nullptr);
+    mysql_options(this-> _conn, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
     auto code = mysql_real_connect (this-> _conn, this-> _server.c_str (), this-> _user.c_str (), this-> _password.c_str (), this-> _db.c_str (), 0, nullptr, 0);
     if (code == 0) {
       auto msg = std::string (mysql_error (this-> _conn));

@@ -29,6 +29,8 @@ namespace socialNet::post {
      */
     PostStorageService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf);
 
+    void onStart () override;
+
     /**
      * Request for insertions
      */

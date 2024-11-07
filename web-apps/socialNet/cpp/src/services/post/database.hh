@@ -4,8 +4,10 @@
 #include <cstdint>
 #include <memory>
 #include <rd_utils/memory/cache/_.hh>
-#include <utils/mysql/client.hh>
 #include <vector>
+
+#include <utils/mysql/client.hh>
+#include <utils/cache/client.hh>
 
 #define MAX_TAGS 16
 #define LOGIN_LEN 16
@@ -27,6 +29,12 @@ namespace socialNet::post {
     // The client connection to the DB
     std::shared_ptr <socialNet::utils::MysqlClient> _client;
 
+    // The connection to the cache
+    std::shared_ptr <socialNet::utils::CacheClient> _cache;
+
+    uint64_t _hit = 0;
+    uint64_t _fail = 0;
+
   public:
 
     /**
@@ -38,7 +46,7 @@ namespace socialNet::post {
     /**
      * Configure the database
      */
-    void configure (const rd_utils::utils::config::ConfigNode & configPath);
+    void configure (const std::string & dbName, const std::string & chName, const rd_utils::utils::config::ConfigNode & configPath);
 
     /**
      * Insert a new post in the DB
@@ -80,6 +88,16 @@ namespace socialNet::post {
      * Create the post and tags tables
      */
     void createTables ();
+
+    /**
+     * Find a post in the cache
+     */
+    bool findPostInCache (uint32_t id, Post & p);
+
+    /**
+     * Insert a post in the cache
+     */
+    void insertPostInCache (uint32_t id, Post & p);
 
   };
 

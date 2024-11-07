@@ -5,6 +5,7 @@
 #include <memory>
 #include <rd_utils/memory/cache/_.hh>
 #include <utils/mysql/client.hh>
+#include <utils/cache/client.hh>
 #include <vector>
 
 
@@ -25,6 +26,12 @@ namespace socialNet::user {
     // The client connection to the DB
     std::shared_ptr <socialNet::utils::MysqlClient> _client;
 
+    // The connection to the cache
+    std::shared_ptr <socialNet::utils::CacheClient> _cache;
+
+    uint64_t _hit = 0;
+    uint64_t _fail = 0;
+
   public:
 
     /**
@@ -36,7 +43,7 @@ namespace socialNet::user {
     /**
      * Configure the database
      */
-    void configure (const rd_utils::utils::config::ConfigNode & configPath);
+    void configure (const std::string & db, const std::string & ch, const rd_utils::utils::config::ConfigNode & cfg);
 
     /**
      * Insert a new user in the db
@@ -59,6 +66,26 @@ namespace socialNet::user {
      * Create the post and tags tables
      */
     void createTables ();
+
+    /**
+     * Find the user in the cache
+     */
+    bool findByLoginInCache (const std::string & login, User & u);
+
+    /**
+     * Insert a user in the cache
+     */
+    void insertByLoginInCache (User & u);
+
+    /**
+     * Find the user in the cache
+     */
+    bool findByIdInCache (uint32_t id, User & u);
+
+    /**
+     * Insert a user in the cache
+     */
+    void insertByIdInCache (User & u);
 
   };
 

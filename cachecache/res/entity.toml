@@ -3,9 +3,9 @@
 [sys]
 addr = "0.0.0.0" # accepted connections
 port = 0 # port of the tcp server
-instances = 2 # number of cache instances to spawn
+instances = 1 # number of cache instances to spawn
 # nb-threads = 1 # number of threads in the system (-1 means nb cpu cores), only one required
-# log-lvl = "info" # log level, info, debug, etc.
+log-lvl = "debug" # log level, info, debug, etc.
 
 # Connection to the supervisor
 # @mandatory
@@ -17,7 +17,7 @@ port = 9090 # its port
 # @optional
 [service]
 addr = "0.0.0.0" # accepted connections
-port = 38287 # port of the tcp server
+port = 6650 # port of the tcp server
 
 # Configure cache entity default values
 # @optional

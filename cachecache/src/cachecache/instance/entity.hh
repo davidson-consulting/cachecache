@@ -102,7 +102,7 @@ namespace cachecache::instance {
                  *    - key: the key to insert
                  *    - session: the session that will send the value
                  */
-                void insert (const std::string & key, rd_utils::net::TcpSession & session);
+                bool insert (const std::string & key, rd_utils::net::TcpSession & session);
 
                 /**
                  * Retreive a value
@@ -110,7 +110,7 @@ namespace cachecache::instance {
                  *    - key: the key to find
                  *    - session: the session to which the value will be sent
                  */
-                void find (const std::string & key, rd_utils::net::TcpSession & session);
+                bool find (const std::string & key, rd_utils::net::TcpSession & session);
 
                 /**
                  * Dispose all content of the cache, and free all handles

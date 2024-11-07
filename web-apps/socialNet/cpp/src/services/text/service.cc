@@ -13,11 +13,14 @@ using namespace socialNet::utils;
 namespace socialNet::text {
 
   TextService::TextService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
-    actor::ActorBase (name, sys, false)
+    actor::ActorBase (name, sys)
   {
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
-    socialNet::registerService (this-> _registry, "text", name, sys-> port (), this-> _iface);
+  }
+
+  void TextService::onStart () {
+    socialNet::registerService (this-> _registry, "text", this-> _name, this-> _system-> port (), this-> _iface);
   }
 
   void TextService::onMessage (const config::ConfigNode & msg) {
@@ -127,7 +130,7 @@ namespace socialNet::text {
           auto found = stream-> readU8 ();
           if (found) {
             auto id = stream-> readU32 ();
-            result.emplace ("@" + user, "<a href=\"{{FRONT}/user/" + std::to_string (id) + "\">@" + user + "</a>");
+            result.emplace ("@" + user, "<a href=\"{{FRONT}}/user/" + std::to_string (id) + "\">@" + user + "</a>");
             tags [result.size () - 1] = id;
           }
         }
@@ -164,7 +167,7 @@ namespace socialNet::text {
           stream-> writeU8 (1);
           stream-> writeStr (url);
           auto str =  stream-> readStr ();
-          result.emplace (url, "<a href=\"{{FRONT}}/url/" + str + "\">" + str + "</a>");
+          result.emplace (url, "<a href=\"{{FRONT}}/api/url/" + str + "\">" + str + "</a>");
         }
 
         stream-> writeU8 (0);

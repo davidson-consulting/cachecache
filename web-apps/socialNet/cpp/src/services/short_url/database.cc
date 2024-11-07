@@ -18,15 +18,21 @@ namespace socialNet::short_url {
    * ====================================================================================================
    */
 
-  void ShortUrlDatabase::configure (const rd_utils::utils::config::ConfigNode & conf) {
-    auto dbName = conf ["db"].getOr ("name", "socialNet");
-    auto dbAddr = conf ["db"].getOr ("addr", "localhost");
-    auto dbUser = conf ["db"].getOr ("user", "root");
-    auto dbPass = conf ["db"].getOr ("pass", "root");
+  void ShortUrlDatabase::configure (const std::string & db, const std::string & ch, const config::ConfigNode & conf) {
+    auto dbName = conf ["db"][db].getOr ("name", "socialNet");
+    auto dbAddr = conf ["db"][db].getOr ("addr", "localhost");
+    auto dbUser = conf ["db"][db].getOr ("user", "root");
+    auto dbPass = conf ["db"][db].getOr ("pass", "root");
 
     this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbPass, dbName);
     this-> _client-> connect ();
     this-> createTables ();
+
+    if (conf.contains ("cache") && ch != "") {
+      auto cacheAddr = conf["cache"][ch].getOr ("addr", "localhost");
+      auto cachePort = conf["cache"][ch].getOr ("port", 6650);
+      this-> _cache = std::make_shared <socialNet::utils::CacheClient> (cacheAddr, cachePort);
+    }
   }
 
   void ShortUrlDatabase::createTables () {

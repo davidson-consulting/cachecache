@@ -23,6 +23,8 @@ namespace socialNet::text {
      */
     TextService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf);
 
+    void onStart () override;
+
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
     void onMessage (const rd_utils::utils::config::ConfigNode&);
