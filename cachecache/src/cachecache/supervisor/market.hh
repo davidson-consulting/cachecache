@@ -4,6 +4,8 @@
 #include <map>
 #include <rd_utils/utils/mem_size.hh>
 
+#include "history.hh"
+
 
 namespace cachecache::supervisor {
 
@@ -26,11 +28,11 @@ namespace cachecache::supervisor {
       // The size given by the market to the cache in KB
       rd_utils::utils::MemorySize size;
 
-      // The current usage of the cache in KB
-      rd_utils::utils::MemorySize usage;
-
-      // Storing the last size to avoid resizing what does not need to be resized
+      // Last given size
       rd_utils::utils::MemorySize last;
+
+      // History of cache memory usage
+      History usages;
 
       // The wallet of the cache
       rd_utils::utils::MemorySize wallet;
