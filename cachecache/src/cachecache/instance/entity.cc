@@ -58,7 +58,7 @@ namespace cachecache::instance {
     try {
       cachelib::LruTailAgeStrategy::Config ageConfig;
       ageConfig.slabProjectionLength = 0; // dont project or estimate tail age
-      ageConfig.numSlabsFreeMem = 1;     // ok to have ~40 MB free memory in unused allocations
+      ageConfig.numSlabsFreeMem = 100;     // ok to have ~40 MB free memory in unused allocations
       this-> _entity-> startNewPoolResizer(std::chrono::milliseconds(500),
                                            99999,
                                            std::make_shared<cachelib::LruTailAgeStrategy> (ageConfig));
@@ -188,53 +188,84 @@ namespace cachecache::instance {
    * ============================================================================================================
    */
 
-  bool  CacheEntity::insert (const std::string & key, rd_utils::net::TcpSession & session) {
-    auto valLen = session-> receiveU32 ();
+  int roundUp (uint64_t numToRound, uint64_t multiple) {
+    if (multiple == 0)
+    return numToRound;
+
+    int remainder = numToRound % multiple;
+    if (remainder == 0)
+    return numToRound;
+
+    return numToRound + multiple - remainder;
+  }
+
+  std::string fillKey (const std::string & key, uint64_t len) {
+    std::stringstream ss;
+    ss << key;
+    for (uint64_t i = key.length () ; i < len ; i++) {
+      ss << "X";
+    }
+
+    return ss.str ();
+  }
+
+
+  bool  CacheEntity::insert (const std::string & key, rd_utils::net::TcpStream& session) {
+    auto valLen = session.receiveU32 ();
     if (valLen > this-> _maxValueSize.bytes ()) {
       LOG_ERROR ("Value for key : ", key, " too large : ", valLen);
-      session-> close ();
+      session.close ();
       return false;
     }
 
     try {
-      size_t toAlloc = valLen + sizeof (int) + sizeof (char);
+      size_t toAlloc = roundUp (valLen + sizeof (int), 8);
       auto handle = this-> _entity-> allocate (this-> _pool, key.c_str (), toAlloc, this-> _ttl);
+
       if (!handle) {
-        LOG_ERROR ("Cannot allocate, cache is full");
-        session-> sendI32 (0);
+        for (uint64_t i = 0 ; i <= 32 ; i++) {
+          toAlloc = roundUp (valLen + sizeof (int), 4 * i);
+          handle = this-> _entity-> allocate (this-> _pool, key.c_str (), toAlloc, this-> _ttl);
+          if (handle != nullptr) break;
+        }
+      }
+
+      if (!handle) {
+        LOG_ERROR ("Cannot allocate, cache is full even after retry : ", valLen + sizeof (int), " ", toAlloc, " ", key, " ", key.size ());
+        session.sendI32 (0);
         return false;
       }
 
-      session-> receiveRaw (static_cast <char*> (handle-> getMemory ()) + sizeof (int), valLen);
-      this-> _entity-> insert (handle);
+      LOG_INFO ("Inserted : ", toAlloc, " ", key, " ", key.size (), " ", this-> getCurrentMemoryUsage ().bytes (), " ", this-> getSize ().bytes ());
+      session.receiveRaw (static_cast <char*> (handle-> getMemory ()) + sizeof (int), valLen);
+      this-> _entity-> insertOrReplace (handle);
+      static_cast<int*> (handle-> getMemory ())[0] = valLen;
 
-      session-> sendI32 (1);
+      session.sendI32 (1);
       return true;
     } catch (const std::exception & e) {
       LOG_ERROR ("Failed to insert key : ", key, " because ", e.what ());
       this-> _entity-> remove (key);
-      session-> close ();
+      session.close ();
       return false;
     }
   }
 
-  bool CacheEntity::find (const std::string & key, rd_utils::net::TcpSession & session) {
+  bool CacheEntity::find (const std::string & key, rd_utils::net::TcpStream& session) {
     try {
       auto handle = this-> _entity-> findToWrite (key.c_str ());
       if (handle != nullptr) {
-        size_t valLen = handle-> getSize () - sizeof (int);
-        session-> sendU32 (valLen - 1);
-        session-> sendRaw (static_cast <const char*> (handle-> getMemory ()) + sizeof (int), valLen - 1);
-
-        *static_cast <int*> (handle-> getMemory ()) = time (NULL);
+        size_t valLen = static_cast <const int*> (handle-> getMemory ())[0];
+        session.sendU32 (valLen);
+        session.sendRaw (static_cast <const char*> (handle-> getMemory ()) + sizeof (int), valLen);
         return true;
       } else {
-        session-> sendI32 (0);
+        session.sendI32 (0);
         return false;
       }
     } catch (std::exception & e) {
       LOG_ERROR ("Failed to find key : ", key, " because ", e.what ());
-      session-> close ();
+      session.close ();
       return false;
     }
   }

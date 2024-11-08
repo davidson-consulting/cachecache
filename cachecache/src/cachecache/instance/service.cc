@@ -320,59 +320,55 @@ namespace cachecache::instance {
 
   void CacheService::onClient (rd_utils::net::TcpSessionKind kind, std::shared_ptr <net::TcpSession> session) {
     try {
-      uint32_t id = (*session)-> receiveI32 ();
+      uint32_t id = session-> getStream ().receiveI32 ();
       if (id == 's') {
-        this-> onSet (*session);
+        this-> onSet (session-> getStream ());
       } else if (id == 'g') {
-        this-> onGet (*session);
+        this-> onGet (session-> getStream ());
       }
     } catch (const std::runtime_error & e) {
       LOG_ERROR ("Client connection reset : ", e.what ());
-      (*session)-> close ();
+      session-> getStream ().close ();
     }
   }
 
-  void CacheService::onSet (net::TcpSession & session) {
+  void CacheService::onSet (net::TcpStream& session) {
     rd_utils::concurrency::timer t;
-    uint32_t keyLen = session-> receiveU32 ();
+    uint32_t keyLen = session.receiveU32 ();
 
     if (keyLen > Limits::MAX_KEY) {
       LOG_ERROR ("Key too large : ", keyLen);
-      session-> close ();
+      session.close ();
       return;
     }
 
     std::string key = this-> readStr (session, keyLen);
-    if (this-> _entity-> insert (key, session)) {
-      LOG_DEBUG ("INSERT : ", t.time_since_start ());
-    } else {
-      LOG_DEBUG ("FAILED : ", t.time_since_start ());
-    }
+    this-> _entity-> insert (key, session);
   }
 
-  void CacheService::onGet (net::TcpSession & session) {
+  void CacheService::onGet (net::TcpStream& session) {
     rd_utils::concurrency::timer t;
-    uint32_t keyLen = session-> receiveU32 ();
+    uint32_t keyLen = session.receiveU32 ();
     if (keyLen > Limits::MAX_KEY) {
       LOG_ERROR ("Key too large : ", keyLen);
-      session-> close ();
+      session.close ();
       return;
     }
 
     std::string key = this-> readStr (session, keyLen);
     if (this-> _entity-> find (key, session)) {
-      LOG_DEBUG ("FOUND : ", t.time_since_start ());
+      LOG_DEBUG ("FOUND : ", t.time_since_start (), " ", key);
     } else {
-      LOG_DEBUG ("NOT FOUND : ", t.time_since_start ());
+      LOG_DEBUG ("NOT FOUND : ", t.time_since_start (), " ", key);
     }
   }
 
-  std::string CacheService::readStr (net::TcpSession & session, uint32_t resLen) {
+  std::string CacheService::readStr (net::TcpStream& stream, uint32_t resLen) {
     std::stringstream ss;
     char buffer [1024];
     while (resLen > 0) {
       uint32_t rest = std::min ((uint32_t) 1023, resLen);
-      if (!session-> receiveRaw<char> (buffer, rest)) {
+      if (!stream.receiveRaw <char> (buffer, rest)) {
         return "";
       }
 

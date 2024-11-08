@@ -19,8 +19,14 @@ class SocialNetworkSimulation extends Simulation {
   val SEED = 0
   val randAlpha = new Random (SEED).alphanumeric
   val randNumber = new Random (SEED)
+  val NB_USERS = 20000;
+  val NB_NEW_POSTS = 100
+  val NB_READS = 10
+  val NB_AT_ONCE = 10
+  val PAGE_SIZE = 50
+  val SIM_SIZE = 1
 
-  val (feeder, userName, nbUsers) = initGlobals ()
+  val feeder = initGlobals ()
 
   /**
     *  ==================================================================================
@@ -31,13 +37,13 @@ class SocialNetworkSimulation extends Simulation {
     */
 
   def initGlobals () = {
-    val f = csv ("user.csv")
-    var userName : Map[Int, String] = Map ()
-    for (i <- f.readRecords) {
-      userName = userName + (i ("user_id").asInstanceOf[String].toInt-> i ("user_name").asInstanceOf [String])
+    var lst : List[Map[String, String]] = List ()
+    for (i <- 1 to NB_USERS) {
+      lst = lst :+ Map("user_id" -> s"$i", "user_name" -> s"user_$i")
     }
 
-    (f.circular, userName, userName.size)
+    val feeder = lst.iterator
+    (feeder)
   }
 
   /**
@@ -110,20 +116,17 @@ class SocialNetworkSimulation extends Simulation {
     len = randNumber.nextInt (50) + 5
     val e = randomString (len)
 
-
-    val users = selectNInM (3, nbUsers)
+    val users = selectNInM (3, NB_USERS)
     for (u <- users) {
-      if (userName.contains (u)) {
-        val name = userName (u)
-        b = b + " @" + name + " "
-      }
+      val name = s"user_$u"
+      b = b + " @" + name + " "
     }
 
     b + " " + e + " https://github.com/GNU-Ymir/bootstrap"
   }
 
   def randomItems () = {
-    50
+    20
   }
 
 
@@ -138,9 +141,9 @@ class SocialNetworkSimulation extends Simulation {
 
   def readHomeTimelineTask () = {
     feed (feeder)
-      .repeat (100, "page") {
+      .repeat (NB_READS, "page") {
         exec { session =>
-          var sess = session.set ("items", randomItems ())
+          var sess = session.set ("items", PAGE_SIZE)
           sess = sess.set ("page_index", randNumber.nextInt (10))
           sess
         }
@@ -183,7 +186,7 @@ class SocialNetworkSimulation extends Simulation {
             jsonPath ("$.user_id").saveAs ("uid")
           )
       )
-      .repeat (20) {
+      .repeat (NB_NEW_POSTS) {
         exec { session =>
           var newSession = session.set ("post", generateNewPost ())
           newSession
@@ -201,17 +204,6 @@ class SocialNetworkSimulation extends Simulation {
       .pause (1)
   }
 
-  // def registerNewUserTask () = {
-  //   feed (feeder)
-  //     .exec (
-  //       http ("new")
-  //         .post ("/new")
-  //         .header ("Content-type", "application/json")
-  //         .body (StringBody ("{\"login\" : \"#{user_name}\", \"password\" : \"pass\"}"))
-  //         .check ()
-  //     )
-  // }
-
   /*!
   * ====================================================================================================
   * ====================================================================================================
@@ -220,11 +212,8 @@ class SocialNetworkSimulation extends Simulation {
   * ====================================================================================================
   */
 
-
-
   val readHome = readHomeTimelineTask ();
   val newPost = postNewPostTask ();
-  // val registerUser = registerNewUserTask ();
 
   val httpProtocol =
     http.baseUrl("http://127.0.0.1:8080")
@@ -238,29 +227,13 @@ class SocialNetworkSimulation extends Simulation {
 
   val write = scenario ("Users").exec (newPost);
   val read = scenario ("Read").exec (readHome);
-  // val register = scenario ("Register").exec (registerUser);
-  // val follow = scenario ("Follow").exec (followUser);
-
-  // setUp (
-  //   register.inject (atOnceUsers (100))
-  // ).protocols (httpProtocol);
 
   setUp (
-    read.inject (
-      atOnceUsers (10)
+    write.inject (
+      constantConcurrentUsers(NB_AT_ONCE).during(SIM_SIZE)
+      // nothingFor (2),
+      // atOnceUsers (NB_AT_ONCE)
     )
   ).protocols (httpProtocol)
-
-  // setUp (
-  //   read.inject (
-  //     atOnceUsers (10),
-  //     nothingFor (10),
-  //     atOnceUsers (10),
-  //     nothingFor (10),
-  //     atOnceUsers (10),
-  //     nothingFor (10),
-  //     atOnceUsers (10)
-  //   )
-  // ).protocols (httpProtocol);
 
 }

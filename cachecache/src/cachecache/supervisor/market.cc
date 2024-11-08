@@ -97,9 +97,9 @@ namespace cachecache::supervisor {
     }
   }
 
-  std::map<uint64_t, MemorySize> Market::sellBaseMemory(
-      MemorySize& market
-      , std::map<uint64_t, MemorySize>& buyers) {
+  std::map<uint64_t, MemorySize> Market::sellBaseMemory (
+                                                         MemorySize& market
+                                                         , std::map<uint64_t, MemorySize>& buyers) {
     
     std::map<uint64_t, MemorySize> allocated;
     MemorySize max = market;
@@ -114,7 +114,7 @@ namespace cachecache::supervisor {
         float percUsage = size.bytes() == 0 ? 0 : (float) usage.bytes() / (float) size.bytes();
 
         // Can't allocate less than a Slab (4MB)
-        MemorySize min = MemorySize::MB(4);
+        MemorySize min = MemorySize::MB(8);
         
         MemorySize allocation = size;
         if (percUsage > this->_triggerIncrement) {
@@ -140,10 +140,11 @@ namespace cachecache::supervisor {
     return allocated;
   }
 
-  void Market::buyExtraMemory(std::map<uint64_t, MemorySize> & allocated, 
-        std::map<uint64_t, MemorySize> & buyers,
-        MemorySize & market,
-        MemorySize & allNeeded) { 
+  void Market::buyExtraMemory (std::map<uint64_t, MemorySize> & allocated,
+                               std::map<uint64_t, MemorySize> & buyers,
+                               MemorySize & market,
+                               MemorySize & allNeeded) {
+
     std::map<uint64_t, MemorySize> failed;
     
     MemorySize defaultWindowSize = MemorySize::MB(0);

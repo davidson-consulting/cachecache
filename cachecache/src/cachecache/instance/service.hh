@@ -90,14 +90,14 @@ namespace cachecache::instance {
                  * @params:
                  *    - session: the session with a client
                  */
-                void onSet (rd_utils::net::TcpSession& session);
+                void onSet (rd_utils::net::TcpStream& session);
 
                 /**
                  * Client request a get
                  * @params:
                  *    - session: the session with a client
                  */
-                void onGet (rd_utils::net::TcpSession& session);
+                void onGet (rd_utils::net::TcpStream& session);
 
                 /**
                  * Read a string in the session whose size is at most 'size'
@@ -105,7 +105,7 @@ namespace cachecache::instance {
                  *    - session: the opened session to the client
                  *    - size: the size to read
                  */
-                std::string readStr (rd_utils::net::TcpSession & session, uint32_t size);
+                std::string readStr (rd_utils::net::TcpStream& session, uint32_t size);
 
         public:
 
