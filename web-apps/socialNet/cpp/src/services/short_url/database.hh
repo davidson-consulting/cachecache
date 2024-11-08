@@ -71,6 +71,11 @@ namespace socialNet::short_url {
      */
     bool findUrlFromShort (ShortUrl & url);
 
+    /**
+     * Dispose the sql connection
+     */
+    void dispose ();
+
   private:
 
     /**

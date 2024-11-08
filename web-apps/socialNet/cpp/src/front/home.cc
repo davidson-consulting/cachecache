@@ -68,7 +68,7 @@ namespace socialNet {
         .insert ("page", page)
         .insert ("nb", nb);
 
-      auto resultStream = composeService-> requestStream (msg).wait ();
+      auto resultStream = composeService-> requestStream (msg, 100).wait ();
       socialNet::post::Post p;
       if (resultStream != nullptr && resultStream-> readU32 () == 200) {
         json result;
@@ -97,7 +97,9 @@ namespace socialNet {
 
         return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
       }
-    } catch (...) {}
+    } catch (const std::runtime_error & e) {
+      LOG_ERROR ("Failed for request : ", e.what (), req);
+    }
 
     return std::make_shared <httpserver::string_response> ("", 404, "text/plain");
   }

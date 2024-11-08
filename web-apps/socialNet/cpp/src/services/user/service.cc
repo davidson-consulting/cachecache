@@ -42,7 +42,10 @@ namespace socialNet::user {
   void UserService::onQuit () {
     if (this-> _registry != nullptr) {
       socialNet::closeService (this-> _registry, "user", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
     }
+
+    this-> _db.dispose ();
   }
 
   /*!

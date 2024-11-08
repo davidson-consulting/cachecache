@@ -53,7 +53,10 @@ namespace socialNet::short_url {
   void ShortUrlService::onQuit () {
     if (this-> _registry != nullptr) {
       socialNet::closeService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
     }
+
+    this-> _db.dispose ();
   }
 
 

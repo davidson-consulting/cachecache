@@ -46,7 +46,10 @@ namespace socialNet::social_graph {
   void SocialGraphService::onQuit () {
     if (this-> _registry != nullptr) {
       socialNet::closeService (this-> _registry, "social_graph", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
     }
+
+    this-> _db.dispose ();
   }
 
   /*!
@@ -101,7 +104,10 @@ namespace socialNet::social_graph {
     try {
       uint32_t userId = msg ["userId"].getI ();
       uint32_t toWhom = msg ["toWhom"].getI ();
-      if (userId == toWhom) throw std::runtime_error ("Cannot subscribe to self");
+      if (userId == toWhom) {
+        LOG_INFO ("Throw 16");
+        throw std::runtime_error ("Cannot subscribe to self");
+      }
 
       auto sub = Sub {.userId = userId, .toWhom = toWhom};
 
@@ -214,19 +220,31 @@ namespace socialNet::social_graph {
       int32_t nb = msg.getOr ("nb", -1);
       int32_t page = msg.getOr ("page", -1);
       if (page >= 0) page *= nb;
+      if (nb <= 1024 && nb > 0) { // Cacheable
+        auto values = this-> _db.findFollowersCacheable (uid, page, nb);
+        stream.writeU32 (ResponseCode::OK);
 
-      uint32_t rid;
-      auto statement = this-> _db.prepareFindFollowers (&rid, &uid, &page, &nb);
-      statement-> execute ();
+        for (auto & it : values) {
+          stream.writeU8 (1);
+          stream.writeU32 (it);
+        }
+        stream.writeU8 (0);
+      } else { // streaming
+        stream.writeU32 (ResponseCode::OK);
+        uint32_t nb = 2048, page = 0;
+        for (;;) {
+          auto values = this-> _db.findFollowersCacheable (uid, page, nb);
+          for (auto & it : values) {
+            stream.writeU8 (1);
+            stream.writeU32 (it);
+          }
 
-      stream.writeU32 (ResponseCode::OK);
+          if (values.size () != nb) break;
+          page += nb;
+        }
 
-      while (statement-> next () && stream.isOpen ()) {
-        stream.writeU8 (1);
-        stream.writeU32 (rid);
+        stream.writeU8 (0);
       }
-
-      stream.writeU8 (0);
     } catch (std::runtime_error & err) {
       LOG_ERROR ("SocialGraphService::streamFollowers : ", err.what ());
     }
@@ -238,18 +256,29 @@ namespace socialNet::social_graph {
       int32_t nb = msg.getOr ("nb", -1);
       int32_t page = msg.getOr ("page", -1);
       if (page >= 0) page *= nb;
+      if (nb <= 1024 && nb > 0) { // Cacheable
+        auto values = this-> _db.findSubsCacheable (uid, page, nb);
+        stream.writeU32 (ResponseCode::OK);
+        for (auto & it : values) {
+          stream.writeU8 (1);
+          stream.writeU32 (it);
+        }
+        stream.writeU8 (0);
+      } else { // streaming
+        stream.writeU32 (ResponseCode::OK);
+        uint32_t nb = 2048, page = 0;
+        for (;;) {
+          auto values = this-> _db.findSubsCacheable (uid, page, nb);
+          for (auto & it : values) {
+            stream.writeU8 (1);
+            stream.writeU32 (it);
+          }
+          if (values.size () != nb) break;
+          page += nb;
+        }
 
-      uint32_t rid;
-      auto statement = this-> _db.prepareFindSubscriptions (&rid, &uid, &page, &nb);
-      statement-> execute ();
-
-      stream.writeU32 (ResponseCode::OK);
-      while (statement-> next () && stream.isOpen ()) {
-        stream.writeU8 (1);
-        stream.writeU32 (rid);
+        stream.writeU8 (0);
       }
-
-      stream.writeU8 (0);
     } catch (std::runtime_error & err) {
       LOG_ERROR ("SocialGraphService::streamSubs : ", err.what ());
     }

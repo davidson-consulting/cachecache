@@ -24,6 +24,7 @@ namespace socialNet {
     HomeTimelineLenRoute (FrontServer * context);
 
     std::shared_ptr <httpserver::http_response> render (const httpserver::http_request & req);
+
   };
 
 }

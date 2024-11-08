@@ -112,6 +112,41 @@ namespace socialNet::social_graph {
     }
   }
 
+  std::vector <uint32_t> SocialGraphDatabase::findFollowersCacheable (uint32_t uid, int32_t page, int32_t nb) {
+    std::vector <uint32_t> result;
+    result.reserve (nb);
+    if (this-> findFollowersInCache (result, uid, page, nb)) return result;
+
+    uint32_t pid;
+    auto statement = this-> prepareFindFollowers (&pid, &uid, &page, &nb);
+    statement-> execute ();
+    while (statement-> next ()) {
+      result.push_back (pid);
+    }
+
+    this-> insertFollowersInCache (result, uid, page, nb);
+    return result;
+  }
+
+  std::vector <uint32_t> SocialGraphDatabase::findSubsCacheable (uint32_t uid, int32_t page, int32_t nb) {
+    std::vector <uint32_t> result;
+    result.reserve (nb);
+
+    if (this-> findSubsInCache (result, uid, page, nb)) return result;
+
+    uint32_t pid;
+    auto statement = this-> prepareFindSubscriptions (&pid, &uid, &page, &nb);
+    statement-> execute ();
+    while (statement-> next ()) {
+      result.push_back (pid);
+    }
+
+    this-> insertSubsInCache (result, uid, page, nb);
+    return result;
+  }
+
+
+
   uint32_t SocialGraphDatabase::countNbSubs (uint32_t id) {
     auto req = this-> _client-> prepare ("SELECT COUNT(user_id) from subs where user_id=?");
     req-> setParam (0, &id);
@@ -150,5 +185,58 @@ namespace socialNet::social_graph {
     req-> finalize ();
     req-> execute ();
   }
+
+
+  void SocialGraphDatabase::dispose () {
+    this-> _client-> dispose ();
+    this-> _client.reset ();
+    this-> _cache.reset ();
+  }
+
+  /*!
+   * ====================================================================================================
+   * ====================================================================================================
+   * =====================================          CACHE          ======================================
+   * ====================================================================================================
+   * ====================================================================================================
+   */
+
+
+  bool SocialGraphDatabase::findSubsInCache (std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr) return false;
+    if (this-> _cache-> get ("sub_t/" + std::to_string (uid) + "/" + std::to_string (page) + "/" + std::to_string (nb), res)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void SocialGraphDatabase::insertSubsInCache (const std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr) return;
+
+    auto log =  "sub_t/" + std::to_string (uid) + "/" + std::to_string (page) + "/" + std::to_string (nb);
+    this-> _cache-> set (log, reinterpret_cast <const uint8_t*> (res.data ()), res.size () * sizeof (uint32_t));
+  }
+
+  bool SocialGraphDatabase::findFollowersInCache (std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr) return false;
+    if (this-> _cache-> get ("fol_t/" + std::to_string (uid) + "/" + std::to_string (page) + "/" + std::to_string (nb), res)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void SocialGraphDatabase::insertFollowersInCache (const std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr  || res.size () <= 1) return;
+
+    auto log =  "fol_t/" + std::to_string (uid) + "/" + std::to_string (page) + "/" + std::to_string (nb);
+    this-> _cache-> set (log, reinterpret_cast <const uint8_t*> (res.data ()), res.size () * sizeof (uint32_t));
+  }
+
+  bool SocialGraphDatabase::hasCache () const {
+    return this-> _cache != nullptr;
+  }
+
 
 }

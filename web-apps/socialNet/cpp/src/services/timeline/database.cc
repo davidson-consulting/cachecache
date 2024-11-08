@@ -129,6 +129,40 @@ namespace socialNet::timeline {
     }
   }
 
+  std::vector <uint32_t> TimelineDatabase::findHomeCacheable (uint32_t uid, int32_t page, int32_t nb) {
+    std::vector <uint32_t> result;
+    result.reserve (nb);
+
+    if (this-> findHomeInCache (result, uid, page, nb)) return result;
+
+    uint32_t pid;
+    auto statement = this-> prepareFindHome (&pid, &uid, &page, &nb);
+    statement-> execute ();
+    while (statement-> next ()) {
+      result.push_back (pid);
+    }
+
+    this-> insertHomeInCache (result, uid, page, nb);
+    return result;
+  }
+
+  std::vector <uint32_t> TimelineDatabase::findPostCacheable (uint32_t uid, int32_t page, int32_t nb) {
+    std::vector <uint32_t> result;
+    result.reserve (nb);
+
+    if (this-> findPostInCache (result, uid, page, nb)) return result;
+
+    uint32_t pid;
+    auto statement = this-> prepareFindPosts (&pid, &uid, &page, &nb);
+    statement-> execute ();
+    while (statement-> next ()) {
+      result.push_back (pid);
+    }
+
+    this-> insertPostInCache (result, uid, page, nb);
+    return result;
+  }
+
   std::shared_ptr <utils::MysqlClient::Statement> TimelineDatabase::prepareFindPosts (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb) {
     if (*page >= 0) {
       auto req = this-> _client-> prepare ("SELECT post_id from post_timeline where user_id = ? order by id DESC limit ? offset ?");
@@ -177,6 +211,59 @@ namespace socialNet::timeline {
     }
 
     return 0;
+  }
+
+
+  void TimelineDatabase::dispose () {
+    this-> _client-> dispose ();
+    this-> _client.reset ();
+    this-> _cache.reset ();
+  }
+
+
+  /*!
+   * ====================================================================================================
+   * ====================================================================================================
+   * =====================================          CACHE          ======================================
+   * ====================================================================================================
+   * ====================================================================================================
+   */
+
+
+  bool TimelineDatabase::findPostInCache (std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr) return false;
+    if (this-> _cache-> get ("post_t:" + std::to_string (uid) + ":" + std::to_string (page) + ":" + std::to_string (nb), res)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void TimelineDatabase::insertPostInCache (const std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr || res.size () <= 1) return;
+
+    auto log =  "post_t:" + std::to_string (uid) + ":" + std::to_string (page) + ":" + std::to_string (nb);
+    this-> _cache-> set (log, reinterpret_cast <const uint8_t*> (res.data ()), res.size () * sizeof (uint32_t));
+  }
+
+  bool TimelineDatabase::findHomeInCache (std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr) return false;
+    if (this-> _cache-> get ("home_t:" + std::to_string (uid) + ":" + std::to_string (page) + ":" + std::to_string (nb), res)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void TimelineDatabase::insertHomeInCache (const std::vector <uint32_t> & res, uint32_t uid, int32_t page, int32_t nb) {
+    if (this-> _cache == nullptr || res.size () <= 1) return;
+
+    auto log =  "home_t:" + std::to_string (uid) + ":" + std::to_string (page) + ":" + std::to_string (nb);
+    this-> _cache-> set (log, reinterpret_cast <const uint8_t*> (res.data ()), res.size () * sizeof (uint32_t));
+  }
+
+  bool TimelineDatabase::hasCache () const {
+    return this-> _cache != nullptr;
   }
 
 }

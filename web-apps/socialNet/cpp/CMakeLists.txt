@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.8)
 project(socialNetCache)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -g -Wall")
 
 include(FetchContent)
 fetchcontent_declare(jwt-cpp

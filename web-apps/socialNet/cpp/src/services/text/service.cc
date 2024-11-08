@@ -65,7 +65,10 @@ namespace socialNet::text {
   std::shared_ptr <config::ConfigNode> TextService::constructText (const config::ConfigNode & msg) {
     try {
       auto text = msg ["text"].getStr ();
-      if (text.length () > 560) throw std::runtime_error ("Too long");
+      if (text.length () > 560) {
+        LOG_INFO ("Throw 14");
+        throw std::runtime_error ("Too long");
+      }
 
       auto users = this-> findUserMentions (text);
       auto urlMentions = this-> findUrlMentions (text);
@@ -73,10 +76,16 @@ namespace socialNet::text {
       uint32_t tags [16];
       bool succeed = true;
       auto mentions = this-> transformUserTags (users, tags, succeed);
-      if (!succeed) throw std::runtime_error ("failed to find user mentions");
+      if (!succeed) {
+        LOG_INFO ("Throw 15");
+        throw std::runtime_error ("failed to find user mentions");
+      }
 
       auto shorts = this-> transformUrls (urlMentions, succeed);
-      if (!succeed) throw std::runtime_error ("failed to transform urls");
+      if (!succeed) {
+        LOG_INFO ("Throw 16");
+        throw std::runtime_error ("failed to transform urls");
+      }
 
       auto finalText = rd_utils::utils::findAndReplaceAll (text, mentions);
       finalText = rd_utils::utils::findAndReplaceAll (finalText, shorts);
@@ -148,6 +157,7 @@ namespace socialNet::text {
   std::map <std::string, std::string> TextService::transformUrls (const std::vector <std::string> & urls, bool & succeed) {
     succeed = true;
     std::map <std::string, std::string> result;
+
     try {
       if (urls.size () != 0) {
         auto urlService = socialNet::findService (this-> _system, this-> _registry, "short_url");

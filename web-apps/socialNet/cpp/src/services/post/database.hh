@@ -15,91 +15,94 @@
 
 namespace socialNet::post {
 
-  struct Post {
-    uint32_t userId;
-    char userLogin [LOGIN_LEN];
-    char text [TEXT_LEN];
-    uint32_t tags [MAX_TAGS];
-    uint8_t nbTags;
-  };
+    struct Post {
+        uint32_t userId;
+        char userLogin [LOGIN_LEN];
+        char text [TEXT_LEN];
+        uint32_t tags [MAX_TAGS];
+        uint8_t nbTags;
+    };
 
-  class PostDatabase {
-  private:
+    class PostDatabase {
+    private:
 
-    // The client connection to the DB
-    std::shared_ptr <socialNet::utils::MysqlClient> _client;
+        // The client connection to the DB
+        std::shared_ptr <socialNet::utils::MysqlClient> _client;
 
-    // The connection to the cache
-    std::shared_ptr <socialNet::utils::CacheClient> _cache;
+        // The connection to the cache
+        std::shared_ptr <socialNet::utils::CacheClient> _cache;
 
-    uint64_t _hit = 0;
-    uint64_t _fail = 0;
+        uint64_t _hit = 0;
+        uint64_t _fail = 0;
 
-  public:
+    public:
 
-    /**
-     * @params:
-     *    - configPath: path to the configuration file
-     */
-    PostDatabase ();
+        /**
+         * @params:
+         *    - configPath: path to the configuration file
+         */
+        PostDatabase ();
 
-    /**
-     * Configure the database
-     */
-    void configure (const std::string & dbName, const std::string & chName, const rd_utils::utils::config::ConfigNode & configPath);
+        /**
+         * Configure the database
+         */
+        void configure (const std::string & dbName, const std::string & chName, const rd_utils::utils::config::ConfigNode & configPath);
 
-    /**
-     * Insert a new post in the DB
-     * @params:
-     *    - post: the post to insert
-     * @returns: the uniq id of the post
-     */
-    uint32_t insertPost (uint32_t id, const std::string & login, const std::string & message, uint32_t * tags, uint32_t nbTags);
+        /**
+         * Insert a new post in the DB
+         * @params:
+         *    - post: the post to insert
+         * @returns: the uniq id of the post
+         */
+        uint32_t insertPost (uint32_t id, const std::string & login, const std::string & message, uint32_t * tags, uint32_t nbTags);
 
-    /**
-     * Find a post from its uniq Id
-     * @params:
-     *    - postId: the id of the post
-     * @returns:
-     *    - p: the found post (if returning true, unchanged otherwise)
-     *    - return: false iif not found
-     */
-    bool findPost (uint32_t postId, Post & p);
+        /**
+         * Find a post from its uniq Id
+         * @params:
+         *    - postId: the id of the post
+         * @returns:
+         *    - p: the found post (if returning true, unchanged otherwise)
+         *    - return: false iif not found
+         */
+        bool findPost (uint32_t postId, Post & p);
 
-  private:
 
-    /**
-     * Find the tags of a post
-     * @returns:
-     *     - tags: filling the list
-     *     - nbTags: the number of tags (max = 16)
-     */
-    void findTags (uint32_t postId, uint32_t * tags, uint8_t & nbTags);
+        void dispose ();
 
-    /**
-     * Insert a list of user id tagged in a post
-     * @params:
-     *     - postId: the post in which there are tags
-     *     - tags: the list of user id tags
-     */
-    void insertTags (uint32_t postId, uint32_t * tags, uint8_t nbTags);
+    private:
 
-    /**
-     * Create the post and tags tables
-     */
-    void createTables ();
+        /**
+         * Find the tags of a post
+         * @returns:
+         *     - tags: filling the list
+         *     - nbTags: the number of tags (max = 16)
+         */
+        void findTags (uint32_t postId, uint32_t * tags, uint8_t & nbTags);
 
-    /**
-     * Find a post in the cache
-     */
-    bool findPostInCache (uint32_t id, Post & p);
+        /**
+         * Insert a list of user id tagged in a post
+         * @params:
+         *     - postId: the post in which there are tags
+         *     - tags: the list of user id tags
+         */
+        void insertTags (uint32_t postId, uint32_t * tags, uint8_t nbTags);
 
-    /**
-     * Insert a post in the cache
-     */
-    void insertPostInCache (uint32_t id, Post & p);
+        /**
+         * Create the post and tags tables
+         */
+        void createTables ();
 
-  };
+        /**
+         * Find a post in the cache
+         */
+        bool findPostInCache (uint32_t id, Post & p);
+
+        /**
+         * Insert a post in the cache
+         */
+        void insertPostInCache (uint32_t id, Post & p);
+
+    };
 
 }
 

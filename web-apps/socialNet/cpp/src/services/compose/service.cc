@@ -176,9 +176,17 @@ namespace socialNet::compose {
       auto textResReq = textService-> request (textReq);
       auto userResReq = userService-> request (userReq);
 
-      auto textResult = textResReq.wait ();
-
-      if (textResult == nullptr || textResult-> getOr ("code", -1) != ResponseCode::OK) throw std::runtime_error ("Text incorrect");
+      std::shared_ptr <config::ConfigNode> textResult;
+      try {
+        textResult = textResReq.wait ();
+        if (textResult == nullptr || textResult-> getOr ("code", -1) != ResponseCode::OK) {
+          LOG_INFO ("THROW 11");
+          throw std::runtime_error ("Text incorrect");
+        }
+      } catch (const std::runtime_error & err) {
+        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
+        return response (ResponseCode::MALFORMED);
+      }
 
       auto arr = std::make_shared <config::Array> ();
       match ((*textResult) ["content"]["tags"]) {
@@ -189,8 +197,17 @@ namespace socialNet::compose {
         } fo;
       }
 
-      auto userResult = userResReq.wait ();
-      if (userResult == nullptr || userResult-> getOr ("code", -1) != ResponseCode::OK) throw std::runtime_error ("User not found");
+      std::shared_ptr <config::ConfigNode> userResult;
+      try {
+        userResult = userResReq.wait ();
+        if (userResult == nullptr || userResult-> getOr ("code", -1) != ResponseCode::OK) {
+          LOG_INFO ("THROW 13");
+          throw std::runtime_error ("User not found");
+        }
+      } catch (const std::runtime_error & err) {
+        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
+        return response (ResponseCode::MALFORMED);
+      }
 
       auto postReq = config::Dict ()
         .insert ("type", RequestCode::STORE)
@@ -200,12 +217,18 @@ namespace socialNet::compose {
         .insert ("jwt_token", msg ["jwt_token"].getStr ())
         .insert ("tags", arr);
 
-      auto result = postService-> request (postReq).wait ();
-      if (result == nullptr || result-> getOr ("code", -1) != ResponseCode::OK) throw std::runtime_error ("Failed to store");
-
-      return response (ResponseCode::OK);
-    } catch (std::runtime_error & err) {
-      LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, __LINE__, err.what ());
+      try {
+        auto result = postService-> request (postReq).wait ();
+        if (result == nullptr || result-> getOr ("code", -1) != ResponseCode::OK) {
+          throw std::runtime_error ("Failed to store");
+        }
+        return response (ResponseCode::OK);
+      } catch (const std::runtime_error & err) {
+        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
+        return response (ResponseCode::MALFORMED);
+      }
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
       return response (ResponseCode::MALFORMED);
     }
   }

@@ -6,6 +6,7 @@ issuer = "auth0"
 port = 0
 iface = "lo"
 log-lvl = "debug"
+threads = 24
 
 [registry]
 name = "registry"
@@ -13,33 +14,34 @@ addr = "localhost"
 port = 0
 
 [services.user]
-nb = 4
+nb = 12
 db = "mysql"
 #cache = "fst"
 
 [services.timeline]
-nb = 4
+nb = 12
 db = "mysql"
+#cache = "fst"
 
 [services.short]
-nb = 1
+nb = 12
 db = "mysql"
 
 [services.social]
-nb = 4
+nb = 12
 db = "mysql"
+#cache = "fst"
 
 [services.post]
-nb = 4
+nb = 12
 db = "mysql"
 #cache = "fst"
 
 [services.compose]
-nb = 4
-#cache = "fst"
+nb = 12
 
 [services.text]
-nb = 4
+nb = 12
 
 [db.mysql]
 name = "socialNet"
@@ -47,6 +49,6 @@ addr = "127.0.0.1"
 user = "root"
 pass = ""
 
-# [cache.fst]
-# addr="localhost"
-# port = 6650
+[cache.fst]
+addr="localhost"
+port = 6651

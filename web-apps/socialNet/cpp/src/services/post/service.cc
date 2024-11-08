@@ -50,7 +50,10 @@ namespace socialNet::post {
   void PostStorageService::onQuit () {
     if (this-> _registry != nullptr) {
       socialNet::closeService (this-> _registry, "post", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
     }
+
+    this-> _db.dispose ();
   }
 
   /**

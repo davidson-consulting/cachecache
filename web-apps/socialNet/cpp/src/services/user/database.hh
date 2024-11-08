@@ -60,6 +60,9 @@ namespace socialNet::user {
      */
     bool findById (uint32_t & id, User & u);
 
+
+      void dispose ();
+
   private:
 
     /**

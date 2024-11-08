@@ -53,7 +53,13 @@ namespace socialNet::timeline {
 
     if (this-> _registry != nullptr) {
       socialNet::closeService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
     }
+
+    this-> _req10.reset ();
+    this-> _req100.reset ();
+    this-> _insertDb.dispose ();
+    this-> _readDb.dispose ();
   }
 
   /*!
@@ -202,18 +208,29 @@ namespace socialNet::timeline {
       int32_t nb = msg.getOr ("nb", -1);
       int32_t page = msg.getOr ("page", -1);
       if (page >= 0) page *= nb;
+      if (nb <= 1024 && nb > 0) { // Cacheable
+        auto values = this-> _readDb.findHomeCacheable (uid, page, nb);
+        stream.writeU32 (ResponseCode::OK);
+        for (auto & it : values) {
+          stream.writeU8 (1);
+          stream.writeU32 (it);
+        }
+        stream.writeU8 (0);
+      } else { // streaming
+        stream.writeU32 (ResponseCode::OK);
+        uint32_t nb = 2048, page = 0;
+        for (;;) {
+          auto values = this-> _readDb.findHomeCacheable (uid, page, nb);
+          for (auto & it : values) {
+            stream.writeU8 (1);
+            stream.writeU32 (it);
+          }
+          if (values.size () != nb) break;
+          page += nb;
+        }
 
-      uint32_t pid;
-      auto statement = this-> _readDb.prepareFindHome (&pid, &uid, &page, &nb);
-      statement-> execute ();
-
-      stream.writeU32 (ResponseCode::OK);
-      while (statement-> next () && stream.isOpen ()) {
-        stream.writeU8 (1);
-        stream.writeU32 (pid);
+        stream.writeU8 (0);
       }
-
-      stream.writeU8 (0);
     } catch (std::runtime_error & err) {
       LOG_ERROR ("TimelineService::streamHome : ", err.what ());
     }
@@ -225,18 +242,32 @@ namespace socialNet::timeline {
       int32_t nb = msg.getOr ("nb", -1);
       int32_t page = msg.getOr ("page", -1);
       if (page >= 0) page *= nb;
+      if (nb <= 1024 && nb > 0) { // Cacheable
+        auto values = this-> _readDb.findPostCacheable (uid, page, nb);
+        stream.writeU32 (ResponseCode::OK);
 
-      uint32_t pid;
-      auto statement = this-> _readDb.prepareFindPosts (&pid, &uid, &page, &nb);
-      statement-> execute ();
+        for (auto & it : values) {
+          stream.writeU8 (1);
+          stream.writeU32 (it);
+        }
 
-      stream.writeU32 (ResponseCode::OK);
-      while (statement-> next () && stream.isOpen ()) {
-        stream.writeU8 (1);
-        stream.writeU32 (pid);
+        stream.writeU8 (0);
+
+      } else { // streaming
+        stream.writeU32 (ResponseCode::OK);
+        uint32_t nb = 2048, page = 0;
+        for (;;) {
+          auto values = this-> _readDb.findPostCacheable (uid, page, nb);
+          for (auto & it : values) {
+            stream.writeU8 (1);
+            stream.writeU32 (it);
+          }
+          if (values.size () != nb) break;
+          page += nb;
+        }
+
+        stream.writeU8 (0);
       }
-
-      stream.writeU8 (0);
     } catch (std::runtime_error & err) {
       LOG_ERROR ("TimelineService::streamPosts : ", err.what ());
     }
@@ -254,22 +285,26 @@ namespace socialNet::timeline {
 
   void TimelineService::treatRoutine (rd_utils::concurrency::Thread) {
     concurrency::timer t;
+    std::map <uint32_t, std::vector <PostUpdate> > cp;
     while (this-> _running) {
       t.reset ();
       LOG_DEBUG ("Timeline iteration");
       LOG_DEBUG ("Timeline wait lock");
 
       try {
-        std::map <uint32_t, std::vector <PostUpdate> > cp;
         WITH_LOCK (this-> _m) { // instances cannot register/quit during a market run
           cp = std::move (this-> _toUpdates);
         }
 
         for (auto & it : cp) {
+          LOG_INFO ("Starting update : ", it.first);
           this-> updateForFollowers (it.first, it.second);
         }
 
-        this-> _insertDb.commit ();
+        if (cp.size () != 0) {
+          this-> _insertDb.commit ();
+          LOG_INFO ("Iteration took : ", t.time_since_start ());
+        }
       } catch (const std::runtime_error & err) {
         LOG_ERROR ("Error in timeline update : ", err.what ());
       }

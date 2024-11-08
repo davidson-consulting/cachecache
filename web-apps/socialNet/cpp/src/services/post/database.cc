@@ -170,6 +170,12 @@ namespace socialNet::post {
     this-> _cache-> set (log, reinterpret_cast<const uint8_t*> (&p), sizeof (Post));
   }
 
+  void PostDatabase::dispose () {
+    this-> _client-> dispose ();
+    this-> _client.reset ();
+    this-> _cache.reset ();
+  }
+
 }
 
 

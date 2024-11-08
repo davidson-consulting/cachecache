@@ -12,20 +12,22 @@ using namespace socialNet::utils;
 namespace socialNet {
 
   RegistryService::RegistryService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode&) :
-    actor::ActorBase (name, sys) // registry is not atomic
+    actor::ActorBase (name, sys, false) // registry is not atomic
   {}
 
   void RegistryService::onQuit () {
     auto msg = config::Dict ()
       .insert ("type", RequestCode::POISON_PILL);
 
-    // Killing non order services
-    for (auto & it : this-> __services__) {
-      for (auto & jt : it.second.second) {
-        auto act = this-> _system-> remoteActor (jt.id, net::SockAddrV4 (jt.addr, jt.port));
-        if (act != nullptr) {
-          LOG_INFO ("Killing : ", jt.id);
-          act-> send (msg);
+    WITH_LOCK (this-> getMutex ()) {
+      // Killing non order services
+      for (auto & it : this-> __services__) {
+        for (auto & jt : it.second.second) {
+          auto act = this-> _system-> remoteActor (jt.id, net::SockAddrV4 (jt.addr, jt.port));
+          if (act != nullptr) {
+            LOG_INFO ("Killing : ", jt.id);
+            act-> send (msg);
+          }
         }
       }
     }
@@ -68,11 +70,13 @@ namespace socialNet {
       uint32_t port = msg ["port"].getI ();
 
       LOG_INFO ("Registering service : ", kind, " ", id, " ", addr, " ", port);
-      auto it = this-> __services__.find (kind);
-      if (it == this-> __services__.end ()) {
-        this-> __services__.emplace (kind, std::make_pair<int, std::vector <Service> > (0, {Service {.id = id, .addr = addr, .port = port}}));
-      } else {
-        it-> second.second.push_back ({.id = id, .addr = addr, .port = port});
+      WITH_LOCK (this-> getMutex ()) {
+        auto it = this-> __services__.find (kind);
+        if (it == this-> __services__.end ()) {
+          this-> __services__.emplace (kind, std::make_pair<int, std::vector <Service> > (0, {Service {.id = id, .addr = addr, .port = port}}));
+        } else {
+          it-> second.second.push_back ({.id = id, .addr = addr, .port = port});
+        }
       }
 
       return response (ResponseCode::OK);
@@ -85,18 +89,21 @@ namespace socialNet {
   std::shared_ptr<rd_utils::utils::config::ConfigNode> RegistryService::findService (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       auto kind = msg ["kind"].getStr ();
+      LOG_DEBUG ("Find service : ", msg);
       Service src;
-      auto it = this-> __services__.find (kind);
-      if (it != this-> __services__.end ()) {
-        auto index = it-> second.first;
-        it-> second.first += 1;
-        if (it-> second.first >= it-> second.second.size ()) {
-          it-> second.first = 0;
+      WITH_LOCK (this-> getMutex ()) {
+        auto it = this-> __services__.find (kind);
+        if (it != this-> __services__.end ()) {
+          auto index = it-> second.first;
+          it-> second.first += 1;
+          if (it-> second.first >= it-> second.second.size ()) {
+            it-> second.first = 0;
+          }
+          src = it-> second.second [index];
+        } else {
+          LOG_WARN ("No service : ", kind);
+          return response (ResponseCode::NOT_FOUND);
         }
-        src = it-> second.second [index];
-      } else {
-        LOG_WARN ("No service : ", kind);
-        return response (ResponseCode::NOT_FOUND);
       }
 
       LOG_DEBUG ("Found service : ", kind);
@@ -121,20 +128,22 @@ namespace socialNet {
 
       LOG_INFO ("Closing service : ", kind, " ", id, " ", addr, " ", port);
 
-      auto it = this-> __services__.find (kind);
-      if (it != this-> __services__.end ()) {
-        it-> second.first = 0;
-        std::vector <Service> res;
-        for (auto & jt : it-> second.second) {
-          if (jt.addr != addr || jt.id != id || jt.port != port) {
-            res.push_back (jt);
+      WITH_LOCK (this-> getMutex ()) {
+        auto it = this-> __services__.find (kind);
+        if (it != this-> __services__.end ()) {
+          it-> second.first = 0;
+          std::vector <Service> res;
+          for (auto & jt : it-> second.second) {
+            if (jt.addr != addr || jt.id != id || jt.port != port) {
+              res.push_back (jt);
+            }
           }
-        }
 
-        if (res.size () == 0) {
-          this-> __services__.erase (kind);
-        } else {
-          it-> second.second = res;
+          if (res.size () == 0) {
+            this-> __services__.erase (kind);
+          } else {
+            it-> second.second = res;
+          }
         }
       }
 
@@ -218,13 +227,15 @@ namespace socialNet {
 
       auto act = sys-> remoteActor (id, net::SockAddrV4 (addr, port));
       if (act == nullptr) {
-        throw std::runtime_error ("Failed to find service : " + kind + "/");
+        throw std::runtime_error (std::string ("Failed to find service : ") + kind);
       }
 
+
+      LOG_DEBUG ("Done : ", kind, " ", act);
       return act;
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("findService ", err.what ());
-      throw std::runtime_error ("Failed to find service : " + kind + "/");
+      throw std::runtime_error (std::string ("Failed to find service : ") + kind );
     }
   }
 
@@ -242,11 +253,11 @@ namespace socialNet {
 
       auto resp = registry-> request (req).wait ();
       if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
-        throw std::runtime_error ("Failed to close service : " + kind + "/" + name);
+        throw std::runtime_error (std::string ("Failed to close service : ") + kind + std::string ("/") + name);
       }
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("closeService ", err.what ());
-      throw std::runtime_error ("Failed to close service : " + kind + "/" + name);
+      throw std::runtime_error (std::string ("Failed to close service : ") + kind + std::string ("/") + name);
     }
   }
 

@@ -44,8 +44,15 @@ namespace socialNet::timeline {
     std::shared_ptr <utils::MysqlClient::Statement> prepareFindHome (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb);
     std::shared_ptr <utils::MysqlClient::Statement> prepareFindPosts (uint32_t * pid, uint32_t * uid, int32_t * page, int32_t * nb);
 
+    std::vector <uint32_t> findHomeCacheable (uint32_t uid, int32_t page, int32_t nb);
+    std::vector <uint32_t> findPostCacheable (uint32_t uid, int32_t page, int32_t nb);
+
     uint32_t countPosts (uint32_t id);
     uint32_t countHome (uint32_t id);
+
+    bool hasCache () const;
+
+      void dispose ();
 
   private:
 
@@ -53,6 +60,12 @@ namespace socialNet::timeline {
      * Create the post and tags tables
      */
     void createTables ();
+
+
+    bool findHomeInCache (std::vector <uint32_t> & result, uint32_t uid, int32_t page, int32_t nb);
+    void insertHomeInCache (const std::vector <uint32_t> & result, uint32_t uid, int32_t page, int32_t nb);
+    bool findPostInCache (std::vector <uint32_t> & result, uint32_t uid, int32_t page, int32_t nb);
+    void insertPostInCache (const std::vector <uint32_t> & result, uint32_t uid, int32_t page, int32_t nb);
 
   };
 

@@ -52,8 +52,10 @@ namespace socialNet {
     }
 
     int32_t webPort = 8080;
+    int32_t nbThreads = 12;
     if (cfg.contains ("server")) {
       webPort = cfg ["server"].getOr ("port", webPort);
+      nbThreads = cfg ["server"].getOr ("threads", nbThreads);
     }
 
     if (cfg.contains ("cache")) {
@@ -66,7 +68,8 @@ namespace socialNet {
     auto create = create_webserver (webPort)
       .log_access (custom_log_access)
       .not_found_resource (custom_not_found)
-      .method_not_allowed_resource (custom_not_allowed);
+      .method_not_allowed_resource (custom_not_allowed)
+      .max_threads (nbThreads);
 
     this-> _server = std::make_shared<webserver> (create);
 

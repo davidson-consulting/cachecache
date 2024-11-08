@@ -92,6 +92,11 @@ namespace socialNet::short_url {
     return false;
   }
 
+  void ShortUrlDatabase::dispose () {
+    this-> _client-> dispose ();
+    this-> _client.reset ();
+  }
+
 }
 
 std::ostream& operator << (std::ostream & s, socialNet::short_url::ShortUrl & url) {

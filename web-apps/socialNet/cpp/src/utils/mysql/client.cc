@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <string.h>
 #include <iostream>
+#include <rd_utils/_.hh>
 
 namespace socialNet::utils {
 
@@ -109,7 +110,8 @@ namespace socialNet::utils {
 
         std::string msg = mysql_error (this-> _context-> _conn);
         this-> _context-> dispose ();
-        throw std::runtime_error ("Failed to bind result " + msg);
+        LOG_INFO ("THROW 1");
+        throw std::runtime_error (std::string ("Failed to bind result ") + msg);
       }
     }
 
@@ -120,7 +122,8 @@ namespace socialNet::utils {
 
         std::string msg = mysql_error (this-> _context-> _conn);
         this-> _context-> dispose ();
-        throw std::runtime_error ("Failed to bind params " + msg);
+        LOG_INFO ("THROW 2");
+        throw std::runtime_error (std::string ("Failed to bind params ") + msg);
       }
     }
   }
@@ -140,7 +143,8 @@ namespace socialNet::utils {
       std::string err = mysql_error (this-> _context-> _conn);
       this-> _stmt = nullptr;
       this-> _context-> dispose ();
-      throw std::runtime_error ("Failed to execute stmt : " + err);
+      LOG_INFO ("THROW 3");
+      throw std::runtime_error (std::string ("Failed to execute stmt : ") + err);
     }
   }
 
@@ -149,6 +153,7 @@ namespace socialNet::utils {
       return mysql_stmt_fetch (this-> _stmt) == 0;
     } else {
       this-> _context-> dispose ();
+      LOG_INFO ("THROW 4");
       throw std::runtime_error ("Statement is empty");
     }
   }
@@ -190,6 +195,7 @@ namespace socialNet::utils {
       __OPENED__ += 1;
       if (__OPENED__ == 1) {
         if (mysql_library_init (0, NULL, NULL)) {
+          LOG_INFO ("THROW 5");
           throw std::runtime_error ("Failed to initialize mysql");
         }
       }
@@ -202,7 +208,8 @@ namespace socialNet::utils {
       auto msg = std::string (mysql_error (this-> _conn));
       mysql_close (this-> _conn);
       this-> _conn = nullptr;
-      throw std::runtime_error ("Failed to connect to database : (" + msg + ")");
+      LOG_INFO ("THROW 6");
+      throw std::runtime_error (std::string ("Failed to connect to database : (") + msg + std::string (")"));
     }
   }
 
@@ -224,13 +231,15 @@ namespace socialNet::utils {
     MYSQL_STMT * stmt = mysql_stmt_init (this-> _conn);
     if (stmt == nullptr) {
       this-> dispose ();
+      LOG_INFO ("THROW 7");
       throw std::runtime_error ("Failed to init a new stmt");
     }
 
     if (mysql_stmt_prepare (stmt, query.c_str (), query.length ())) {
       mysql_stmt_close (stmt);
       this-> dispose ();
-      throw std::runtime_error ("Failed to prepare stmt from query : " + query);
+      LOG_INFO ("THROW 8");
+      throw std::runtime_error (std::string ("Failed to prepare stmt from query : ") + query);
     }
 
     auto param_count = mysql_stmt_param_count (stmt);
