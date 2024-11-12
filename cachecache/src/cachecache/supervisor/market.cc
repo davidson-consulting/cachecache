@@ -10,7 +10,7 @@ namespace cachecache::supervisor {
 
   Market::Market (MemorySize size) :
     _size (size)
-    , _triggerIncrement (0.6)
+    , _triggerIncrement (0.8)
     , _triggerDecrement (0.5)
     , _increasingSpeed (0.1)
     , _decreasingSpeed (0.1)
@@ -35,10 +35,11 @@ namespace cachecache::supervisor {
         .uid = uid,
         .req = req,
         .size = usage,
-        .usage = usage,
         .last = usage,
         .wallet = MemorySize::MB(0)
       });
+
+    this->_entities.at(uid).usages.add(usage);
   }
 
   void Market::removeCache (uint64_t uid) {
@@ -49,8 +50,7 @@ namespace cachecache::supervisor {
     LOG_INFO("UPDATE USAGE - CACHE ", uid, " IS USING ", usage.bytes(), " - ", usage.megabytes());
     auto it = this-> _entities.find (uid);
     if (it != this-> _entities.end ()) {
-      it-> second.usage = usage;
-      it-> second.last = it-> second.size;
+      it-> second.usages.add(usage);
     }
   }
 
@@ -93,7 +93,7 @@ namespace cachecache::supervisor {
       cache.last = cache.size;
       cache.size = allocated[id];
 
-      LOG_INFO("Cache ", id, " Req ", cache.req.kilobytes(), "kb - Usage ", cache.usage.kilobytes(), "kb - Size ", cache.last.kilobytes(), ">", cache.size.kilobytes(), "kb - Wallet", cache.wallet.kilobytes());
+      LOG_INFO("Cache ", id, " Req ", cache.req.kilobytes(), "kb - Usage ", cache.usages.current().kilobytes(), "kb - Size ", cache.last.kilobytes(), ">", cache.size.kilobytes(), "kb - Wallet", cache.wallet.kilobytes());
     }
   }
 
@@ -105,19 +105,20 @@ namespace cachecache::supervisor {
     MemorySize max = market;
 
     for (auto & [id, cache]: this->_entities) {
-        const MemorySize usage = cache.usage;
+        const MemorySize usage = cache.usages.current();
         const MemorySize requested = cache.req;
         const MemorySize size = cache.size;
 
-        if (usage > size) LOG_DEBUG("OVERUSAGE FOR CACHE ", id, " : ", usage.megabytes() , " > ", size.megabytes());
+        if (usage > size) LOG_DEBUG("OVERUSAGE FOR CACHE ", id, " : ", usage.megabytes() , " > ", size.megabytes()); 
 
         float percUsage = size.bytes() == 0 ? 0 : (float) usage.bytes() / (float) size.bytes();
-
-        // Can't allocate less than a Slab (4MB)
-        MemorySize min = MemorySize::MB(8);
+        HistoryTrend trend = cache.usages.trend((float)MemorySize::KB(1).bytes() * 0.1); 
         
+        // Can't allocate less than a Slab (4MB)
+        MemorySize min = MemorySize::MB(4);
+
         MemorySize allocation = size;
-        if (percUsage > this->_triggerIncrement) {
+        if (percUsage > this->_triggerIncrement && trend == HistoryTrend::INCREASING) {
             auto previous = usage;
             uint64_t incrementFactor = (1.0 + this->_increasingSpeed) * 100;
             allocation = std::max(min, std::min(max, size * incrementFactor / 100));
@@ -146,7 +147,7 @@ namespace cachecache::supervisor {
                                MemorySize & allNeeded) {
 
     std::map<uint64_t, MemorySize> failed;
-    
+
     MemorySize defaultWindowSize = MemorySize::MB(0);
     if (market.bytes() > 0 && buyers.size() > 0) {
       defaultWindowSize = MemorySize::B(market.bytes() / buyers.size());
