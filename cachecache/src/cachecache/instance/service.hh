@@ -36,6 +36,8 @@ namespace cachecache::instance {
                 // The cache entity managed by the actor
                 std::shared_ptr <CacheEntity> _entity;
 
+                rd_utils::concurrency::mutex _m;
+
                 // Set to true when everything is set and running
                 bool _fullyConfigured = false;
 
@@ -83,7 +85,7 @@ namespace cachecache::instance {
                 /**
                  * Answer a client request
                  */
-                void onClient (rd_utils::net::TcpSessionKind, std::shared_ptr<rd_utils::net::TcpSession> session);
+                void onClient (std::shared_ptr<rd_utils::net::TcpStream> session);
 
                 /**
                  * Client request a set

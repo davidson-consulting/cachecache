@@ -40,8 +40,13 @@ namespace cachecache::instance {
     if (repo-> contains ("sys")) {
       addr = (*repo) ["sys"].getOr ("addr", "0.0.0.0");
       port = (*repo) ["sys"].getOr ("port", 0);
-      nbThreads = (*repo) ["sys"].getOr ("nb-threads", 1);
-      nbInstances = (*repo)["sys"].getOr ("instances", 1);
+      if ((*repo)["sys"].contains ("nb-threads")) {
+        nbThreads = (*repo) ["sys"].getOr ("nb-threads", 1);
+      }
+
+      if ((*repo)["sys"].contains ("instances")) {
+        nbInstances = (*repo)["sys"].getOr ("instances", 1);
+      }
 
       Logger::globalInstance ().changeLevel ((*repo)["sys"].getOr ("log-lvl", "info"));
     }
@@ -54,9 +59,16 @@ namespace cachecache::instance {
     __GLOBAL_SYSTEM__-> start ();
 
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
+    try {
+      for (uint32_t i = 0 ; i < nbInstances ; i++) {
+        __GLOBAL_SYSTEM__-> add <CacheService> ("instance(" + std::to_string (i) + ")", repo, i);
+      }
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("Killing actor system: ", err.what ());
+      LOG_ERROR ("Aborting.");
 
-    for (uint32_t i = 0 ; i < nbInstances ; i++) {
-      __GLOBAL_SYSTEM__-> add <CacheService> ("instance(" + std::to_string (i) + ")", repo, i);
+      __GLOBAL_SYSTEM__-> dispose ();
+      return;
     }
 
     __GLOBAL_SYSTEM__-> join ();
@@ -109,8 +121,14 @@ namespace cachecache::instance {
   void CacheService::onStart () {
     this-> _fullyConfigured = false;
     if (this-> connectSupervisor (this-> _cfg)) {
-      this-> configureEntity (this-> _cfg);
-      this-> configureServer (this-> _cfg);
+      try {
+        this-> configureEntity (this-> _cfg);
+        this-> configureServer (this-> _cfg);
+      } catch (const std::runtime_error & err) {
+
+        this-> onQuit ();
+        throw err;
+      }
     }
 
     // no need to keep the configuration
@@ -188,8 +206,10 @@ namespace cachecache::instance {
 
     LOG_INFO ("Killing cache instance -> ", this-> _name);
     if (this-> _entity != nullptr) {
-      this-> _entity-> dispose ();
-      this-> _entity = nullptr;
+      WITH_LOCK (this-> _m) {
+        this-> _entity-> dispose ();
+        this-> _entity = nullptr;
+      }
     }
   }
 
@@ -202,23 +222,28 @@ namespace cachecache::instance {
    */
 
   void CacheService::onSizeUpdate (const config::ConfigNode & msg) {
-    if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to be resized
-      auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
-      auto size = MemorySize::unit (msg ["size"].getI (), unit);
-      this-> _entity-> resize (size);
+    WITH_LOCK (this-> _m) {
+      if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to be resized
+        auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
+        auto size = MemorySize::unit (msg ["size"].getI (), unit);
+        this-> _entity-> resize (size);
+      }
     }
   }
 
   std::shared_ptr <config::ConfigNode> CacheService::onEntityInfoRequest (const config::ConfigNode & msg) {
     auto result = std::make_shared <config::Dict> ();
-    if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to have a size
-      result-> insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
-      result-> insert ("size", (int64_t) this-> _entity-> getSize ().kilobytes ());
-    } else {
-      result-> insert ("usage", (int64_t) 0);
-      result-> insert ("size", (int64_t) 0);
+    int64_t usage = 0;
+    int64_t size = 0;
+    WITH_LOCK (this-> _m) {
+      if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to have a size
+        usage = (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ();
+        size = this-> _entity-> getSize ().kilobytes ();
+      }
     }
 
+    result-> insert ("usage", usage);
+    result-> insert ("size", size);
     result-> insert ("unit", (int64_t) MemorySize::Unit::KB);
     return ResponseCode (200, result);
   }
@@ -297,18 +322,17 @@ namespace cachecache::instance {
       auto & conf = *cfg;
 
       std::string sAddr = "0.0.0.0";
-      int64_t nbThreads = 1, maxCon = -1, sPort = 0;
+      int64_t nbThreads = -1, sPort = 0;
 
       if (conf.contains ("service")) {
         sAddr = conf ["service"].getOr ("addr", sAddr);
         sPort = conf ["service"].getOr ("port", sPort);
         nbThreads = conf ["service"].getOr ("nb-threads", nbThreads);
-        maxCon = conf ["service"].getOr ("max-conn", maxCon);
       }
 
       if (sPort != 0) sPort += this-> _uniqNb;
 
-      this-> _clients = std::make_shared <net::TcpServer> (net::SockAddrV4 (sAddr, sPort), nbThreads, maxCon);
+      this-> _clients = std::make_shared <net::TcpServer> (net::SockAddrV4 (sAddr, sPort), nbThreads);
       this-> _clients-> start (this, &CacheService::onClient);
     }  catch (std::runtime_error & err) {
       LOG_ERROR ("Error : ", err.what ());
@@ -318,17 +342,22 @@ namespace cachecache::instance {
     LOG_INFO ("Cache tcp server ready on port ", this-> _clients-> port ());
   }
 
-  void CacheService::onClient (rd_utils::net::TcpSessionKind kind, std::shared_ptr <net::TcpSession> session) {
+  void CacheService::onClient (std::shared_ptr <net::TcpStream> session) {
+    if (!this-> _fullyConfigured) {
+      session-> close ();
+      return;
+    }
+
     try {
-      uint32_t id = session-> getStream ().receiveI32 ();
+      uint32_t id = session-> receiveI32 ();
       if (id == 's') {
-        this-> onSet (session-> getStream ());
+        this-> onSet (*session);
       } else if (id == 'g') {
-        this-> onGet (session-> getStream ());
+        this-> onGet (*session);
       }
     } catch (const std::runtime_error & e) {
       LOG_ERROR ("Client connection reset : ", e.what ());
-      session-> getStream ().close ();
+      session-> close ();
     }
   }
 
@@ -343,7 +372,9 @@ namespace cachecache::instance {
     }
 
     std::string key = this-> readStr (session, keyLen);
-    this-> _entity-> insert (key, session);
+    WITH_LOCK (this-> _m) {
+      this-> _entity-> insert (key, session);
+    }
   }
 
   void CacheService::onGet (net::TcpStream& session) {
@@ -356,10 +387,12 @@ namespace cachecache::instance {
     }
 
     std::string key = this-> readStr (session, keyLen);
-    if (this-> _entity-> find (key, session)) {
-      LOG_DEBUG ("FOUND : ", t.time_since_start (), " ", key);
-    } else {
-      LOG_DEBUG ("NOT FOUND : ", t.time_since_start (), " ", key);
+    WITH_LOCK (this-> _m) {
+      if (this-> _entity-> find (key, session)) {
+        LOG_DEBUG ("FOUND : ", t.time_since_start (), " ", key);
+      } else {
+        LOG_DEBUG ("NOT FOUND : ", t.time_since_start (), " ", key);
+      }
     }
   }
 

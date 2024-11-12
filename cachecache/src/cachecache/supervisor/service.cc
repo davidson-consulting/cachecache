@@ -148,7 +148,7 @@ namespace cachecache::supervisor {
     for (auto & it : this-> _instances) {
       try {
         it.second.remote-> send (config::Dict ()
-                                 .insert ("type", RequestIds::POISON_PILL), 1);
+                                 .insert ("type", RequestIds::POISON_PILL));
 
         LOG_INFO ("Broadcasting the info to cache entity (", it.first, " aka ", it.second.name, ")");
       } catch (std::runtime_error & e) {
@@ -297,7 +297,7 @@ namespace cachecache::supervisor {
         LOG_INFO ("Killing cache (", inst.first, " aka ", inst.second.name, ")");
         try {
           inst.second.remote-> send (config::Dict ()
-                                     .insert ("type", RequestIds::POISON_PILL), 1);
+                                     .insert ("type", RequestIds::POISON_PILL));
         } catch (const std::runtime_error & e) {
           LOG_ERROR ("Failed to send kill signal to entity (", inst.first, " aka ", inst.second.name, ") ", e.what ());
         }
@@ -329,7 +329,7 @@ namespace cachecache::supervisor {
         LOG_INFO ("Killing cache (", inst-> first, " aka ", inst-> second.name, ")");
         try {
           inst-> second.remote-> send (config::Dict ()
-                                     .insert ("type", RequestIds::POISON_PILL), 1);
+                                     .insert ("type", RequestIds::POISON_PILL));
         } catch (const std::runtime_error & e) {
           LOG_ERROR ("Failed to send kill signal to entity (", inst-> first, " aka ", inst-> second.name, ") ", e.what ());
         }
@@ -350,7 +350,7 @@ namespace cachecache::supervisor {
           inst.second.remote-> send (config::Dict ()
                                      .insert ("type", RequestIds::UPDATE_SIZE)
                                      .insert ("size", (int64_t) newSize.kilobytes ())
-                                     .insert ("unit", (int64_t) MemorySize::Unit::KB), 1);
+                                     .insert ("unit", (int64_t) MemorySize::Unit::KB));
 
           LOG_INFO ("Set size of (", inst.first, " aka ", inst.second.name, ") = ", newSize.megabytes (), " MB");
         } else {
