@@ -28,6 +28,9 @@ namespace cachecache::supervisor {
       // The size given by the market to the cache in KB
       rd_utils::utils::MemorySize size;
 
+      // The size given by the market during paid auction phase KB
+      rd_utils::utils::MemorySize buyingSize;
+
       // Last given size
       rd_utils::utils::MemorySize last;
 

@@ -3,7 +3,9 @@
 #include "history.hh"
 
 #include <algorithm>
+#include <rd_utils/utils/print.hh>
 #include <rd_utils/utils/log.hh>
+
 
 using namespace cachecache::supervisor;
 using namespace rd_utils::utils;
@@ -18,12 +20,10 @@ History::History(int size):
   , _cursor(0) {}
 
 void History::add(MemorySize value) {
-  if (this->_history.size() < this->_size) {
-    this->_history.push_back(value);
-  } else {
-    this->_history[this->_cursor] = value;
+  this->_history.push_back (value);
+  if (this->_history.size() >= this->_size) {
+    this-> _history.erase (this-> _history.begin ());
   }
-  this->_cursor = (this->_cursor + 1) % this->_size;
 }
 
 // formula from https://www.cuemath.com/data/regression-coefficients/
@@ -33,12 +33,9 @@ HistoryTrend History::trend(float min_coeff) {
   float sum_y = 0;
   float sum_x_squared = 0;
 
-  // history can not be filled yet
-  int size = min(this->_size, (int)this->_history.size());
-  for (int i = 0; i < size; i++) {
-    int current = (this->_cursor + i) % size;
+  for (uint64_t i = 0; i < this-> _history.size () ; i++) {
     float x = i;
-    float y = (float)this->_history[current].bytes();
+    float y = (float) this-> _history [i].kilobytes ();
 
     sum_xy += x * y;
     sum_x += x;
@@ -46,17 +43,18 @@ HistoryTrend History::trend(float min_coeff) {
     sum_x_squared += x * x;
   }
 
-  float nominator = size * sum_xy - sum_x * sum_y;
-  float denominator = size * sum_x_squared - (sum_x * sum_x);
+
+  float nominator = this-> _history.size () * sum_xy - sum_x * sum_y;
+  float denominator = this-> _history.size () * sum_x_squared - (sum_x * sum_x);
   if (denominator == 0) return HistoryTrend::STEADY;
 
-  float coef = nominator / denominator;
-  
-  LOG_DEBUG("COEF IS ", coef, " MIN COEF IS ", min_coeff);
-  if (coef >= min_coeff) {
+  float slope = nominator / denominator;
+
+  LOG_DEBUG ("COEF IS ", slope, " MIN COEF IS ", min_coeff, " ", this-> _history);
+  if (slope >= min_coeff) {
     return HistoryTrend::INCREASING;
   }
-  if (coef <= min_coeff * -1) {
+  if (slope <= min_coeff * -1) {
     return HistoryTrend::DECREASING;
   }
   return HistoryTrend::STEADY; 

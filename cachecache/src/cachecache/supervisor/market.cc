@@ -123,6 +123,7 @@ namespace cachecache::supervisor {
     for(auto& [id, cache]: this-> _entities) {
       cache.last = cache.size; // Store the last cache size, to see check for size change
       cache.size = allocated [id] + adding; // set the cache size to what was given to the cache in base, auction, and final distribution
+      cache.buyingSize = allocated [id]; // without the free memory size
 
       LOG_INFO ("Cache ", id, " Req ", cache.req.kilobytes(), "kb - Usage ", cache.usages.current().kilobytes(), "kb - Size ", cache.last.kilobytes(), ">", cache.size.kilobytes(), "kb - Wallet", cache.wallet.kilobytes());
     }
@@ -140,7 +141,12 @@ namespace cachecache::supervisor {
     for (auto & [id, cache]: this->_entities) {
       const MemorySize usage = cache.usages.current (); // cache current usage (due to stored Key/Values)
       const MemorySize requested = cache.req; // cache requested size (guarantee)
-      const MemorySize size = cache.size; // cache previous size (set by the previous market iteration)
+      const MemorySize size = cache.buyingSize; // cache previous size (set by the previous market iteration, and without taking into account the free memory space)
+
+      //
+      // We don't take real size into consideration, as a free distribution is done in the end of the market phases
+      // If we used the full size in that phase, then the cache will have to pay to keep the memory given for free in the previous iteration, leading to a wallet of 0
+      //
 
       if (usage > size) LOG_DEBUG ("OVERUSAGE FOR CACHE ", id, " : ", usage.megabytes() , " > ", size.megabytes());
 
@@ -157,8 +163,9 @@ namespace cachecache::supervisor {
        *    - 1) The cache is increasing its memory usage
        */
       if (overTrig) {
-        MemorySize increase = size * (1.0 + this->_increasingSpeed); // increase by 1.x
+        MemorySize increase = MemorySize::B ((float) size.bytes () * (float) (1.0 + this->_decreasingSpeed));  // increase by 1.x
         MemorySize current = MemorySize::max (min, MemorySize::min (requested, increase)); // memory to set in base selling that does not go over requested
+        LOG_INFO ("Cache increase : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;
         allocated [id] = current;
@@ -174,8 +181,9 @@ namespace cachecache::supervisor {
        *    - 2) The cache is decreasing its memory usage
        */
       else if (underTrig) {
-        MemorySize increase = size * (1.0 - this->_decreasingSpeed);
+        MemorySize increase = MemorySize::B ((float) size.bytes () * (float) (1.0 - this->_decreasingSpeed));
         MemorySize current = MemorySize::max (min, MemorySize::min (requested, increase));
+        LOG_INFO ("Cache decrease : ", id, " ", increase.kilobytes (), " ", requested.kilobytes (), " ", current.kilobytes (), " ", size.kilobytes ());
 
         market -= current;
         allocated [id] = current;
@@ -193,7 +201,7 @@ namespace cachecache::supervisor {
       else {
         auto increase = MemorySize::min (max, usage + (max * 0.01));
         auto current = MemorySize::max (min, MemorySize::min (requested, increase));
-        LOG_INFO ("Cache : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
+        LOG_INFO ("Cache steady : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;
         allocated [id] = current; // allocating current usage, or requested
