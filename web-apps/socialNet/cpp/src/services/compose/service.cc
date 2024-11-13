@@ -282,25 +282,25 @@ namespace socialNet::compose {
         try {
           socialNet::post::Post p;
 
-          while (timelineStream-> isOpen () && postStream-> isOpen ()) {
-            if (timelineStream-> readOr ((uint8_t) 0) != 0) {
-              auto pid = timelineStream-> readU32 ();
-              postStream-> writeU8 (1);
-              postStream-> writeU32 (pid);
-              if (postStream-> readOr ((uint8_t) 0) != 0) {;
-                postStream-> readRaw (p);
-                stream.writeU8 (1);
-                stream.writeRaw (p);
-              }
-            } else {
-              postStream-> writeU8 (0);
-              break;
+          while (timelineStream-> readOr ((uint8_t) 0) != 0) {
+            auto pid = timelineStream-> readU32 ();
+            postStream-> writeU8 (1);
+            postStream-> writeU32 (pid);
+            if (postStream-> readOr ((uint8_t) 0) != 0) {;
+              postStream-> readRaw (p);
+              stream.writeU8 (1);
+              stream.writeRaw (p);
             }
           }
 
+          postStream-> writeU8 (0);
           stream.writeU8 (0);
         }  catch (const std::runtime_error & err) {
-          LOG_ERROR ("Error ComposeService::streamTimeline ", __FILE__, __LINE__, " ", err.what ());
+          LOG_ERROR ("Error ComposeService::streamTimeline ", __FILE__, __LINE__, " ", err.what (), " ", timelineStream-> isOpen (), " ", postStream-> isOpen (), " ", stream.isOpen ());
+          if (postStream-> isOpen ()) {
+            postStream-> writeU8 (0);
+          }
+          stream.writeU8 (0);
         }
       }
   }
@@ -368,25 +368,21 @@ namespace socialNet::compose {
     std::shared_ptr <actor::ActorStream> socialStream, userStream;
     if (this-> openSubStreams (msg, kind, stream, socialStream, userStream)) {
       try {
-        while (socialStream-> isOpen () && userStream-> isOpen ()) {
-          auto next = socialStream-> readU8 ();
-          if (next != 0 && socialStream-> isOpen ()) {
-            auto rid = socialStream-> readU32 ();
-            userStream-> writeU8 (1);
-            userStream-> writeU32 (rid);
 
-            if (userStream-> readOr (0) != 0) {
-              auto name = userStream-> readStr ();
-              stream.writeU8 (1);
-              stream.writeU32 (rid);
-              stream.writeStr (name);
-            }
-          } else {
-            userStream-> writeU8 (0);
-            break;
+        while (socialStream-> readOr (0) != 0) {
+          auto rid = socialStream-> readU32 ();
+          userStream-> writeU8 (1);
+          userStream-> writeU32 (rid);
+
+          if (userStream-> readOr (0) != 0) {
+            auto name = userStream-> readStr ();
+            stream.writeU8 (1);
+            stream.writeU32 (rid);
+            stream.writeStr (name);
           }
         }
 
+        userStream-> writeU8 (0);
         stream.writeU8 (0);
       } catch (const std::runtime_error & err) {
         LOG_ERROR ("Error ComposeService::streamSubs ", __FILE__, __LINE__, " ", err.what ());
