@@ -269,6 +269,10 @@ namespace cachecache::instance {
         sPort = conf ["supervisor"].getOr ("port", sPort);
       }
 
+      if (sPort == 0) {
+        sPort = std::atoi (rd_utils::utils::read_file ("./super_port").c_str ());
+      }
+
       if (conf.contains ("cache")) {
         size = conf ["cache"].getOr ("size", 1024) * 1024;
       }

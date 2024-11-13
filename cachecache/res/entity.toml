@@ -3,7 +3,7 @@
 [sys]
 addr = "0.0.0.0" # accepted connections
 port = 0 # port of the tcp server
-instances = 1 # number of cache instances to spawn
+instances = 4 # number of cache instances to spawn
 # nb-threads = 1 # number of threads in the system (-1 means nb cpu cores), only one required
 log-lvl = "debug" # log level, info, debug, etc.
 
@@ -11,7 +11,7 @@ log-lvl = "debug" # log level, info, debug, etc.
 # @mandatory
 [supervisor]
 addr = "127.0.0.1" # address of the actor system managing the host
-port = 9090 # its port
+port = 0 # its port, 0 will read to super_port file
 
 # server avaible for clients
 # @optional

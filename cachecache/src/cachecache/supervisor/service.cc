@@ -53,6 +53,7 @@ namespace cachecache::supervisor {
     __GLOBAL_SYSTEM__-> start ();
 
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
+    rd_utils::utils::write_file ("super_port", std::to_string ( __GLOBAL_SYSTEM__-> port ()));
 
     __GLOBAL_SYSTEM__-> add <SupervisorService> ("supervisor", repo);
 
