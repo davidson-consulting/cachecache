@@ -151,7 +151,7 @@ namespace cachecache::supervisor {
       if (usage > size) LOG_DEBUG ("OVERUSAGE FOR CACHE ", id, " : ", usage.megabytes() , " > ", size.megabytes());
 
       float percUsage = size.bytes() == 0 ? 0 : (float) usage.bytes() / (float) size.bytes(); // usage over size
-      HistoryTrend trend = cache.usages.trend ((float) MemorySize::KB (1).bytes () * 0.1); // compute the trend of the cache /> \> -->
+      HistoryTrend trend = cache.usages.trend (10.0f); // compute the trend of the cache /> \> -->
       bool overTrig  = (percUsage > this-> _triggerIncrement) && (trend != HistoryTrend::STEADY);
       bool underTrig = (percUsage < this-> _triggerDecrement) && (trend != HistoryTrend::STEADY);
 
