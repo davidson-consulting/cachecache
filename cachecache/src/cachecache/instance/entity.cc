@@ -11,24 +11,6 @@ using namespace rd_utils::utils;
 
 namespace cachecache::instance {
 
-  int roundUp (uint64_t numToRound, uint64_t multiple) {
-    if (multiple == 0)
-    return numToRound;
-
-    int remainder = numToRound % multiple;
-    if (remainder == 0)
-    return numToRound;
-
-    return numToRound + multiple - remainder;
-  }
-
-  uint64_t next_pow2 (uint64_t x) {
-    if (x == 1) return 1;
-    else {
-      return 1 << (64 - __builtin_clzl (x - 1));
-    }
-  }
-
   CacheEntity::CacheEntity () :
     _maxSize (MemorySize::B (0))
     , _maxValueSize (MemorySize::B (0))
@@ -115,7 +97,7 @@ namespace cachecache::instance {
 
     auto current = MemorySize::B (this-> _entity-> getPool (this-> _pool).getPoolSize ());
 
-    auto asked = MemorySize::MB (roundUp (newSize.megabytes(), CacheEntity::getSlabSize().megabytes() * 8));
+    auto asked = MemorySize::roundUp (newSize, CacheEntity::getSlabSize ());
     auto bound = MemorySize::min (MemorySize::max (CacheEntity::getSlabSize (), asked), this-> _maxSize);
 
     LOG_INFO ("Asking for a cache resize from ", current.megabytes (), "MB to ~", newSize.megabytes (), " as ", asked.megabytes (), " MB. Will resize to ", bound.megabytes (), "MB");
@@ -225,24 +207,24 @@ namespace cachecache::instance {
     }
 
     try {
-      size_t toAlloc = next_pow2 (valLen + sizeof (int));
-      auto handle = this-> _entity-> allocate (this-> _pool, key.c_str (), toAlloc, this-> _ttl);
+      auto toAlloc = MemorySize::nextPow2 (MemorySize::B (valLen + sizeof (int)));
+      auto handle = this-> _entity-> allocate (this-> _pool, key.c_str (), toAlloc.bytes (), this-> _ttl);
 
       if (!handle) {
         for (uint64_t i = 0 ; i <= 32 ; i++) {
-          toAlloc = next_pow2 ((valLen + sizeof (int)) * i);
-          handle = this-> _entity-> allocate (this-> _pool, key.c_str (), toAlloc, this-> _ttl);
+          toAlloc = MemorySize::nextPow2 (MemorySize::B (valLen + sizeof (int)) * i);
+          handle = this-> _entity-> allocate (this-> _pool, key.c_str (), toAlloc.bytes (), this-> _ttl);
           if (handle != nullptr) break;
         }
       }
 
       if (!handle) {
-        LOG_ERROR ("Cannot allocate, cache is full even after retry : ", valLen + sizeof (int), " ", toAlloc, " ", key.c_str (), " ", key.size (), " ", this-> _pool, " ", this-> _ttl, " ", this);
+        LOG_ERROR ("Cannot allocate, cache is full even after retry : ", valLen + sizeof (int), " ", toAlloc.bytes (), " ", key.c_str (), " ", key.size (), " ", this-> _pool, " ", this-> _ttl, " ", this);
         session.sendI32 (0);
         return false;
       }
 
-      LOG_INFO ("Inserted : ", toAlloc, " ", key, " ", key.size (), " ", this-> getCurrentMemoryUsage ().bytes (), " ", this-> getSize ().bytes (), " ", this-> _pool, " ", this);
+      LOG_INFO ("Inserted : ", toAlloc.bytes (), " ", key, " ", key.size (), " ", this-> getCurrentMemoryUsage ().bytes (), " ", this-> getSize ().bytes (), " ", this-> _pool, " ", this);
       session.receiveRaw (static_cast <char*> (handle-> getMemory ()) + sizeof (int), valLen);
       this-> _entity-> insertOrReplace (handle);
       static_cast<int*> (handle-> getMemory ())[0] = valLen;

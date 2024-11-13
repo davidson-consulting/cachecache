@@ -23,5 +23,5 @@ port = 6653 # port of the tcp server
 # @optional
 [cache]
 ttl = 100
-size = 100
+size = 40
 unit = "MB"
