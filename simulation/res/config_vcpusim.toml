@@ -1,5 +1,5 @@
-# [global]
-# seed = 0
+[global]
+seed = 0
 
 [datacenter]
 overcommit = 1.0
@@ -19,14 +19,35 @@ power-model = "dahu"
 [vms.templateA]
 nb_cores = 4
 memory = 4
-nb_instances = 3
-start = [0, 1]
-length = [999, 1000]
-multi_threads = false
-usage = "A"
+nb_instances = 1
+start = [0, 0]
+length = [1000, 1000]
+multi_threads = true
+usage = "A" # in dict modals
+application = "A" # in dict cache_applications
+
+[vms.templateB]
+nb_cores = 4
+memory = 4
+nb_instances = 1
+start = [0, 0]
+length = [1000, 1000]
+multi_threads = true
+usage = "A" # in dict modals
+application = "B" # in dict cache_applications
 
 [modals.A]
 frequency = [25, 50]
 usages = [{average = 10, variance = 5, weight = 0.8},
           {average = 40, variance = 10, weight = 0.1},
           {average = 99.9, variance = 0.01, weight = 0.1}]
+
+[cache_applications.A]
+cache = {addr = "0.0.0.0", port = 8081}
+costs = {get = 10, set = 30}
+generation_parameters = {size_keys = 10, size_values = 100}
+
+[cache_applications.B]
+cache = {addr = "0.0.0.0", port = 8082}
+costs = {get = 10, set = 30}
+generation_parameters = {size_keys = 100, size_values = 1000}

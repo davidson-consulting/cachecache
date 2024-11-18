@@ -4,6 +4,7 @@
 #include <rd_utils/concurrency/timer.hh>
 #include <chrono>
 
+#include <memory>
 #include <application.hh>
 
 namespace cachecache_sim {
@@ -18,6 +19,7 @@ namespace cachecache_sim {
 
     this-> _dc.configure ((*cfg) ["datacenter"], outPath);
     this-> configureTraceCreators ((*cfg)["modals"]);
+    this-> configureCaches ((*cfg)["cache_applications"]);
     this-> configureVMs ((*cfg)["vms"]);
   }
 
@@ -46,7 +48,14 @@ namespace cachecache_sim {
       for (auto & v : fnd-> second) {
         auto tc = this-> _tcs.find (v.usage);
         LOG_INFO ("Spawn a new VM at t=", index, ", (", v.cores, ",", v.memory, ")-> ", v.len);
-        this-> _dc.spawn (v.cores, v.memory, tc-> second, v.len, v.multiTh, std::move(Application()));
+        Application params = this->_applications[v.application];
+        std::shared_ptr<CacheApplication> app = std::make_shared<CacheApplication>(
+            params.addr 
+            , params.port
+            , params.cost_get
+            , params.cost_set
+            , params.genCfg);
+        this-> _dc.spawn (v.cores, v.memory, tc-> second, v.len, v.multiTh, app);
       }
 
       this-> _futureVMs.erase (index);
@@ -94,10 +103,15 @@ namespace cachecache_sim {
       uint32_t lenA = (*vms)[i]["length"][0].getI ();
       uint32_t lenB = (*vms)[i]["length"][1].getI ();
       bool multiTh = (*vms)[i].getOr ("multi_threads", false);
-      std::string modal = (*vms)[i]["usage"].getStr ();
 
+      std::string modal = (*vms)[i]["usage"].getStr ();
       if (this-> _tcs.find (modal) == this-> _tcs.end ()) {
         throw std::runtime_error ("Unkwon usage model : " + modal);
+      }
+
+      std::string app = (*vms)[i]["application"].getStr();
+      if (this->_applications.find(app) == this->_applications.end()) {
+        throw std::runtime_error("Unknown application : " + app);
       }
 
       auto startEngine = std::uniform_real_distribution <float> (startA, startB);
@@ -110,8 +124,37 @@ namespace cachecache_sim {
                                                        .memory = memory,
                                                        .len = len,
                                                        .multiTh = multiTh,
-                                                       .usage = modal});
+                                                       .usage = modal,
+                                                       .application = app});
       }
+    }
+  }
+
+  void Simulation::configureCaches (const rd_utils::utils::config::ConfigNode & cfg) {
+    auto apps = (const rd_utils::utils::config::Dict*) (&cfg);
+
+    for (auto & i : apps->getKeys()) {
+      auto & app = (*apps)[i];
+      auto cache = (const rd_utils::utils::config::Dict*)(&app["cache"]); 
+      auto costs = (const rd_utils::utils::config::Dict*)(&app["costs"]);
+      auto gen_params = (const rd_utils::utils::config::Dict*)(&app["generation_parameters"]);
+
+    
+      Application params {
+          .cost_get = (int)(*costs)["get"].getI()
+          , .cost_set = (int)(*costs)["set"].getI()
+          , .addr = (*cache)["addr"].getStr()
+          , .port = (int)(*cache)["port"].getI()
+      };
+
+      if (gen_params->contains("size_keys")) {
+        params.genCfg.size_keys = (*gen_params)["size_keys"].getI();
+      }
+      if (gen_params->contains("size_values")) {
+        params.genCfg.size_values = (*gen_params)["size_values"].getI();
+      }
+
+      this->_applications[i] = params;
     }
   }
 
@@ -120,7 +163,5 @@ namespace cachecache_sim {
       .htSlowDown (cfg.getOr ("ht_slowdown", 1.9))
       .randomSeed (cfg.getOr ("seed", std::chrono::system_clock::now().time_since_epoch().count()));
   }
-
-
 }
 

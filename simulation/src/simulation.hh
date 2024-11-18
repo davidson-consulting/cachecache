@@ -11,6 +11,8 @@
 #include <vcpu_sim/config/_.hh>
 #include <vcpu_sim/export/_.hh>
 
+#include "generator.hh"
+
 using namespace vcpu_sim; 
 
 namespace cachecache_sim {
@@ -24,6 +26,18 @@ namespace cachecache_sim {
     uint32_t len;
     bool multiTh;
     std::string usage;
+    std::string application;
+  };
+
+  struct Application {
+    int cost_get;
+    int cost_set;
+
+    // parameters for connection to cache
+    std::string addr;
+    int port;
+    
+    GeneratorConfiguration genCfg;
   };
 
   /**
@@ -39,6 +53,9 @@ namespace cachecache_sim {
     // Vms to spawn in the future
     std::map <uint32_t, std::vector <FutureVM> > _futureVMs;
 
+    // Map of applications by their name
+    std::unordered_map<std::string, Application> _applications;
+    
     std::map <std::string, virt::TraceCreator> _tcs;
 
   public:
@@ -76,7 +93,7 @@ namespace cachecache_sim {
 
     void configureVMs (const rd_utils::utils::config::ConfigNode & cfg);
 
+    void configureCaches (const rd_utils::utils::config::ConfigNode & cfg);
+
   };
-
-
 }
