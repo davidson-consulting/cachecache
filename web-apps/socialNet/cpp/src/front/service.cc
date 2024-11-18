@@ -11,7 +11,7 @@ using namespace rd_utils::utils;
 namespace socialNet {
 
   void custom_log_access (const std::string & url) {
-    LOG_INFO ("Accessing : ", url);
+    LOG_DEBUG ("Accessing : ", url);
   }
 
   std::shared_ptr <http_response> custom_not_found (const http_request&) {

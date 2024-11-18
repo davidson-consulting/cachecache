@@ -49,6 +49,6 @@ addr = "127.0.0.1"
 user = "root"
 pass = ""
 
-# [cache.fst]
-# addr="localhost"
-# port = 6694
+[cache.fst]
+addr="localhost"
+port = 6694

@@ -44,6 +44,8 @@ namespace socialNet {
 
   HomeTimelineRoute::HomeTimelineRoute (FrontServer * context) :
     _context (context)
+    // , _cacheCounter ("home_cache")
+    // , _serviceCounter ("home_service")
   {}
 
   std::shared_ptr <http_response> HomeTimelineRoute::render (const http_request & req) {
@@ -52,15 +54,20 @@ namespace socialNet {
       int64_t page = std::atoi (std::string (req.get_arg ("page")).c_str ());
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
 
+      rd_utils::concurrency::timer t;
       std::string rqt;
       if (this-> _context-> getCache () != nullptr) {
         rqt = std::string ("home/") + std::string (req.get_arg ("user_id")) + "/" + std::string (req.get_arg ("page")) + "/" + std::string (req.get_arg ("nb"));
         std::string result;
         if (this-> _context-> getCache ()-> get (rqt, result)) {
+          // this-> _cacheCounter.insert (t.time_since_start ());
           return std::make_shared <httpserver::string_response> (result, 200, "text/json");
         }
+
+        // this-> _cacheCounter.insert (t.time_since_start ());
       }
 
+      t.reset ();
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
         .insert ("type", RequestCode::HOME_TIMELINE)
@@ -95,6 +102,7 @@ namespace socialNet {
           this-> _context-> getCache ()-> set (rqt, reinterpret_cast <const uint8_t*> (finalResult.c_str ()), finalResult.length ());
         }
 
+        // this-> _serviceCounter.insert (t.time_since_start ());
         return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
       }
     } catch (const std::runtime_error & e) {

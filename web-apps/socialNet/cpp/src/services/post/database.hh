@@ -32,9 +32,6 @@ namespace socialNet::post {
         // The connection to the cache
         std::shared_ptr <socialNet::utils::CacheClient> _cache;
 
-        uint64_t _hit = 0;
-        uint64_t _fail = 0;
-
     public:
 
         /**

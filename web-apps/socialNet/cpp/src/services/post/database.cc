@@ -153,13 +153,9 @@ namespace socialNet::post {
   bool PostDatabase::findPostInCache (uint32_t id, Post & p) {
     if (this-> _cache == nullptr) return false;
     if (this-> _cache-> get ("post/" + std::to_string (id), reinterpret_cast <uint8_t*> (&p), sizeof (Post))) {
-      this-> _hit += 1;
-      if (this-> _hit % 1000 == 0) LOG_INFO ("Hit : ", this-> _hit, " ", this-> _fail);
       return true;
     }
 
-    this-> _fail += 1;
-    if (this-> _fail % 1000 == 0) LOG_INFO ("Hit : ", this-> _hit, " ", this-> _fail);
     return false;
   }
 

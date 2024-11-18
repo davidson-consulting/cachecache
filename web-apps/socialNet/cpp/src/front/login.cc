@@ -34,7 +34,6 @@ namespace socialNet {
 
       auto result = userService-> request (msg).wait ();
       if (result != nullptr && result-> getOr ("code", -1) == 200) {
-        std::cout << *result << std::endl;
         json j;
         j ["token"] = (*result)["content"]["jwt_token"].getStr ();
         j ["user_id"] = (*result)["content"]["userId"].getI ();

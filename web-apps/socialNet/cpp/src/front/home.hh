@@ -1,6 +1,7 @@
 #pragma once
 
 #include <httpserver.hpp>
+#include <utils/cache/counter.hh>
 
 namespace socialNet {
 
@@ -8,6 +9,8 @@ namespace socialNet {
   class HomeTimelineRoute : public httpserver::http_resource {
 
     FrontServer * _context;
+    utils::Counter _cacheCounter;
+    utils::Counter _serviceCounter;
 
   public:
     HomeTimelineRoute (FrontServer*);

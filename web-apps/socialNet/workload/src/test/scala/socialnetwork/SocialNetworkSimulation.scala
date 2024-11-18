@@ -20,11 +20,11 @@ class SocialNetworkSimulation extends Simulation {
   val randAlpha = new Random (SEED).alphanumeric
   val randNumber = new Random (SEED)
   val NB_USERS = 20000;
-  val NB_NEW_POSTS = 100
-  val NB_READS = 10
-  val NB_AT_ONCE = 10
+  val NB_NEW_POSTS = 10
+  val NB_READS = 20
+  val NB_AT_ONCE = 100
   val PAGE_SIZE = 50
-  val SIM_SIZE = 1
+  val SIM_SIZE = 100
 
   val feeder = initGlobals ()
 
@@ -229,7 +229,7 @@ class SocialNetworkSimulation extends Simulation {
   val read = scenario ("Read").exec (readHome);
 
   setUp (
-    write.inject (
+    read.inject (
       constantConcurrentUsers(NB_AT_ONCE).during(SIM_SIZE)
       // nothingFor (2),
       // atOnceUsers (NB_AT_ONCE)
