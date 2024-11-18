@@ -274,6 +274,6 @@ namespace cachecache::supervisor {
   }
 
   void Market::increaseWallet(uint64_t cacheId, MemorySize amount) {
-    // this->_entities[cacheId].wallet += amount;
+    this->_entities[cacheId].wallet += amount;
   }
 }
