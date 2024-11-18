@@ -109,8 +109,8 @@ namespace cachecache::instance {
     else if (current.bytes () > bound.bytes ()) { // Shrinking
       if (!this-> _entity-> shrinkPool (this-> _pool, (current - bound).bytes ())) return false;
 
-      // auto currMemUsage = this-> getCurrentMemoryUsage ();
-      // if (currMemUsage.bytes () > bound.bytes ()) this-> reclaimSlabs (currMemUsage - bound);
+      auto currMemUsage = this-> getCurrentMemoryUsage ();
+      if (currMemUsage.bytes () > bound.bytes ()) this-> reclaimSlabs (currMemUsage - bound);
 
       return true;
     }
@@ -224,7 +224,7 @@ namespace cachecache::instance {
         return false;
       }
 
-      LOG_INFO ("Inserted : ", toAlloc.bytes (), " ", key, " ", key.size (), " ", this-> getCurrentMemoryUsage ().bytes (), " ", this-> getSize ().bytes (), " ", this-> _pool, " ", this);
+      LOG_DEBUG ("Inserted : ", toAlloc.bytes (), " ", key, " ");
       session.receiveRaw (static_cast <char*> (handle-> getMemory ()) + sizeof (int), valLen);
       this-> _entity-> insertOrReplace (handle);
       static_cast<int*> (handle-> getMemory ())[0] = valLen;

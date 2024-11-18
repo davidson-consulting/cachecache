@@ -1,5 +1,7 @@
 #define LOG_LEVEL 10
 
+#include <rd_utils/utils/mem_size.hh>
+#include <rd_utils/utils/print.hh>
 #include <rd_utils/utils/log.hh>
 #include "cachelib/allocator/memory/Slab.h"
 #include "market.hh"
@@ -70,6 +72,10 @@ namespace cachecache::supervisor {
     return MemorySize::B (0);
   }
 
+  MemorySize Market::getPoolSize () const {
+    return this-> _size;
+  }
+
   bool Market::hasChanged (uint64_t uid) const {
     auto it = this-> _entities.find (uid);
     if (it != this-> _entities.end ()) {
@@ -90,6 +96,7 @@ namespace cachecache::supervisor {
      *   - 1) compute the needs of the cache instances, and provide them their guaranteed memory size
      */
     auto allocated = this-> sellBaseMemory (market, buyers);
+    LOG_DEBUG ("After first step : ", allocated, " ", buyers, " ", market);
 
     /*
      *   - 2) run an auction to buy the memory that was sell to no one
@@ -97,6 +104,7 @@ namespace cachecache::supervisor {
      */
     MemorySize allNeeded = zero;
     this-> buyExtraMemory (allocated, buyers, market, allNeeded);
+    LOG_DEBUG ("After second step : ", allocated, " ", buyers, " ", market);
 
     /*
      *   - 3) Distribute the remaining memory to the failing buyers for free
@@ -106,11 +114,14 @@ namespace cachecache::supervisor {
       for (auto & b : buyers) {
         // give them the remaining according to the respective asking size
         auto percent = (float) b.second.bytes () / (float) allNeeded.bytes ();
-        auto add = rest * percent;
+        auto add = MemorySize::B (rest.bytes () * percent);
+
         allocated [b.first] += add;
+        buyers [b.first] -= add;
         market -= add;
       }
     }
+    LOG_DEBUG ("After third step : ", allocated, " ", buyers, " ", market, " ", allNeeded);
 
     /*
      *    - 4) Distribute the remaining memory to the cache entities equally
@@ -124,9 +135,13 @@ namespace cachecache::supervisor {
       cache.last = cache.size; // Store the last cache size, to see check for size change
       cache.size = allocated [id] + adding; // set the cache size to what was given to the cache in base, auction, and final distribution
       cache.buyingSize = allocated [id]; // without the free memory size
+      allocated [id] += adding;
+      market -= adding;
 
       LOG_INFO ("Cache ", id, " Req ", cache.req.kilobytes(), "kb - Usage ", cache.usages.current().kilobytes(), "kb - Size ", cache.last.kilobytes(), ">", cache.size.kilobytes(), "kb - Wallet", cache.wallet.kilobytes());
     }
+
+    LOG_DEBUG ("After fourth step : ", allocated, " ", buyers, " ", market);
   }
 
   std::map<uint64_t, MemorySize> Market::sellBaseMemory (MemorySize& market
@@ -225,8 +240,9 @@ namespace cachecache::supervisor {
       return;
     }
 
+    allNeeded = MemorySize::MB (0);
     std::map<uint64_t, MemorySize> failed;
-    MemorySize defaultWindowSize = MemorySize::B (market.bytes () / buyers.size ());
+    MemorySize defaultWindowSize = MemorySize::MB (32); // market.bytes () / buyers.size ());
 
     while (market.bytes () > 0 && buyers.size () > 0) {
       for (auto cache = buyers.cbegin (); cache != buyers.cend(); ) { // we cannot use : for (auto & v : buyers), because we need to erase elements in the map
@@ -258,6 +274,6 @@ namespace cachecache::supervisor {
   }
 
   void Market::increaseWallet(uint64_t cacheId, MemorySize amount) {
-    this->_entities[cacheId].wallet += amount;
+    // this->_entities[cacheId].wallet += amount;
   }
 }

@@ -44,6 +44,31 @@ namespace cachecache::instance {
                 // THe number of the instance in local system
                 uint32_t _uniqNb;
 
+        private:
+
+                bool _running;
+
+                // Number of hit
+                int64_t _hit = 0;
+
+                // Number of misses
+                int64_t _miss = 0;
+
+                // Number of sets
+                int64_t _set = 0;
+
+                // The trace routine thread
+                rd_utils::concurrency::Thread _traceRoutine;
+
+                // The frequency of the trace export
+                float _freq;
+
+                // The sleep or wait in trace routine
+                rd_utils::concurrency::semaphore _traceSleeping;
+
+                // The handle to the trace exports
+                std::shared_ptr <rd_utils::utils::trace::TraceExporter> _traces;
+
         public:
 
                 /**
@@ -158,6 +183,13 @@ namespace cachecache::instance {
                  * Answer to a supervisor request for the current cache usage
                  */
                 std::shared_ptr <rd_utils::utils::config::ConfigNode> onEntityInfoRequest (const rd_utils::utils::config::ConfigNode & msg);
+
+        private:
+
+                /**
+                 * Routine used to export traces
+                 */
+                void traceRoutine (rd_utils::concurrency::Thread);
 
         };
 

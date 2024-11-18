@@ -76,7 +76,6 @@ namespace cachecache::supervisor {
     // of memory allocation
     float _decreasingSpeed;
 
-
   public:
 
     /**
@@ -138,6 +137,11 @@ namespace cachecache::supervisor {
      * @returns: the size attributed by the market to the cache entity
      */
     rd_utils::utils::MemorySize getCacheSize (uint64_t uid) const;
+
+    /**
+     * @returns: the size of the market to distribute among the cache instances
+     */
+    rd_utils::utils::MemorySize getPoolSize () const;
 
     /**
      * @returns: true if the market made the size of the cache change

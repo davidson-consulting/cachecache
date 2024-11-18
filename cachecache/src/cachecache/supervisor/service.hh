@@ -58,6 +58,9 @@ namespace cachecache::supervisor {
     // The market of the supervisor, used to select the size of the cache entities
     Market _market;
 
+    // The trace exporter used to export the decision of the market
+    std::shared_ptr <rd_utils::utils::trace::TraceExporter> _traces;
+
   private :
 
     static std::shared_ptr <rd_utils::concurrency::actor::ActorSystem>  __GLOBAL_SYSTEM__;

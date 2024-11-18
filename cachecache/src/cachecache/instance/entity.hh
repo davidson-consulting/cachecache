@@ -109,6 +109,8 @@ namespace cachecache::instance {
                  * @params:
                  *    - key: the key to find
                  *    - session: the session to which the value will be sent
+                 * @returns:
+                 *    - true iif found
                  */
                 bool find (const std::string & key, rd_utils::net::TcpStream& session);
 

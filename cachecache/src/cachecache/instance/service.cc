@@ -112,6 +112,7 @@ namespace cachecache::instance {
   CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t nb) :
     actor::ActorBase (name, sys)
     , _regSize (MemorySize::B (0))
+    , _traceRoutine (0, nullptr)
   {
     LOG_INFO ("Spawning a new cache instance -> ", name);
     this-> _cfg = cfg;
@@ -125,7 +126,6 @@ namespace cachecache::instance {
         this-> configureEntity (this-> _cfg);
         this-> configureServer (this-> _cfg);
       } catch (const std::runtime_error & err) {
-
         this-> onQuit ();
         throw err;
       }
@@ -202,6 +202,20 @@ namespace cachecache::instance {
       } catch (...) {
         LOG_WARN ("Supervisor is offline.");
       }
+    }
+
+    if (this-> _clients != nullptr) {
+      this-> _clients-> stop ();
+      this-> _clients-> join ();
+      this-> _clients = nullptr;
+    }
+
+    if (this-> _traceRoutine.id != 0) {
+      this-> _running = false;
+      this-> _traceSleeping.post ();
+
+      concurrency::join (this-> _traceRoutine);
+      this-> _traceRoutine = concurrency::Thread (0, nullptr);
     }
 
     LOG_INFO ("Killing cache instance -> ", this-> _name);
@@ -335,6 +349,12 @@ namespace cachecache::instance {
       }
 
       if (sPort != 0) sPort += this-> _uniqNb;
+      if (conf.contains ("sys")) {
+        this-> _freq = conf["sys"].getOr ("freq", 1.0f);
+        auto filename = conf ["sys"].getOr ("export-traces", "/tmp/entity") + "." + std::to_string (sPort) + ".json";
+        this-> _traces = std::make_shared <rd_utils::utils::trace::JsonExporter> (filename);
+        this-> _traceRoutine = concurrency::spawn (this, &CacheService::traceRoutine);
+      }
 
       this-> _clients = std::make_shared <net::TcpServer> (net::SockAddrV4 (sAddr, sPort), nbThreads);
       this-> _clients-> start (this, &CacheService::onClient);
@@ -378,6 +398,7 @@ namespace cachecache::instance {
     std::string key = this-> readStr (session, keyLen);
     WITH_LOCK (this-> _m) {
       this-> _entity-> insert (key, session);
+      this-> _set += 1;
     }
   }
 
@@ -393,9 +414,9 @@ namespace cachecache::instance {
     std::string key = this-> readStr (session, keyLen);
     WITH_LOCK (this-> _m) {
       if (this-> _entity-> find (key, session)) {
-        LOG_DEBUG ("FOUND : ", t.time_since_start (), " ", key);
+        this-> _hit += 1;
       } else {
-        LOG_DEBUG ("NOT FOUND : ", t.time_since_start (), " ", key);
+        this-> _miss += 1;
       }
     }
   }
@@ -416,4 +437,48 @@ namespace cachecache::instance {
 
     return ss.str ();
   }
+
+  /*!
+   * ====================================================================================================
+   * ====================================================================================================
+   * =====================================          TRACES          =====================================
+   * ====================================================================================================
+   * ====================================================================================================
+   */
+
+  void CacheService::traceRoutine (rd_utils::concurrency::Thread) {
+    concurrency::timer t;
+    this-> _running = true;
+
+    while (this-> _running) {
+      t.reset ();
+
+      WITH_LOCK (this-> _m) { // instances cannot register/quit during a market run
+        config::Dict d;
+        d.insert ("hit", this-> _hit);
+        d.insert ("miss", this-> _miss);
+        d.insert ("set", this-> _set);
+        d.insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
+        d.insert ("size", (int64_t) this-> _entity-> getSize ().kilobytes ());
+        d.insert ("unit", "KB");
+
+        this-> _traces-> append (time (NULL), d);
+
+        this-> _hit = 0;
+        this-> _miss = 0;
+        this-> _set = 0;
+      }
+
+      auto took = t.time_since_start ();
+      auto suppose = 1.0f / this-> _freq;
+      if (took < suppose) {
+        if (this-> _traceSleeping.wait (suppose - took)) {
+          LOG_INFO ("Interupted");
+          return;
+        }
+      }
+    }
+  }
+
+
 }

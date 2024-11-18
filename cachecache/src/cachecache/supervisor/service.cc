@@ -99,6 +99,7 @@ namespace cachecache::supervisor {
     , _marketRoutine (0, nullptr)
     , _market (MemorySize::B (0))
     , _memoryPoolSize (MemorySize::B (0))
+    , _traces (nullptr)
   {
     LOG_INFO ("Spawning supervisor actor -> ", name);
   }
@@ -124,6 +125,10 @@ namespace cachecache::supervisor {
 
     if (conf.contains ("sys")) {
       this-> _freq = conf["sys"].getOr ("freq", 1.0f);
+      if (conf ["sys"].contains ("export-traces")) {
+        auto filename = conf ["sys"].getOr ("export-traces", "/tmp/super.out") + ".json";
+        this-> _traces = std::make_shared <rd_utils::utils::trace::JsonExporter> (filename);
+      }
     } else {
       this-> _freq = 1.0f;
     }
@@ -247,12 +252,12 @@ namespace cachecache::supervisor {
     return ResponseCode (404);
   }
 
-  /**
-   * ============================================================================================================
-   * ============================================================================================================
-   * =============================================      MARKET      =============================================
-   * ============================================================================================================
-   * ============================================================================================================
+  /*!
+   * ====================================================================================================
+   * ====================================================================================================
+   * =====================================          MARKET          =====================================
+   * ====================================================================================================
+   * ====================================================================================================
    */
 
   void SupervisorService::marketRoutine (rd_utils::concurrency::Thread) {
@@ -344,10 +349,14 @@ namespace cachecache::supervisor {
 
   void SupervisorService::informEntitySizes () {
     std::map <uint32_t, CacheInfo> rests;
+    config::Dict trace;
+    trace.insert ("pool_size", (int64_t) this-> _market.getPoolSize ().kilobytes ());
+    trace.insert ("unit", "KB");
+
     for (auto & inst : this-> _instances) {
       try {
+        auto newSize = this-> _market.getCacheSize (inst.first);
         if (this-> _market.hasChanged (inst.first)) {
-          auto newSize = this-> _market.getCacheSize (inst.first);        
           inst.second.remote-> send (config::Dict ()
                                      .insert ("type", RequestIds::UPDATE_SIZE)
                                      .insert ("size", (int64_t) newSize.kilobytes ())
@@ -361,6 +370,8 @@ namespace cachecache::supervisor {
         rests.emplace (inst.first, CacheInfo {.remote = std::move (inst.second.remote),
                                                 .name = inst.second.name,
                                                 .uid = inst.second.uid});
+
+        trace.insert (inst.second.name, (int64_t) newSize.kilobytes ());
       } catch (...) {
         LOG_ERROR ("Cache (", inst.first, " aka ", inst.second.name, ") was disconnected during size update");
         LOG_INFO ("Killing cache (", inst.first, " aka ", inst.second.name, ")");
@@ -369,6 +380,9 @@ namespace cachecache::supervisor {
     }
 
     this-> _instances = std::move (rests);
+    if (this-> _traces != nullptr) {
+      this-> _traces-> append (time (NULL), trace);
+    }
   }
 
 
