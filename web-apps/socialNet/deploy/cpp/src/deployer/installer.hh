@@ -6,14 +6,10 @@
 namespace deployer {
 
     class Cluster;
+    class Machine;
+
     class Installer {
     private :
-
-        // The path of the working directory of the installer
-        std::string _wd;
-
-        // The list of script to execute on each nodes
-        std::map <std::string, std::vector <std::string> > _scripts;
 
         // The context of the installation
         Cluster * _context;
@@ -28,25 +24,53 @@ namespace deployer {
         /**
          * @params: The working directory
          */
-        Installer (Cluster & c, const std::string & wd);
+        Installer (Cluster & c);
 
         /**
          * Execute the installation process on every nodes of the cluster according to their respective configuration
          */
-        void execute (const rd_utils::utils::config::ConfigNode & cfg);
+        void execute ();
 
     private:
 
         /**
-         * @returns: the path to the installation scripts according to the configuration file
+         * Install on a specific node
+         * @params:
+         *   - mc: the machine id
          */
-        std::vector <std::string> getInstallScripts (const std::string & nodeName, const rd_utils::utils::config::ConfigNode & cfg);
+        void installOnNode (rd_utils::concurrency::Thread, std::string mc);
 
         /**
-         * Run the script on the machine
+         * Run apt commands
          */
-        void runScripts (rd_utils::concurrency::Thread, std::string mc);
-    } ;
+        void runAptInstalls (std::shared_ptr <Machine> m);
+
+        /**
+         * Install libhttpserver
+         */
+        void runHttpInstall (std::shared_ptr <Machine> m);
+
+        /**
+         * Install rd_utils
+         */
+        void runRdUtilsInstall (std::shared_ptr <Machine> m);
+
+        /**
+         * Install socialNet
+         */
+        void runSocialNetInstall (std::shared_ptr <Machine> m);
+
+        /**
+         * Install cache
+         */
+        void runCacheInstall (std::shared_ptr <Machine> m);
+
+        /**
+         * Install gatling
+         */
+        void runGatlingInstall (std::shared_ptr <Machine> m);
+
+    };
 
 
 }

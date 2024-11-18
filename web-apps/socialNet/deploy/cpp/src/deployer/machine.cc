@@ -5,11 +5,50 @@ using namespace rd_utils::concurrency;
 
 namespace deployer {
 
-
-    Machine::Machine (const std::string & host, const std::string & user)
+    Machine::Machine (const std::string & host, const std::string & user, const std::string & iface)
         : _hostname (host)
         , _user (user)
-    {}
+        , _iface (iface)
+    {
+        this-> discoverIP ();
+    }
+
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          GET/SET          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    void Machine::addFlag (const std::string & flg) {
+        this-> _flags.emplace (flg);
+    }
+
+    bool Machine::hasFlag (const std::string & flg) {
+        return this-> _flags.find (flg) != this-> _flags.end ();
+    }
+
+    const std::string & Machine::getName () const {
+        return this-> _hostname;
+    }
+
+    const std::string & Machine::getIface () const {
+        return this-> _iface;
+    }
+
+    const std::string & Machine::getIp () const {
+        return this-> _ip;
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          SSH/SCP          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
 
     std::shared_ptr <SSHProcess> Machine::run (const std::string & cmd, const std::string & where) {
         std::string realCmd = cmd;
@@ -23,7 +62,26 @@ namespace deployer {
         return proc;
     }
 
-    std::shared_ptr <SCPProcess> Machine::put (const std::string & file, const std::string & where) {
+    std::shared_ptr <SSHProcess> Machine::runScript (const std::string & script) {
+        auto tmpDir = rd_utils::utils::create_temp_dirname (this-> _hostname);
+        auto tmpFile = utils::join_path (tmpDir, "script.sh");
+        rd_utils::utils::write_file (tmpFile, script);
+
+        this-> run ("mkdir " + tmpDir)-> wait ();
+        this-> put (tmpFile, tmpFile);
+
+        return this-> run ("bash " + tmpFile, ".");
+    }
+
+    void Machine::putFromStr (const std::string & content, const std::string & where) {
+        auto tmpDir = rd_utils::utils::create_temp_dirname (this-> _hostname);
+        auto tmpFile = utils::join_path (tmpDir, "script.sh");
+        rd_utils::utils::write_file (tmpFile, content);
+
+        this-> put (tmpFile, where);
+    }
+
+    void Machine::put (const std::string & file, const std::string & where) {
         std::string realOutPath = "";
         if (where == "") {
             realOutPath = utils::join_path ("./", utils::get_filename (file));
@@ -33,11 +91,9 @@ namespace deployer {
 
         auto proc = std::make_shared <SCPProcess> (this-> _hostname, file, realOutPath, false, this-> _user);
         proc-> upload ();
-
-        return proc;
     }
 
-    std::shared_ptr <SCPProcess> Machine::get (const std::string & file, const std::string & where) {
+    void Machine::get (const std::string & file, const std::string & where) {
         std::string realOutPath = "";
         if (where == "") {
             realOutPath = utils::join_path ("/tmp/" + this-> _hostname, utils::get_filename (file));
@@ -47,8 +103,27 @@ namespace deployer {
 
         auto proc = std::make_shared <SCPProcess> (this-> _hostname, file, realOutPath, false, this-> _user);
         proc-> download ();
-
-        return proc;
     }
 
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          PRIVATE          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    void Machine::discoverIP () {
+        auto p = this-> run ("ip a show dev eth0 |  awk -F ' *|:' '/inet /{print $3}'");
+        p-> wait ();
+        this-> _ip = p-> stdout ();
+        auto index = this-> _ip.find ("/");
+        if (index != std::string::npos) {
+            this-> _ip = this-> _ip.substr (0, index);
+        }
+
+        LOG_INFO ("Ip of machine : ", this-> _hostname, " is ", this-> _ip);
+    }
+    
+    
 }

@@ -12,8 +12,9 @@ namespace deployer {
                     for (auto & mc : machines-> getKeys ()) {
                         auto hostname = (*machines) [mc]["hostname"].getStr ();
                         auto user = (*machines) [mc]["user"].getStr ();
+                        auto iface = (*machines) [mc].getOr ("iface", "eth0");
 
-                        this-> _machines.emplace (mc, std::make_shared <Machine> (hostname, user));
+                        this-> _machines.emplace (mc, std::make_shared <Machine> (hostname, user, iface));
                     }
                 } catch (const std::runtime_error & err) {
                     LOG_ERROR ("Malformed configuration file : ", err.what ());
