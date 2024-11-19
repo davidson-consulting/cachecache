@@ -3,7 +3,7 @@
 [sys]
 addr = "0.0.0.0" # accepted connections
 port = 0 # port of the tcp server
-instances = 2 # number of cache instances to spawn
+instances = 1 # number of cache instances to spawn
 # nb-threads = 1 # number of threads in the system (-1 means nb cpu cores), only one required
 log-lvl = "debug" # log level, info, debug, etc.
 export-traces = "./entity-traces"
@@ -18,7 +18,7 @@ port = 0 # its port, 0 will read to super_port file
 # @optional
 [service]
 addr = "0.0.0.0" # accepted connections
-port = 6693 # port of the tcp server
+port = 0 # port of the tcp server
 
 # Configure cache entity default values
 # @optional

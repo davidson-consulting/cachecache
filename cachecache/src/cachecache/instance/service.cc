@@ -34,6 +34,8 @@ namespace cachecache::instance {
 
     auto repo = toml::parseFile (configFile);
     std::string addr = "0.0.0.0";
+    std::string name = "instance";
+
     uint32_t port = 0;
     int64_t nbThreads = 1;
     uint32_t nbInstances = 1;
@@ -48,6 +50,7 @@ namespace cachecache::instance {
         nbInstances = (*repo)["sys"].getOr ("instances", 1);
       }
 
+      name = (*repo)["sys"].getOr ("name", name);
       Logger::globalInstance ().changeLevel ((*repo)["sys"].getOr ("log-lvl", "info"));
     }
 
@@ -60,8 +63,12 @@ namespace cachecache::instance {
 
     LOG_INFO ("Starting service system : ", addr, ":", __GLOBAL_SYSTEM__-> port ());
     try {
-      for (uint32_t i = 0 ; i < nbInstances ; i++) {
-        __GLOBAL_SYSTEM__-> add <CacheService> ("instance(" + std::to_string (i) + ")", repo, i);
+      if (nbInstances != 1) {
+        for (uint32_t i = 0 ; i < nbInstances ; i++) {
+          __GLOBAL_SYSTEM__-> add <CacheService> (name + "_" + std::to_string (i), repo, i);
+        }
+      } else {
+        __GLOBAL_SYSTEM__-> add <CacheService> (name, repo, 0);
       }
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("Killing actor system: ", err.what ());
@@ -358,6 +365,11 @@ namespace cachecache::instance {
 
       this-> _clients = std::make_shared <net::TcpServer> (net::SockAddrV4 (sAddr, sPort), nbThreads);
       this-> _clients-> start (this, &CacheService::onClient);
+
+      if (sPort == 0) {
+        rd_utils::utils::write_file ("entity_port." + std::to_string (this-> _uniqNb) + "." + this-> _name, std::to_string (this-> _clients-> port ()));
+      }
+
     }  catch (std::runtime_error & err) {
       LOG_ERROR ("Error : ", err.what ());
       throw std::runtime_error ("Failed to configure tcp server");
