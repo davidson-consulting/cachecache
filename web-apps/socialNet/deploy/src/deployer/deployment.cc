@@ -119,29 +119,28 @@ namespace deployer {
         ::signal (SIGTERM, &ctrlCHandler);
         ::signal (SIGKILL, &ctrlCHandler);
 
+        try {
+            if (this-> _installNodes) {
+                Installer i (*this-> _cluster);
+                i.execute ();
+            }
 
-        if (this-> _installNodes) {
-            Installer i (*this-> _cluster);
-            i.execute ();
-        }
+            for (auto & it : this-> _caches) {
+                it.second-> start ();
+            }
 
-        for (auto & it : this-> _caches) {
-            it.second-> start ();
-        }
-
-        for (auto & it : this-> _apps) {
-            it.second-> start ();
+            for (auto & it : this-> _apps) {
+                it.second-> start ();
+            }
+        } catch (const std::runtime_error & err) {
+            LOG_ERROR ("Failed to start deployement : ", err.what ());
+            this-> kill ();
+            ::exit (-1);
         }
     }
 
     void Deployment::join () {
-        for (auto & it : this-> _apps) {
-            it.second-> join ();
-        }
-
-        for (auto & it : this-> _caches) {
-            it.second-> join ();
-        }
+        this-> _sem.wait ();
     }
 
     void Deployment::kill () {
@@ -153,6 +152,8 @@ namespace deployer {
         for (auto & it : this-> _caches) {
             it.second-> kill ();
         }
+
+        this-> _cluster-> clean ();
     }
 
     /*!

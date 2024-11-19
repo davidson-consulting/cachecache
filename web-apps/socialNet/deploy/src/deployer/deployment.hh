@@ -33,6 +33,9 @@ namespace deployer {
         // Reinstall the DB on the nodes (otherwise assume everything is already installed)
         bool _installDB;
 
+        // To wait indefinitely
+        rd_utils::concurrency::semaphore _sem;
+
     public:
 
         Deployment ();

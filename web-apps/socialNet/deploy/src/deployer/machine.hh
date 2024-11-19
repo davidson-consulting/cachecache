@@ -72,6 +72,11 @@ namespace deployer {
                 std::shared_ptr <rd_utils::concurrency::SSHProcess> run (const std::string & cmd, const std::string & where = ".");
 
                 /**
+                 *  Run and wait a command until it succeeds or > nbTries
+                 */
+                void runAndWait (const std::string & cmd, uint32_t nbTries, float sleepBetweenTries);
+
+                /**
                  * Run a complex bash script on remote node
                  * @params:
                  *   - script: the content of the script to run
@@ -104,10 +109,13 @@ namespace deployer {
 
                 /**
                  * Download a file from remote node and put it in a string
+                 * If the file does not exist, retry until nbTries
                  * @params:
                  *    - filePath: the path of the file on the remote node
+                 *    - nbTries: number of read tries
+                 *    - sleepBetweenTries: the number of second to sleep between each try
                  */
-                std::string getToStr (const std::string & filePath);
+                std::string getToStr (const std::string & filePath, uint32_t nbTries, float sleepBetweenTries);
 
         private:
 

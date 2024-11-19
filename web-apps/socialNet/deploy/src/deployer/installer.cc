@@ -109,11 +109,10 @@ namespace deployer {
             "cd .build\n"
             "cmake ..\n"
             "make -j12\n"
-            "mkdir ~/socialNet\n"
-            "mv front ~/socialNet\n"
-            "mv reg ~/socialNet\n"
-            "mv services ~/socialNet\n"
-            "mv ../res ~/socialNet\n"
+            "mkdir -p ~/execs/socialNet\n"
+            "mv front ~/execs/socialNet\n"
+            "mv reg ~/execs/socialNet\n"
+            "mv services ~/execs/socialNet\n"
             "cd ~\n"
             "rm -rf cachecache\n";
 
@@ -132,7 +131,19 @@ namespace deployer {
             "./clone_cachelib.sh\n"
             "./build.sh\n"
             "cd .build\n"
-            "make -j12\n";
+            "make -j12\n"
+
+            "mkdir -p ~/execs/cache\n"
+            "mkdir ~/execs/cache/libs\n"
+            "mv ~/cachecache/cachecache/CacheLib/opt/cachelib/lib/lib* ~/execs/cache/libs\n"
+            "mv ~/cachecache/cachecache/.build/supervisor ~/execs/cache/\n"
+            "mv ~/cachecache/cachecache/.build/cache ~/execs/cache/\n"
+            "cd ~/execs/cache\n"
+            "for i in $(ldd supervisor | grep \"not found\" | awk '{ print $1 }');  do  patchelf --add-needed \"./libs/${i}\" supervisor; done\n"
+            "for i in $(ldd cache | grep \"not found\" | awk '{ print $1 }');  do  patchelf --add-needed \"./libs/${i}\" cache; done\n"
+
+            "rm -rf ~/cachecache/"
+            ;
 
         auto r = m-> runScript (script);
         r-> wait ();

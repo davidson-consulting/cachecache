@@ -22,34 +22,37 @@ namespace deployer {
      */
 
     void Application::start () {
-        this-> deployBdd ();
-        auto cfg = this-> createRegistryConfig ();
-    }
-
-    void Application::join () {
-        for (auto & it : this-> _running) {
-            it-> wait ();
+        this-> deployDB ();
+        this-> deployRegistry ();
+        for (auto & it : this-> _services) {
+            this-> deployServices (it.first);
         }
 
-        this-> _running.clear ();
-        this-> kill ();
+        this-> deployFront ();
     }
 
     void Application::kill () {
         LOG_INFO ("Kill app ", this-> _name);
+
         for (auto & it : this-> _running) {
             it-> dispose ();
         }
 
-        this-> _running.clear ();
         for (auto & it : this-> _killing) {
             auto mch = this-> _context-> getCluster ()-> get (it.first);
             for (auto & jt : it.second) {
+                LOG_INFO ("Run kill cmd : [", jt, "] on host ", it.first);
                 mch-> run (jt)-> wait ();
             }
         }
 
         this-> _killing.clear ();
+        for (auto & it : this-> _hostHasDir) {
+            auto host = this-> _context-> getCluster ()-> get (it);
+            auto path = utils::join_path (host-> getHomeDir (), "run/apps/" + this-> _name);
+            LOG_INFO ("Remove app directory '" + this-> _name + "' on : ", it);
+            host-> run ("rm -rf " + path)-> wait ();
+        }
     }
 
     /*!
@@ -77,11 +80,15 @@ namespace deployer {
             this-> _context-> getCluster ()-> get (this-> _registryHost)-> addFlag ("socialNet");
 
             this-> _dbHost = cfg ["db"]["host"].getStr ();
+            this-> _dbName = cfg ["db"]["name"].getStr ();
+            this-> _dbPort = cfg ["db"].getOr ("port", 3306);
             this-> _context-> getCluster ()-> get (this-> _dbHost)-> addFlag ("db");
 
             this-> _frontHost = cfg ["front"]["host"].getStr ();
             this-> _context-> getCluster ()-> get (this-> _frontHost)-> addFlag ("socialNet");
             this-> _frontCache = this-> findCacheFromName (cfg ["front"].getOr ("cache", ""));
+            this-> _frontThreads = cfg ["front"].getOr ("threads", -1);
+            this-> _frontPort = cfg ["front"].getOr ("port", (int64_t) this-> _frontPort);
 
             LOG_INFO ("Register app registry for ", this-> _name, " on host ", this-> _registryHost);
             if (this-> _frontCache.name == "") {
@@ -127,14 +134,7 @@ namespace deployer {
                                     LOG_INFO ("Register ", nb, " service replicates '", name, "' on host '", host, "' for ", this-> _name, " with cache ", ch.supervisor-> getName (), ".", ch.name);
                                 }
 
-                                auto fnd = this-> _services.find (host);
-                                if (fnd == this-> _services.end ()) {
-                                    ServiceDeployement n = ServiceDeployement {.nbAll = nb, .services = {}};
-                                    n.services.emplace (name, ServiceReplications {.nb = nb, .cache = ch});
-                                } else {
-                                    fnd-> second.nbAll += nb;
-                                    fnd-> second.services.emplace (name, ServiceReplications {.nb = nb, .cache = ch});
-                                }
+                                this-> _services [host].emplace (name, ServiceReplications {.nb = nb, .cache = ch});
                             } elfo {
                                 throw std::runtime_error ("Malformed service configuration for " + this-> _name);
                             }
@@ -179,7 +179,7 @@ namespace deployer {
      */
 
 
-    void Application::deployBdd () {
+    void Application::deployDB () {
         auto cmp =
             "version: '3.8'\n"
             "services:\n"
@@ -190,28 +190,245 @@ namespace deployer {
             "    environment:\n"
             "      - MYSQL_ALLOW_EMPTY_PASSWORD=yes\n"
             "    ports:\n"
-            "      - 3306:3306\n"
+            "      - " + std::to_string (this-> _dbPort) + ":3306\n"
             "    command: mysqld --lower_case_table_names=1 --skip-ssl --character_set_server=utf8mb4 --explicit_defaults_for_timestamp\n";
 
-        this-> _context-> getCluster ()-> get (this-> _dbHost)-> putFromStr (cmp, "compose.yaml");
-        auto p = this-> _context-> getCluster ()-> get (this-> _dbHost)-> run ("docker-compose up -d");
-        p-> wait ();
+        auto host = this-> _context-> getCluster ()-> get (this-> _dbHost);
+        auto path = this-> appPath (host);
 
-        LOG_INFO (p-> stdout ());
+        auto script =
+            "cd " + path + "\n"
+            "docker-compose up -d";
+
+        host-> putFromStr (cmp, utils::join_path (path, "compose.yaml"));
+        host-> runScript (script)-> wait ();
+        concurrency::timer t;
+
+        LOG_INFO ("Deploying DB on '", this-> _dbHost);
+        this-> _killing [this-> _dbHost].push_back ("cd " + path + "; docker-compose down");
+
+        t.sleep (1);
+
+        host-> runAndWait ("mysql -e \"create database if not exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _dbPort), 50, 0.2);
+        LOG_INFO ("Created db on ", this-> _dbHost, " (took : ", t.time_since_start (), "s)");
     }
 
-    std::shared_ptr <config::ConfigNode> Application::createRegistryConfig () {
-        auto cfg = std::make_shared <config::Dict> ();
-        cfg-> insert ("port", (int64_t) 0);
-        cfg-> insert ("addr", "0.0.0.0");
-        cfg-> insert ("iface", this-> _context-> getCluster ()-> get (this-> _registryHost)-> getIface ());
+    void Application::deployRegistry () {
+        auto host = this-> _context-> getCluster ()-> get (this-> _registryHost);
+        auto cfg = this-> createRegistryConfig (host);
+        auto path = this-> appPath (host);
 
-        return cfg;
+        auto script =
+            "cd " + path + "\n"
+            "rm registry.out.txt\n"
+            "./reg -c ./res/registry.toml >> registry.out.txt 2>&1  &\n"
+            "echo -e $! > pidof_registry\n";
+
+        host-> putFromStr (cfg, utils::join_path (path, "res/registry.toml"));
+        LOG_INFO ("Launching app '", this-> _name , "' registry on ", this-> _registryHost);
+
+        this-> _running.push_back (host-> runScript (script));
+        LOG_INFO ("Waiting for the registry to be avaible");
+
+        auto pidStr = host-> getToStr (utils::join_path (path, "pidof_registry"), 10, 0.1);
+        auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
+
+        auto portStr = host-> getToStr (utils::join_path (path, "registry_port"), 10, 0.1);
+        this-> _registryPort = std::strtoull (portStr.c_str (), NULL, 0);
+
+        LOG_INFO ("App '", this-> _name, "' registry  is running on ", this-> _registryHost, " on port = ", this-> _registryPort, ", and pid = ", pid);
+        this-> _killing [this-> _registryHost].push_back ("kill -9 " + std::to_string (pid));
     }
 
-    uint32_t Application::deployRegistry (std::shared_ptr <config::ConfigNode> cfg) {
-        return 0;
+    void Application::deployServices (const std::string & hostName) {
+        auto host = this-> _context-> getCluster ()-> get (hostName);
+        auto cfg = this-> createServiceConfig (hostName, host);
+        auto path = this-> appPath (host);
+
+        auto script =
+            "cd " + path + "\n"
+            "rm services.out.txt\n"
+            "./services -c ./res/services.toml >> services.out.txt 2>&1  &\n"
+            "echo -e $! > pidof_services\n";
+
+        host-> putFromStr (cfg, utils::join_path (path, "res/services.toml"));
+        LOG_INFO ("Launching app '", this-> _name , "' services on ", hostName);
+
+        this-> _running.push_back (host-> runScript (script));
+        LOG_INFO ("Waiting for the services to be avaible");
+
+        auto pidStr = host-> getToStr (utils::join_path (path, "pidof_services"), 10, 0.1);
+        auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
+
+        LOG_INFO ("App '", this-> _name, "' services are running on ", hostName, " pid = ", pid);
+        this-> _killing [this-> _registryHost].push_back ("kill -9 " + std::to_string (pid));
+    }
+    
+    void Application::deployFront () {
+        auto host = this-> _context-> getCluster ()-> get (this-> _frontHost);
+        auto cfg = this-> createFrontConfig (host);
+        auto path = this-> appPath (host);
+
+        auto script =
+            "cd " + path + "\n"
+            "rm front.out.txt\n"
+            "./front -c ./res/front.toml >> front.out.txt 2>&1  &\n"
+            "echo -e $! > pidof_front\n";
+
+        host-> putFromStr (cfg, utils::join_path (path, "res/front.toml"));
+        LOG_INFO ("Launching app '", this-> _name , "' front on ", this-> _frontHost);
+
+        this-> _running.push_back (host-> runScript (script));
+        LOG_INFO ("Waiting for the front to be avaible");
+
+        auto pidStr = host-> getToStr (utils::join_path (path, "pidof_front"), 10, 0.1);
+        auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
+
+        LOG_INFO ("App '", this-> _name, "' front is running on ", this-> _frontHost, " pid = ", pid);
+        this-> _killing [this-> _registryHost].push_back ("kill -9 " + std::to_string (pid));
     }
 
+
+    std::string Application::appPath (std::shared_ptr <Machine> host) {
+        auto path = utils::join_path (host-> getHomeDir (), "run/apps/" + this-> _name);
+        if (this-> _hostHasDir.find (host-> getName ()) == this-> _hostHasDir.end ()) {
+            LOG_INFO ("Create app directory for ", host-> getName ());
+            host-> run ("mkdir -p " + path)-> wait ();
+            host-> run ("mkdir -p " + utils::join_path (path, "res"))-> wait ();
+            host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/socialNet/front") + " " + path)-> wait ();
+            host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/socialNet/services") + " " + path)-> wait ();
+            host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/socialNet/reg") + " " + path)-> wait ();
+
+            this-> _hostHasDir.emplace (host-> getName ());
+        }
+
+        return path;
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ================================          CONFIG CREATION          =================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    std::string Application::createRegistryConfig (std::shared_ptr <Machine> host) {
+        auto cfg = config::Dict ()
+            .insert ("port", (int64_t) 0)
+            .insert ("addr", "0.0.0.0")
+            .insert ("iface", host-> getIface ());
+
+        return toml::dump (cfg);
+    }
+
+    std::string Application::createFrontConfig (std::shared_ptr <Machine> host) {
+        auto regHost = this-> _context-> getCluster ()-> get (this-> _registryHost);
+        auto result = std::make_shared <config::Dict> ();
+        auto sys = std::make_shared <config::Dict> ();
+        sys-> insert ("port", (int64_t) 0);
+        sys-> insert ("iface", host-> getIface ());
+        sys-> insert ("threads", (int64_t) 1);
+        result-> insert ("sys", sys);
+
+        auto server = std::make_shared <config::Dict> ();
+        server-> insert ("port", (int64_t) this-> _frontPort);
+        server-> insert ("iface", host-> getIface ());
+        server-> insert ("threads", (int64_t) this-> _frontThreads);
+        result-> insert ("server", server);
+
+        auto reg = std::make_shared <config::Dict> ();
+        reg-> insert ("name", "registry");
+        reg-> insert ("addr", regHost-> getIp ());
+        reg-> insert ("port", (int64_t) this-> _registryPort);
+        result-> insert ("registry", reg);
+
+        if (this-> _frontCache.name != "") {
+            auto cache = std::make_shared <config::Dict> ();
+            cache-> insert ("addr", this-> _frontCache.supervisor-> getHost ()-> getIp ());
+            cache-> insert ("port", (int64_t) this-> _frontCache.supervisor-> getPort (this-> _frontCache.name));
+            result-> insert ("cache", cache);
+        }
+
+        return toml::dump (*result);
+    }
+
+    std::string Application::createServiceConfig (const std::string & hostName, std::shared_ptr <Machine> host) {
+        auto regHost = this-> _context-> getCluster ()-> get (this-> _registryHost);
+
+        auto result = std::make_shared <config::Dict> ();
+
+        std::map <std::string, std::shared_ptr <Cache> > caches;
+        bool needDb = false;
+        uint32_t nbAll = 0;
+
+        auto services = std::make_shared <config::Dict> ();
+        for (auto & it : this-> _services [hostName]) {
+            auto serConf = std::make_shared <config::Dict> ();
+            if (it.second.cache.name != "") {
+                caches.emplace (it.second.cache.name, it.second.cache.supervisor);
+                serConf-> insert ("cache", it.second.cache.name);
+            }
+
+            if (it.first != "compose" && it.first != "text") {
+                serConf-> insert ("db", "mysql");
+                needDb = true;
+            }
+
+            serConf-> insert ("nb", (int64_t) it.second.nb);
+            nbAll += it.second.nb;
+
+            services-> insert (it.first, serConf);
+        }
+        result-> insert ("services", services);
+
+        if (needDb) {
+            auto dbs = std::make_shared <config::Dict> ();
+            auto db = std::make_shared <config::Dict> ();
+            db-> insert ("addr", this-> _context-> getCluster ()-> get (this-> _dbHost)-> getIp ());
+            db-> insert ("name", this-> _dbName);
+            db-> insert ("port", (int64_t) this-> _dbPort);
+            db-> insert ("user", "root");
+            db-> insert ("pass", "");
+
+            dbs-> insert ("mysql", db);
+            result-> insert ("db", dbs);
+        }
+
+        if (caches.size () > 0) {
+            auto cacheConfigs = std::make_shared <config::Dict> ();
+            for (auto & ch : caches) {
+                auto port = ch.second-> getPort (ch.first);
+                auto chInst = std::make_shared<config::Dict> ();
+                chInst-> insert ("addr", ch.second-> getHost ()-> getIp ());
+                chInst-> insert ("port", (int64_t) port);
+
+                cacheConfigs-> insert (ch.first, chInst);
+            }
+
+            result-> insert ("cache", cacheConfigs);
+        }
+
+        if (nbAll == 0) nbAll = 1;
+
+        auto sys = std::make_shared <config::Dict> ();
+        sys-> insert ("port", (int64_t) 0);
+        sys-> insert ("iface", host-> getIface ());
+        sys-> insert ("threads", (int64_t) nbAll);
+        result-> insert ("sys", sys);
+
+        auto auth = std::make_shared <config::Dict> ();
+        auth-> insert ("secret", "password");
+        auth-> insert ("issuer", "auth0");
+        result-> insert ("auth", auth);
+
+        auto reg = std::make_shared <config::Dict> ();
+        reg-> insert ("name", "registry");
+        reg-> insert ("addr", regHost-> getIp ());
+        reg-> insert ("port", (int64_t) this-> _registryPort);
+        result-> insert ("registry", reg);
+
+        return toml::dump (*result);
+    }
 
 }

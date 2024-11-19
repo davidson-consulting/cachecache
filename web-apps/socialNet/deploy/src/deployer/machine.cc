@@ -67,6 +67,17 @@ namespace deployer {
         return proc;
     }
 
+    void Machine::runAndWait (const std::string & cmd, uint32_t nbTries, float sleepBetweenTries) {
+        for (uint32_t nb = 1 ;; nb ++) {
+            auto p = this-> run (cmd)-> wait ();
+            if (p == 0) break;
+            else if (nb >= nbTries) throw std::runtime_error ("Fail to run command " + cmd);
+            else {
+                concurrency::timer::sleep (sleepBetweenTries);
+            }
+        }
+    }
+
     std::shared_ptr <SSHProcess> Machine::runScript (const std::string & script) {
         auto tmpDir = rd_utils::utils::create_temp_dirname (this-> _hostname);
         auto tmpFile = utils::join_path (tmpDir, "script.sh");
@@ -74,7 +85,9 @@ namespace deployer {
 
         this-> run ("mkdir " + tmpDir)-> wait ();
         this-> put (tmpFile, tmpFile);
-        std::cout << tmpFile << std::endl;
+
+        utils::remove (tmpFile);
+        utils::remove (tmpDir);
 
         return this-> run ("bash " + tmpFile, ".");
     }
@@ -85,14 +98,33 @@ namespace deployer {
         rd_utils::utils::write_file (tmpFile, content);
 
         this-> put (tmpFile, where);
+
+        utils::remove (tmpFile);
+        utils::remove (tmpDir);
     }
 
-    std::string Machine::getToStr (const std::string & file) {
+    std::string Machine::getToStr (const std::string & file, uint32_t nbTries, float sleepBetweenTries) {
         auto tmpDir = rd_utils::utils::create_temp_dirname (this-> _hostname);
         auto tmpFile = utils::join_path (tmpDir, "result");
-        this-> get (file, tmpFile);
 
-        return rd_utils::utils::read_file (tmpFile);
+        for (uint32_t nb = 1 ;; nb ++) {
+            try {
+                this-> get (file, tmpFile);
+
+                auto result = rd_utils::utils::read_file (tmpFile);
+                utils::remove (tmpFile);
+                utils::remove (tmpDir);
+
+                return result;
+            } catch (const std::runtime_error & err) {
+                if (nb >= nbTries) {
+                    utils::remove (tmpFile);
+                    utils::remove (tmpDir);
+                    throw err;
+                }
+                concurrency::timer::sleep (sleepBetweenTries);
+            }
+        }
     }
 
     void Machine::put (const std::string & file, const std::string & where) {

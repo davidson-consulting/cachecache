@@ -43,6 +43,10 @@ namespace deployer {
          */
         std::vector <std::string> machines () const;
 
+        /**
+         * Clean the machines temporary files
+         */
+        void clean ();
     };
 
 }

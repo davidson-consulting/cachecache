@@ -13,8 +13,9 @@ namespace deployer {
     class Cache {
     private:
 
-        struct CacheDeployement {
-
+        struct EntityInfo {
+            rd_utils::utils::MemorySize size;
+            uint32_t ttl;
         };
 
     private:
@@ -41,7 +42,10 @@ namespace deployer {
         rd_utils::utils::MemorySize _size;
 
         // The size of the entities to deploy
-        std::map <std::string, rd_utils::utils::MemorySize> _entities;
+        std::map <std::string, EntityInfo> _entities;
+
+        // True if working dir is created on host
+        bool _hasPath = false;
 
     private:
 
@@ -75,11 +79,6 @@ namespace deployer {
         void start ();
 
         /**
-         * Wait for the cache instance to finish @infinite
-         */
-        void join ();
-
-        /**
          * Kill every processes started by the cache
          */
         void kill ();
@@ -101,6 +100,17 @@ namespace deployer {
          * @returns: the name of the cache
          */
         const std::string & getName () const;
+
+        /**
+         * @returns: the host on which the cache is deployed
+         */
+        std::shared_ptr <Machine> getHost ();
+
+        /**
+         * @returns: the port on which the entity is deployed
+         * @throws: if not exist
+         */
+        uint32_t getPort (const std::string & name) const;
 
     private:
 
@@ -129,7 +139,12 @@ namespace deployer {
          * @params:
          *    - supervisorPort: the port on which the supervisor is running
          */
-        std::string createCacheEntityConfig (uint32_t supervisorPort);
+        std::string createCacheEntityConfig (const std::string & name, std::shared_ptr <Machine> host);
+
+        /**
+         * @returns: the path to the bin files on the machine host, and create them if they don't exist
+         */
+        std::string cachePath ();
 
     };
 
