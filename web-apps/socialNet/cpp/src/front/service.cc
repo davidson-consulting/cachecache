@@ -3,6 +3,7 @@
 #include "service.hh"
 #include "../registry/service.hh"
 #include <cstdint>
+#include <thread>
 
 using namespace httpserver;
 using namespace rd_utils;
@@ -52,10 +53,13 @@ namespace socialNet {
     }
 
     int32_t webPort = 8080;
-    int32_t nbThreads = 12;
+    int32_t nbThreads = (std::thread::hardware_concurrency () / 2);
     if (cfg.contains ("server")) {
       webPort = cfg ["server"].getOr ("port", webPort);
       nbThreads = cfg ["server"].getOr ("threads", nbThreads);
+      if (nbThreads <= 0) {
+        nbThreads = (std::thread::hardware_concurrency () / 2);
+      }
     }
 
     if (cfg.contains ("cache")) {
