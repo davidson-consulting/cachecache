@@ -49,6 +49,11 @@ namespace deployer {
                 const std::string & getName () const;
 
                 /**
+                 * @returns: the path to the home directory of the machine
+                 */
+                std::string getHomeDir () const;
+
+                /**
                  * @returns: the remote iface of the machine accessible from anywhere
                  */
                 const std::string & getIface () const;
@@ -96,6 +101,13 @@ namespace deployer {
                  *    - where: the directory in which to put the file (by default /tmp/{hostname} if where == "", or /root if user is root)
                  */
                 void get (const std::string & filePath, const std::string & where = "");
+
+                /**
+                 * Download a file from remote node and put it in a string
+                 * @params:
+                 *    - filePath: the path of the file on the remote node
+                 */
+                std::string getToStr (const std::string & filePath);
 
         private:
 

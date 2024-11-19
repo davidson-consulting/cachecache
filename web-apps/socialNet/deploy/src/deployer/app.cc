@@ -1,13 +1,15 @@
 #include "app.hh"
+#include "deployment.hh"
 #include "cluster.hh"
+#include "cache.hh"
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
 
 namespace deployer {
 
-    Application::Application (Cluster & c, const std::string & name) :
-        _context (&c)
+    Application::Application (Deployment * c, const std::string & name) :
+        _context (c)
         , _name (name)
     {}
 
@@ -24,7 +26,31 @@ namespace deployer {
         auto cfg = this-> createRegistryConfig ();
     }
 
-    void Application::join () {}
+    void Application::join () {
+        for (auto & it : this-> _running) {
+            it-> wait ();
+        }
+
+        this-> _running.clear ();
+        this-> kill ();
+    }
+
+    void Application::kill () {
+        LOG_INFO ("Kill app ", this-> _name);
+        for (auto & it : this-> _running) {
+            it-> dispose ();
+        }
+
+        this-> _running.clear ();
+        for (auto & it : this-> _killing) {
+            auto mch = this-> _context-> getCluster ()-> get (it.first);
+            for (auto & jt : it.second) {
+                mch-> run (jt)-> wait ();
+            }
+        }
+
+        this-> _killing.clear ();
+    }
 
     /*!
      * ====================================================================================================
@@ -37,10 +63,8 @@ namespace deployer {
     void Application::configure (const rd_utils::utils::config::ConfigNode & cfg) {
         match (cfg) {
             of (config::Dict, dc) {
-                this-> readCacheConfiguration (*dc);
                 this-> readMainConfiguration (*dc);
                 this-> readServiceConfiguration (*dc);
-                this-> readBddConfiguration (*dc);
             } elfo {
                 throw std::runtime_error ("Malformed configuration for " + this-> _name);
             }
@@ -50,21 +74,23 @@ namespace deployer {
     void Application::readMainConfiguration (const config::Dict & cfg) {
         try {
             this-> _registryHost = cfg ["registry"]["host"].getStr ();
-            this-> _context-> get (this-> _registryHost)-> addFlag ("socialNet");
+            this-> _context-> getCluster ()-> get (this-> _registryHost)-> addFlag ("socialNet");
 
-            this-> _bddHost = cfg ["bdd"]["host"].getStr ();
-            this-> _context-> get (this-> _bddHost)-> addFlag ("bdd");
+            this-> _dbHost = cfg ["db"]["host"].getStr ();
+            this-> _context-> getCluster ()-> get (this-> _dbHost)-> addFlag ("db");
 
             this-> _frontHost = cfg ["front"]["host"].getStr ();
-            this-> _context-> get (this-> _frontHost)-> addFlag ("socialNet");
-            if (cfg ["front"].contains ("cache")) {
-                auto name = cfg ["front"]["cache"].getStr ();
-                if (this-> _ch.entities.find (name) == this-> _ch.entities.end ()) {
-                    throw std::runtime_error ("No cache named : " + name + " for front");
-                }
+            this-> _context-> getCluster ()-> get (this-> _frontHost)-> addFlag ("socialNet");
+            this-> _frontCache = this-> findCacheFromName (cfg ["front"].getOr ("cache", ""));
 
-                this-> _frontCache = name;
+            LOG_INFO ("Register app registry for ", this-> _name, " on host ", this-> _registryHost);
+            if (this-> _frontCache.name == "") {
+                LOG_INFO ("Register app front for ", this-> _name, " on host ", this-> _frontHost, " without cache");
+            } else {
+                LOG_INFO ("Register app front for ", this-> _name, " on host ", this-> _frontHost, " with cache ", this-> _frontCache.supervisor-> getName (), ".", this-> _frontCache.name);
             }
+            
+            LOG_INFO ("Register app database for ", this-> _name, " on host ", this-> _dbHost);
 
         } catch (const std::runtime_error & err) {
             LOG_ERROR ("Failed to read app configuration : ", err.what ());
@@ -92,18 +118,22 @@ namespace deployer {
                                 auto host = (*dc)["host"].getStr ();
                                 uint32_t nb = (*dc)["nb"].getI ();
                                 auto cache = (*dc).getOr ("cache", "");
-                                this-> _context-> get (host)-> addFlag ("social");
-                                if (cache != "" && this-> _ch.entities.find (cache) == this-> _ch.entities.end ()) {
-                                    throw std::runtime_error ("No cache named : " + cache + " for " + name);
+                                this-> _context-> getCluster ()-> get (host)-> addFlag ("social");
+                                auto ch = this-> findCacheFromName (cache);
+
+                                if (ch.name == "") {
+                                    LOG_INFO ("Register ", nb, " service replicates '", name, "' on host ", host, " for '", this-> _name, "' with no cache");
+                                } else {
+                                    LOG_INFO ("Register ", nb, " service replicates '", name, "' on host '", host, "' for ", this-> _name, " with cache ", ch.supervisor-> getName (), ".", ch.name);
                                 }
 
                                 auto fnd = this-> _services.find (host);
                                 if (fnd == this-> _services.end ()) {
                                     ServiceDeployement n = ServiceDeployement {.nbAll = nb, .services = {}};
-                                    n.services.emplace (name, ServiceReplications {.nb = nb, .cacheName = cache});
+                                    n.services.emplace (name, ServiceReplications {.nb = nb, .cache = ch});
                                 } else {
                                     fnd-> second.nbAll += nb;
-                                    fnd-> second.services.emplace (name, ServiceReplications {.nb = nb, .cacheName = cache});
+                                    fnd-> second.services.emplace (name, ServiceReplications {.nb = nb, .cache = ch});
                                 }
                             } elfo {
                                 throw std::runtime_error ("Malformed service configuration for " + this-> _name);
@@ -120,36 +150,24 @@ namespace deployer {
         }
     }
 
-    void Application::readCacheConfiguration (const config::Dict & cfg) {
-        if (cfg.contains ("cache")) {
-            try {
-                this-> _cacheHost = cfg ["cache"]["host"].getStr ();
-                auto unit = cfg ["cache"]["unit"].getStr ();
-                this-> _ch.size = MemorySize::unit (cfg ["cache"]["size"].getI (), unit);
-                this-> _context-> get (this-> _cacheHost)-> addFlag ("cache");
+    Application::CacheRef Application::findCacheFromName (const std::string & name) {
+        // No cache
+        if (name == "") return CacheRef {.name = "", .supervisor = nullptr};
 
-                match (cfg ["cache"]["entities"]) {
-                    of (config::Dict, en) {
-                        for (auto & it : en-> getKeys ()) {
-                            this-> _ch.entities.emplace (it, MemorySize::unit ((*en)[it].getI (), unit));
-                        }
-                    } fo;
-                }
-            } catch (const std::runtime_error & err) {
-                LOG_ERROR ("Failed to load cache configuration : ", err.what ());
-                throw std::runtime_error ("Malformed cache configuration for " + this-> _name);
-            }
+        auto fnd = name.find (".");
+        if (fnd == std::string::npos) {
+            throw std::runtime_error ("Malformed cache name : " + name + " (expected ${cacheName}.${entityName})");
         }
-    }
 
-    void Application::readBddConfiguration (const config::Dict & cfg) {
-        try {
-            this-> _bddHost = cfg ["bdd"]["host"].getStr ();
-            this-> _context-> get (this-> _bddHost)-> addFlag ("bdd");
-        } catch (const std::runtime_error & err) {
-            LOG_ERROR ("Failed to read BDD config", err.what ());
-            throw std::runtime_error ("Malformed cache configuration for " + this-> _name);
+        auto cacheName = name.substr (0, fnd);
+        auto entityName = name.substr (fnd + 1);
+
+        auto cacheInst = this-> _context-> getCache (cacheName);
+        if (!cacheInst-> hasEntity (entityName)) {
+            throw std::runtime_error ("Malformed cache name : " + name + " (cache instance " + cacheName + " does not have an entity named " + entityName + ")");
         }
+
+        return CacheRef {.name = entityName, .supervisor = cacheInst};
     }
 
     /*!
@@ -175,8 +193,8 @@ namespace deployer {
             "      - 3306:3306\n"
             "    command: mysqld --lower_case_table_names=1 --skip-ssl --character_set_server=utf8mb4 --explicit_defaults_for_timestamp\n";
 
-        this-> _context-> get (this-> _bddHost)-> putFromStr (cmp, "compose.yaml");
-        auto p = this-> _context-> get (this-> _bddHost)-> run ("docker-compose up -d");
+        this-> _context-> getCluster ()-> get (this-> _dbHost)-> putFromStr (cmp, "compose.yaml");
+        auto p = this-> _context-> getCluster ()-> get (this-> _dbHost)-> run ("docker-compose up -d");
         p-> wait ();
 
         LOG_INFO (p-> stdout ());
@@ -186,7 +204,7 @@ namespace deployer {
         auto cfg = std::make_shared <config::Dict> ();
         cfg-> insert ("port", (int64_t) 0);
         cfg-> insert ("addr", "0.0.0.0");
-        cfg-> insert ("iface", this-> _context-> get (this-> _registryHost)-> getIface ());
+        cfg-> insert ("iface", this-> _context-> getCluster ()-> get (this-> _registryHost)-> getIface ());
 
         return cfg;
     }

@@ -42,6 +42,11 @@ namespace deployer {
         return this-> _ip;
     }
 
+    std::string Machine::getHomeDir () const {
+        if (this-> _user == "root") return "/root";
+        else return "/home/" + this-> _user;
+    }
+
     /*!
      * ====================================================================================================
      * ====================================================================================================
@@ -69,16 +74,25 @@ namespace deployer {
 
         this-> run ("mkdir " + tmpDir)-> wait ();
         this-> put (tmpFile, tmpFile);
+        std::cout << tmpFile << std::endl;
 
         return this-> run ("bash " + tmpFile, ".");
     }
 
     void Machine::putFromStr (const std::string & content, const std::string & where) {
         auto tmpDir = rd_utils::utils::create_temp_dirname (this-> _hostname);
-        auto tmpFile = utils::join_path (tmpDir, "script.sh");
+        auto tmpFile = utils::join_path (tmpDir, "content");
         rd_utils::utils::write_file (tmpFile, content);
 
         this-> put (tmpFile, where);
+    }
+
+    std::string Machine::getToStr (const std::string & file) {
+        auto tmpDir = rd_utils::utils::create_temp_dirname (this-> _hostname);
+        auto tmpFile = utils::join_path (tmpDir, "result");
+        this-> get (file, tmpFile);
+
+        return rd_utils::utils::read_file (tmpFile);
     }
 
     void Machine::put (const std::string & file, const std::string & where) {
@@ -98,7 +112,7 @@ namespace deployer {
         if (where == "") {
             realOutPath = utils::join_path ("/tmp/" + this-> _hostname, utils::get_filename (file));
         } else {
-            realOutPath = utils::join_path (where, utils::get_filename (file));
+            realOutPath = where;
         }
 
         auto proc = std::make_shared <SCPProcess> (this-> _hostname, file, realOutPath, false, this-> _user);

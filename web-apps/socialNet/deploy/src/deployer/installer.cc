@@ -53,8 +53,8 @@ namespace deployer {
             "apt install -y nlohmann-json3-dev libgc-dev libssh-dev libssl-dev libmysqlcppconn-dev libmysql++-dev\n"
             "wget https://github.com/davidson-consulting/vjoule/releases/download/v1.3.0/vjoule-tools_1.3.0.deb\n"
             "dpkg -i vjoule-tools_1.3.0.deb\n"
-            "rm vjoule-tools_1.3.0.deb\n";
-
+            "rm vjoule-tools_1.3.0.deb\n"
+            "mkdir ~/traces/\n";
 
         auto r = m-> runScript (script);
         r-> wait ();
