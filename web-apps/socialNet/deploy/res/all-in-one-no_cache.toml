@@ -1,0 +1,26 @@
+[machines.nuc-intel]
+hostname = "nuc-intel"
+user = "root"
+iface = "eth0"
+
+[apps.app1]
+registry = {host = "nuc-intel"}
+db = {host = "nuc-intel", name = "socialNet", port = 3309 }
+front = {host = "nuc-intel", port = 8081}#, cache = "cache1.front"}
+
+compose = [{host = "nuc-intel", nb = 4}]
+text = [{host = "nuc-intel", nb = 4}]
+post = [{host = "nuc-intel", nb = 4}]#, cache = "cache1.service"}]
+social = [{host = "nuc-intel", nb = 4}]#, cache = "cache1.service"}]
+short = [{host = "nuc-intel", nb = 4}]#, cache = "cache1.service"}]
+user = [{host = "nuc-intel", nb = 4}]#, cache = "cache1.service"}]
+timeline = [{host = "nuc-intel", nb = 4 }]#, cache = "cache1.service"}]
+
+# [caches.cache1]
+# host = "nuc-intel"
+# size = 256
+# unit = "MB"
+# entities = {
+#      service = { size = 64, ttl = 100 },
+#      front = { size = 128 }
+# }
