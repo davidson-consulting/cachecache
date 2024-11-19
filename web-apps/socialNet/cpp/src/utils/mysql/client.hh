@@ -107,6 +107,8 @@ namespace socialNet::utils {
 
     std::string _password;
 
+    uint32_t _port;
+
     // The connection to mysql
     MYSQL * _conn = nullptr;
 
@@ -130,7 +132,7 @@ namespace socialNet::utils {
      * Create a mysql client
      * @info: not connected yet
      */
-    MysqlClient (const std::string & addr, const std::string & user, const std::string & password, const std::string & db);
+    MysqlClient (const std::string & addr, const std::string & user, const std::string & password, const std::string & db, uint32_t port);
 
     /**
      * Connect to the database

@@ -23,8 +23,9 @@ namespace socialNet::short_url {
     auto dbAddr = conf ["db"][db].getOr ("addr", "localhost");
     auto dbUser = conf ["db"][db].getOr ("user", "root");
     auto dbPass = conf ["db"][db].getOr ("pass", "root");
+    auto dbPort = conf ["db"][db].getOr ("port", 0);
 
-    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbPass, dbName);
+    this-> _client = std::make_shared <socialNet::utils::MysqlClient> (dbAddr, dbUser, dbPass, dbName, dbPort);
     this-> _client-> connect ();
     this-> createTables ();
 

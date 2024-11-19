@@ -1,7 +1,7 @@
 [sys]
 port = 0
 iface = "lo"
-threads = 40
+threads = 1
 
 [registry]
 name = "registry"
@@ -11,3 +11,7 @@ port = 0
 [cache]
 addr = "localhost"
 port = 6693
+
+[server]
+port = 8080
+threads = 40

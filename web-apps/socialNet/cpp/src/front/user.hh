@@ -9,8 +9,6 @@ namespace socialNet {
   class UserTimelineRoute : public httpserver::http_resource {
 
     FrontServer * _context;
-    utils::Counter _cacheCounter;
-    utils::Counter _serviceCounter;
 
   public:
 

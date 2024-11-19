@@ -182,11 +182,12 @@ namespace socialNet::utils {
     }
   }
 
-  MysqlClient::MysqlClient (const std::string & server, const std::string & user, const std::string & password, const std::string & db) :
+  MysqlClient::MysqlClient (const std::string & server, const std::string & user, const std::string & password, const std::string & db, uint32_t port) :
     _server (server)
     , _user (user)
     , _db (db)
     , _password (password)
+    , _port (port)
     , _conn (nullptr)
   {}
 
@@ -203,7 +204,7 @@ namespace socialNet::utils {
 
     this-> _conn = mysql_init (nullptr);
     mysql_options(this-> _conn, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
-    auto code = mysql_real_connect (this-> _conn, this-> _server.c_str (), this-> _user.c_str (), this-> _password.c_str (), this-> _db.c_str (), 0, nullptr, 0);
+    auto code = mysql_real_connect (this-> _conn, this-> _server.c_str (), this-> _user.c_str (), this-> _password.c_str (), this-> _db.c_str (), this-> _port, nullptr, 0);
     if (code == 0) {
       auto msg = std::string (mysql_error (this-> _conn));
       mysql_close (this-> _conn);
