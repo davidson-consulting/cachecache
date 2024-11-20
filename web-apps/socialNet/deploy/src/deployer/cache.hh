@@ -79,6 +79,11 @@ namespace deployer {
                 void start ();
 
                 /**
+                 * Download the result of the xps
+                 */
+                void downloadResults (const std::string & resultDir);
+
+                /**
                  * Kill every processes started by the cache
                  */
                 void kill ();

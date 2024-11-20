@@ -2,6 +2,8 @@
 hostname = "nuc-intel"
 user = "root"
 iface = "eth0"
+work-dir = "~/"
+has-pdu = true
 
 [caches.cache1]
 host = "nuc-intel"

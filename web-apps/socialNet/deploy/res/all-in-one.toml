@@ -3,6 +3,7 @@ hostname = "nuc-intel"
 work-dir = "~/"
 user = "root"
 iface = "eth0"
+has-pdu = true
 
 [apps.app1]
 registry = {host = "nuc-intel"}
@@ -15,7 +16,7 @@ post = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
 social = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
 short = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
 user = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
-timeline = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
+timeline = [{host = "nuc-intel", nb = 12<, cache = "cache1.service"}]
 
 [caches.cache1]
 host = "nuc-intel"

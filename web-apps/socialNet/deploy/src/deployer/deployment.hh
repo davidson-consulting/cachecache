@@ -27,6 +27,9 @@ namespace deployer {
                 // The file containing the configuration
                 std::string _hostFile;
 
+                // The result directory
+                std::string _resultDir;
+
                 // Install packages on nodes (otherwise assume everything is already installed)
                 bool _installNodes;
 
@@ -57,6 +60,11 @@ namespace deployer {
                  * Wait for the deployment to join (infinite unless there is a crash)
                  */
                 void join ();
+
+                /**
+                 * Download the results file of the xps
+                 */
+                void downloadResults ();
 
                 /**
                  * Kill the deployement

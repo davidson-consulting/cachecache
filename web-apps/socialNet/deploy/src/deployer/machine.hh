@@ -27,6 +27,9 @@ namespace deployer {
                 // The ip of the machine (discovered from iface)
                 std::string _ip;
 
+                // True if a pdu is connected to the machine
+                bool _hasPDU;
+
         public:
 
                 /**
@@ -35,7 +38,7 @@ namespace deployer {
                  *    - user: the user of the machine
                  *    - workDir: the working directory of the deployement
                  */
-                Machine (const std::string & hostname, const std::string & user, const std::string & workDir, const std::string & iface);
+                Machine (const std::string & hostname, const std::string & user, const std::string & workDir, const std::string & iface, bool hasPDU = false);
 
                 /**
                  * Add a flag to the machine to filter installation
@@ -66,6 +69,11 @@ namespace deployer {
                  * @returns: the remote ip of the machine accessible from anywhere
                  */
                 const std::string & getIp () const;
+
+                /**
+                 * @returns: true iif the machine has a pdu
+                 */
+                bool hasPDU () const;
 
                 /**
                  * Run a single command on the remote node

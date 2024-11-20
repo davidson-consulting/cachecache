@@ -1,7 +1,9 @@
 [machines.nuc-intel]
 hostname = "nuc-intel"
+work-dir = "~/"
 user = "root"
 iface = "eth0"
+has-pdu = true
 
 [apps.app1]
 registry = {host = "nuc-intel"}

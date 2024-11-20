@@ -98,6 +98,26 @@ namespace deployer {
         }
     }
 
+    void Cache::downloadResults (const std::string & resultDir) {
+        auto host = this-> _context-> getCluster ()-> get (this-> _cacheHost);
+        auto dir = utils::join_path (resultDir, this-> _cacheHost);
+        utils::create_directory (dir, true);
+
+        try {
+            auto superTrace = utils::join_path (utils::join_path (host-> getHomeDir (), "traces"), this-> _name + "_traces.json");
+            auto outSuperPath = utils::join_path (dir, this-> _name + "_traces.json");
+            host-> get (superTrace, outSuperPath);
+        } catch (...) {}
+
+        for (auto & it : this-> _entities) {
+            try {
+                auto entityPath = utils::join_path (utils::join_path (host-> getHomeDir (), "traces"), this-> _name + "." + it.first + "_traces.0.json");
+                auto out = utils::join_path (dir, this-> _name + "." + it.first + "_traces.json");
+                host-> get (entityPath, out);
+            } catch (...) {}
+        }
+    }
+
     void Cache::kill () {
         LOG_INFO ("Kill cache ", this-> _name);
         for (auto & it : this-> _running) {
@@ -145,11 +165,13 @@ namespace deployer {
         auto pidStr = host-> getToStr (utils::join_path (path, "pidof_super"), 10, 0.1);
         auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
+        host-> run ("cgclassify -g cpu,memory:cache/" + this-> _name + " " + pidStr)-> wait ();
+
         auto portStr = host-> getToStr (utils::join_path (path, "super_port"), 10, 0.1);
         this-> _superPort = std::strtoull (portStr.c_str (), NULL, 0);
 
         LOG_INFO ("Cache supervisor is running on ", this-> _cacheHost, " on port = ", this-> _superPort, ", and pid = ", pid);
-        this-> _killing.push_back ("kill -9 " + std::to_string (pid));
+        this-> _killing.push_back ("kill -2 " + std::to_string (pid));
     }
 
     std::string Cache::createCacheSupervisorConfig (std::shared_ptr <Machine> host) {
@@ -202,12 +224,14 @@ namespace deployer {
         auto pidStr = host-> getToStr (utils::join_path (path, "pidof_entity." + entityName), 20, 0.05);
         auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
+        host-> run ("cgclassify -g cpu,memory:cache/" + this-> _name + " " + pidStr)-> wait ();
+
         auto portStr = host-> getToStr (utils::join_path (path, "entity_port.0." + entityName), 20, 0.05);
         auto port = std::strtoull (portStr.c_str (), NULL, 0);
 
         this->_entitiesPort.emplace (entityName, port);
         LOG_INFO ("Cache entity is running on ", this-> _cacheHost, " on port = ", port, ", and pid = ", pid);
-        this-> _killing.push_back ("kill -9 " + std::to_string (pid));
+        this-> _killing.push_back ("kill -2 " + std::to_string (pid));
     }
 
     std::string Cache::createCacheEntityConfig (const std::string & entityName, std::shared_ptr <Machine> host) {
@@ -250,6 +274,8 @@ namespace deployer {
             host-> run ("cp -r " + utils::join_path (host-> getHomeDir (), "execs/cache/libs") + " " + path)-> wait ();
             host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/cache/supervisor") + " " + path)-> wait ();
             host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/cache/cache") + " " + path)-> wait ();
+
+            host-> run ("cgcreate -g cpu,memory:cache/" + this-> _name)-> wait ();
             this-> _hasPath = true;
         }
 

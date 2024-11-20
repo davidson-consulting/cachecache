@@ -44,6 +44,18 @@ namespace deployer {
         std::vector <std::string> machines () const;
 
         /**
+         * Prepare the monitoring of the nodes using vjoule
+         */
+        void prepareVJoule ();
+
+        /**
+         * Download the traces of vjoule
+         * @params:
+         *    - resultPath: the directory in which result are outputed
+         */
+        void downloadVJouleTraces (const std::string & resultPath);
+
+        /**
          * Clean the machines temporary files
          */
         void clean ();

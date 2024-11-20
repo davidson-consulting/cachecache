@@ -5,11 +5,12 @@ using namespace rd_utils::concurrency;
 
 namespace deployer {
 
-    Machine::Machine (const std::string & host, const std::string & user, const std::string & workDir, const std::string & iface)
+    Machine::Machine (const std::string & host, const std::string & user, const std::string & workDir, const std::string & iface, bool pdu)
         : _hostname (host)
         , _workingDir (workDir)
         , _user (user)
         , _iface (iface)
+        , _hasPDU (pdu)
     {
         this-> discoverIP ();
     }
@@ -159,6 +160,10 @@ namespace deployer {
 
         auto proc = std::make_shared <SCPProcess> (this-> _hostname, file, realOutPath, false, this-> _user);
         proc-> download ();
+    }
+
+    bool Machine::hasPDU () const {
+        return this-> _hasPDU;
     }
 
     /*!

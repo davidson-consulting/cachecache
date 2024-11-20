@@ -277,11 +277,13 @@ namespace deployer {
         auto pidStr = host-> getToStr (utils::join_path (path, "pidof_registry"), 10, 0.1);
         auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
+        host-> run ("cgclassify -g cpu,memory:apps/" + this-> _name + " " + pidStr)-> wait ();
+
         auto portStr = host-> getToStr (utils::join_path (path, "registry_port"), 10, 0.1);
         this-> _registryPort = std::strtoull (portStr.c_str (), NULL, 0);
 
         LOG_INFO ("App '", this-> _name, "' registry  is running on ", this-> _registryHost, " on port = ", this-> _registryPort, ", and pid = ", pid);
-        this-> _killing [this-> _registryHost].push_back ("kill -9 " + std::to_string (pid));
+        this-> _killing [this-> _registryHost].push_back ("kill -2 " + std::to_string (pid));
     }
 
     void Application::deployServices (const std::string & hostName) {
@@ -310,8 +312,10 @@ namespace deployer {
         auto pidStr = host-> getToStr (utils::join_path (path, "pidof_services"), 10, 0.1);
         auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
+        host-> run ("cgclassify -g cpu,memory:apps/" + this-> _name + " " + pidStr)-> wait ();
+
         LOG_INFO ("App '", this-> _name, "' services are running on ", hostName, " pid = ", pid);
-        this-> _killing [hostName].push_back ("kill -9 " + std::to_string (pid));
+        this-> _killing [hostName].push_back ("kill -2 " + std::to_string (pid));
     }
     
     void Application::deployFront () {
@@ -334,8 +338,10 @@ namespace deployer {
         auto pidStr = host-> getToStr (utils::join_path (path, "pidof_front"), 10, 0.1);
         auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
+        host-> run ("cgclassify -g cpu,memory:apps/" + this-> _name + " " + pidStr)-> wait ();
+
         LOG_INFO ("App '", this-> _name, "' front is running on ", this-> _front.host, " pid = ", pid);
-        this-> _killing [this-> _front.host].push_back ("kill -9 " + std::to_string (pid));
+        this-> _killing [this-> _front.host].push_back ("kill -2 " + std::to_string (pid));
     }
 
 
@@ -348,6 +354,9 @@ namespace deployer {
             host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/socialNet/front") + " " + path)-> wait ();
             host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/socialNet/services") + " " + path)-> wait ();
             host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/socialNet/reg") + " " + path)-> wait ();
+
+            host-> run ("cgcreate -g cpu,memory:apps")-> wait ();
+            host-> run ("cgcreate -g cpu,memory:apps/" + this-> _name)-> wait ();
 
             this-> _hostHasDir.emplace (host-> getName ());
         }

@@ -13,11 +13,12 @@ using namespace rd_utils::utils;
 deployer::Deployment * __GLOBAL_DEPLOY__ = nullptr;
 
 void ctrlCHandler (int signum) {
-  LOG_INFO ("Signal ", strsignal(signum), " received");
-  if (__GLOBAL_DEPLOY__ != nullptr) {
-    __GLOBAL_DEPLOY__-> kill ();
-    __GLOBAL_DEPLOY__ = nullptr;
-  }
+    LOG_INFO ("Signal ", strsignal(signum), " received");
+    if (__GLOBAL_DEPLOY__ != nullptr) {
+        __GLOBAL_DEPLOY__-> kill ();
+        __GLOBAL_DEPLOY__-> downloadResults ();
+        __GLOBAL_DEPLOY__ = nullptr;
+    }
 
   ::exit (0);
 }
@@ -55,8 +56,11 @@ namespace deployer {
         this-> _installNodes = false;
         this-> _installDB = false;
         this-> _onlyClean = false;
+        this-> _resultDir = "./results";
+        this-> _hostFile = "./hosts.toml";
 
-        app.add_option("-c,--config-path", this-> _hostFile, "the path of the configuration file");
+        app.add_option("-c,--config-path", this-> _hostFile, "the path of the configuration file (default = ./hosts.toml)");
+        app.add_option ("-o,--output-dir", this-> _resultDir, "the directory in which results will be exported (default = ./results)");
         app.add_flag ("--install", this-> _installNodes, "install applications on hosts");
         app.add_flag ("--install-db", this-> _installDB, "reset mysql volumes, and install base bdd (also reset user timelines)");
         app.add_flag ("--clean", this-> _onlyClean, "clean temporary files created on remote nodes (does not consider other flags, and does not launch anything)");
@@ -66,6 +70,14 @@ namespace deployer {
         } catch (const CLI::ParseError &e) {
             ::exit (app.exit (e));
         }
+
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+
+        std::stringstream ss;
+        ss << std::put_time(&tm, "%d-%m-%Y.%H-%M-%S");
+
+        this-> _resultDir = utils::join_path (this-> _resultDir, ss.str ());
     }
 
     void Deployment::configureCluster (const config::ConfigNode & cfg) {
@@ -132,6 +144,7 @@ namespace deployer {
                 i.execute ();
             }
 
+            this-> _cluster-> prepareVJoule ();
             for (auto & it : this-> _caches) {
                 it.second-> start ();
             }
@@ -148,6 +161,19 @@ namespace deployer {
 
     void Deployment::join () {
         this-> _sem.wait ();
+    }
+
+    void Deployment::downloadResults () {
+        utils::create_directory (this-> _resultDir, true);
+        try {
+            this-> _cluster-> downloadVJouleTraces (this-> _resultDir);
+        } catch (...) {}
+
+        for (auto & it : this-> _caches) {
+            try {
+                it.second-> downloadResults (this-> _resultDir);
+            } catch (...) {}
+        }
     }
 
     void Deployment::kill () {

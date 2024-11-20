@@ -27,28 +27,29 @@ namespace deployer {
         this-> runAptInstalls (mch);
 
         if (mch-> hasFlag ("social") || mch-> hasFlag ("cache")) {
-            this-> runRdUtilsInstall (mch);
+            this-> runConfigureVjoule (mch);
+            // this-> runRdUtilsInstall (mch);
         }
 
-        if (mch-> hasFlag ("social")) {
-            this-> runHttpInstall (mch);
-            this-> runSocialNetInstall (mch);
-        }
+        // if (mch-> hasFlag ("social")) {
+        //     this-> runHttpInstall (mch);
+        //     this-> runSocialNetInstall (mch);
+        // }
 
-        if (mch-> hasFlag ("gatling")) {
-            this-> runGatlingInstall (mch);
-        }
+        // if (mch-> hasFlag ("gatling")) {
+        //     this-> runGatlingInstall (mch);
+        // }
 
-        if (mch-> hasFlag ("cache")) {
-            this-> runCacheInstall (mch);
-        }
+        // if (mch-> hasFlag ("cache")) {
+        //     this-> runCacheInstall (mch);
+        // }
     }
 
     void Installer::runAptInstalls (std::shared_ptr <Machine> m) {
         LOG_INFO ("Install apt dependencies on : ", m-> getName ());
         auto script =
             "apt update\n"
-            "apt install -y mysql-client libmysqlclient-dev libgc-dev emacs patchelf net-tools\n"
+            "apt install -y mysql-client libmysqlclient-dev libgc-dev emacs patchelf net-tools cgroup-tools\n"
             "apt install -y docker-compose git cmake g++ binutils automake libtool libmicrohttpd-dev\n"
             "apt install -y nlohmann-json3-dev libgc-dev libssh-dev libssl-dev libmysqlcppconn-dev libmysql++-dev\n"
             "wget https://github.com/davidson-consulting/vjoule/releases/download/v1.3.0/vjoule-tools_1.3.0.deb\n"
@@ -60,6 +61,7 @@ namespace deployer {
         r-> wait ();
         LOG_INFO (r-> stdout ());
     }
+
 
     void Installer::runHttpInstall (std::shared_ptr <Machine> m) {
         LOG_INFO ("Install libhttpd on : ", m-> getName ());
@@ -169,5 +171,59 @@ namespace deployer {
         r-> wait ();
         LOG_INFO (r-> stdout ());
     }
-    
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =====================================          VJOULE          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    void Installer::runConfigureVjoule (std::shared_ptr <Machine> m) {
+        auto cfg = this-> createVjouleConfig (m);
+        m-> putFromStr (cfg, "/etc/vjoule/config.toml");
+
+        auto cgroupFile =
+            "cache/*\n"
+            "apps/*\n"
+            "system.slice/docker-*"
+            ;
+
+        m-> putFromStr (cgroupFile, "/etc/vjoule/cgroups");
+    }
+
+    std::string Installer::createVjouleConfig (std::shared_ptr <Machine> m) const {
+        auto sensor = std::make_shared <config::Dict> ();
+        sensor-> insert ("freq", (int64_t) 1);
+        sensor-> insert ("log-lvl", "none");
+        sensor-> insert ("core", "dumper");
+        sensor-> insert ("log-path", "/etc/vjoule/service.log");
+        sensor-> insert ("output-dir", "/etc/vjoule/results");
+        sensor-> insert ("mount-tmpfs", std::make_shared <config::Bool> (true));
+
+        auto counters = std::make_shared <config::Array> ();
+        counters-> insert ("PERF_COUNT_SW_CPU_CLOCK");
+        sensor-> insert ("perf-counters", counters);
+
+        auto cpu = std::make_shared <config::Dict> ();
+        cpu-> insert ("name", "rapl");
+
+        auto ram = std::make_shared <config::Dict> ();
+        ram-> insert ("name", "rapl");
+
+        auto result = config::Dict ()
+            .insert ("sensor", sensor)
+            .insert ("cpu", cpu)
+            .insert ("ram", ram);
+
+        if (m-> hasPDU ()) {
+            auto pdu = std::make_shared <config::Dict> ();
+            pdu-> insert ("name", "yocto");
+            result.insert ("pdu", pdu);
+        }
+
+        return toml::dump (result);
+    }
+
 }
