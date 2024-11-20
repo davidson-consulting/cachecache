@@ -21,6 +21,20 @@ namespace deployer {
                         CacheRef cache;
                 };
 
+                struct DBConfig {
+                        uint32_t port = 3306;
+                        std::string name;
+                        std::string host;
+                        std::string base = "";
+                };
+
+                struct FrontConfig {
+                        std::string host;
+                        int32_t threads = 0;
+                        uint32_t port = 8080;
+                        CacheRef cache;
+                };
+
         private:
 
                 Deployment * _context;
@@ -41,26 +55,11 @@ namespace deployer {
                 // The host deploying the registry
                 std::string _registryHost;
 
-                // The host deploying the DB
-                std::string _dbHost;
+                // The configuration of the db
+                DBConfig _db;
 
-                // The name of the db used by the app
-                std::string _dbName;
-
-                // The port of the db
-                uint32_t _dbPort = 3306;
-
-                // The host deploying the front
-                std::string _frontHost;
-
-                // The number of threads of the front
-                int32_t _frontThreads = 0;
-
-                // The port of the front app
-                uint32_t _frontPort = 8080;
-
-                // The name of the cache used by the front (can be "" if no cache)
-                CacheRef _frontCache;
+                // The configuration of the front
+                FrontConfig _front;
 
         private:
 
@@ -120,6 +119,11 @@ namespace deployer {
                  * Kill every processes launched by the app
                  */
                 void kill ();
+
+                /**
+                 * Clean temporary files created on remote nodes
+                 */
+                void clean ();
 
         private:
 

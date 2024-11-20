@@ -12,6 +12,9 @@ namespace deployer {
                 // The host name of the machine (used for ssh connection)
                 std::string _hostname;
 
+                // The working directory
+                std::string _workingDir;
+
                 // THe user accessing the machine
                 std::string _user;
 
@@ -30,8 +33,9 @@ namespace deployer {
                  * @params:
                  *    - hostname: the name of the host machine
                  *    - user: the user of the machine
+                 *    - workDir: the working directory of the deployement
                  */
-                Machine (const std::string & hostname, const std::string & user, const std::string & iface);
+                Machine (const std::string & hostname, const std::string & user, const std::string & workDir, const std::string & iface);
 
                 /**
                  * Add a flag to the machine to filter installation

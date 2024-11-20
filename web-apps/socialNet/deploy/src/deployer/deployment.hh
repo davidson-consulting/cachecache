@@ -6,102 +6,120 @@
 
 namespace deployer {
 
-    class Cluster;
-    class Application;
-    class Cache;
+        class Cluster;
+        class Application;
+        class Cache;
 
-    class Deployment {
-    private:
+        class Deployment {
+        private:
 
-        // The cluster on which the deployment is made
-        std::shared_ptr<Cluster> _cluster;
+                // The cluster on which the deployment is made
+                std::shared_ptr<Cluster> _cluster;
 
-        // The list of application to deploy
-        std::map <std::string, std::shared_ptr <Application> > _apps;
+                // The list of application to deploy
+                std::map <std::string, std::shared_ptr <Application> > _apps;
 
-        // The list of cache to deploy
-        std::map <std::string, std::shared_ptr <Cache> > _caches;
+                // The list of cache to deploy
+                std::map <std::string, std::shared_ptr <Cache> > _caches;
 
-    private:
+        private:
 
-        // The file containing the configuration
-        std::string _hostFile;
+                // The file containing the configuration
+                std::string _hostFile;
 
-        // Install packages on nodes (otherwise assume everything is already installed)
-        bool _installNodes;
+                // Install packages on nodes (otherwise assume everything is already installed)
+                bool _installNodes;
 
-        // Reinstall the DB on the nodes (otherwise assume everything is already installed)
-        bool _installDB;
+                // Reinstall the DB on the nodes (otherwise assume everything is already installed)
+                bool _installDB;
 
-        // To wait indefinitely
-        rd_utils::concurrency::semaphore _sem;
+                // Clean remote nodes
+                bool _onlyClean;
 
-    public:
+                // To wait indefinitely
+                rd_utils::concurrency::semaphore _sem;
 
-        Deployment ();
+        public:
 
-        /**
-         * Configure the deployement
-         */
-        void configure (int argc, char ** argv);
+                Deployment ();
 
-        /**
-         * Start the deployement
-         */
-        void start ();
+                /**
+                 * Configure the deployement
+                 */
+                void configure (int argc, char ** argv);
 
-        /**
-         * Wait for the deployment to join (infinite unless there is a crash)
-         */
-        void join ();
+                /**
+                 * Start the deployement
+                 */
+                void start ();
 
-        /**
-         * Kill the deployement
-         */
-        void kill ();
+                /**
+                 * Wait for the deployment to join (infinite unless there is a crash)
+                 */
+                void join ();
 
-        /*!
-         * ====================================================================================================
-         * ====================================================================================================
-         * ====================================          GETTERS          =====================================
-         * ====================================================================================================
-         * ====================================================================================================
-         */
+                /**
+                 * Kill the deployement
+                 */
+                void kill ();
 
-        /**
-         * @returns: the cluster of the deployment
-         */
-        std::shared_ptr <Cluster> getCluster ();
+                /**
+                 * Clean everything created by this deployement (or a previous identical one)
+                 */
+                void clean ();
 
-        /**
-         * @returns: the cache deployment
-         * @throws: if the cache does not exist
-         */
-        std::shared_ptr <Cache> getCache (const std::string & name);
+                /*!
+                 * ====================================================================================================
+                 * ====================================================================================================
+                 * ====================================          GETTERS          =====================================
+                 * ====================================================================================================
+                 * ====================================================================================================
+                 */
 
-    private:
+                /**
+                 * @returns: the cluster of the deployment
+                 */
+                std::shared_ptr <Cluster> getCluster ();
 
-        /**
-         * Parse the command line options
-         * @warning: exit the application if command line are wrong
-         */
-        void parseCmdOptions (int argc, char ** argv);
+                /**
+                 * @returns: the cache deployment
+                 * @throws: if the cache does not exist
+                 */
+                std::shared_ptr <Cache> getCache (const std::string & name);
 
-        /**
-         * Configure the machines of the deployement
-         */
-        void configureCluster (const rd_utils::utils::config::ConfigNode & cfg);
+                /**
+                 * @returns: true if the flag install db was set
+                 */
+                bool installDB () const;
 
-        /**
-         * Configure the cached to deploy
-         */
-        void configureCaches (const rd_utils::utils::config::ConfigNode & cfg);
+                /**
+                 * @returns: the relative path to the directory containing the configuration file
+                 */
+                std::string getConfigDirPath () const;
 
-        /**
-         * Configure the applications to deploy
-         */
-        void configureApplications (const rd_utils::utils::config::ConfigNode & cfg);
+        private:
 
-    };
+                /**
+                 * Parse the command line options
+                 * @warning: exit the application if command line are wrong
+                 */
+                void parseCmdOptions (int argc, char ** argv);
+
+                /**
+                 * Configure the machines of the deployement
+                 */
+                void configureCluster (const rd_utils::utils::config::ConfigNode & cfg);
+
+                /**
+                 * Configure the cached to deploy
+                 */
+                void configureCaches (const rd_utils::utils::config::ConfigNode & cfg);
+
+                /**
+                 * Configure the applications to deploy
+                 */
+                void configureApplications (const rd_utils::utils::config::ConfigNode & cfg);
+
+        };
 
 }

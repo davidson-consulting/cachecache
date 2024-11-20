@@ -5,8 +5,9 @@ using namespace rd_utils::concurrency;
 
 namespace deployer {
 
-    Machine::Machine (const std::string & host, const std::string & user, const std::string & iface)
+    Machine::Machine (const std::string & host, const std::string & user, const std::string & workDir, const std::string & iface)
         : _hostname (host)
+        , _workingDir (workDir)
         , _user (user)
         , _iface (iface)
     {
@@ -43,8 +44,17 @@ namespace deployer {
     }
 
     std::string Machine::getHomeDir () const {
-        if (this-> _user == "root") return "/root";
-        else return "/home/" + this-> _user;
+        std::string home = "";
+        if (this-> _user == "root") {
+            home = "/root";
+        } else {
+            home = "/home/" + this-> _user;
+        }
+
+        if (this-> _workingDir == "") return home;
+        else {
+            return utils::findAndReplaceAll (this-> _workingDir, "~", home);
+        }
     }
 
     /*!
@@ -168,7 +178,7 @@ namespace deployer {
             this-> _ip = this-> _ip.substr (0, index);
         }
 
-        LOG_INFO ("Ip of machine : ", this-> _hostname, " is ", this-> _ip);
+        LOG_INFO ("Remote machine '", this-> _hostname, "' configured with ip = ", this-> _ip, ", wd = ", this-> getHomeDir ());
     }
     
     

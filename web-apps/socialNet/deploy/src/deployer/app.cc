@@ -47,12 +47,38 @@ namespace deployer {
         }
 
         this-> _killing.clear ();
-        for (auto & it : this-> _hostHasDir) {
-            auto host = this-> _context-> getCluster ()-> get (it);
+    }
+
+    void Application::clean () {
+        try {
+            auto host = this-> _context-> getCluster ()-> get (this-> _db.host);
             auto path = utils::join_path (host-> getHomeDir (), "run/apps/" + this-> _name);
-            LOG_INFO ("Remove app directory '" + this-> _name + "' on : ", it);
-            host-> run ("rm -rf " + path)-> wait ();
+            LOG_INFO ("Closing mysql docker image on : ", this-> _db.host);
+            host-> run ("cd " + path + "; docker-compose down")-> wait ();
+        } catch (...) {}
+
+        for (auto & it : this-> _services) {
+            try {
+                auto host = this-> _context-> getCluster ()-> get (it.first);
+                auto path = utils::join_path (host-> getHomeDir (), "run/apps/" + this-> _name);
+                LOG_INFO ("Remove app directory '" + this-> _name + "' on : ", it.first);
+                host-> run ("rm -rf " + path)-> wait ();
+            } catch (...) {}
         }
+
+        try {
+            auto host = this-> _context-> getCluster ()-> get (this-> _front.host);
+            auto path = utils::join_path (host-> getHomeDir (), "run/apps/" + this-> _name);
+            LOG_INFO ("Remove app directory '" + this-> _name + "' on : ", this-> _front.host);
+            host-> run ("rm -rf " + path)-> wait ();
+        } catch (...) {}
+
+        try {
+            auto host = this-> _context-> getCluster ()-> get (this-> _registryHost);
+            auto path = utils::join_path (host-> getHomeDir (), "run/apps/" + this-> _name);
+            LOG_INFO ("Remove app directory '" + this-> _name + "' on : ", this-> _registryHost);
+            host-> run ("rm -rf " + path)-> wait ();
+        } catch (...) {}
     }
 
     /*!
@@ -76,28 +102,38 @@ namespace deployer {
 
     void Application::readMainConfiguration (const config::Dict & cfg) {
         try {
+            // Read registry configuration
             this-> _registryHost = cfg ["registry"]["host"].getStr ();
             this-> _context-> getCluster ()-> get (this-> _registryHost)-> addFlag ("socialNet");
 
-            this-> _dbHost = cfg ["db"]["host"].getStr ();
-            this-> _dbName = cfg ["db"]["name"].getStr ();
-            this-> _dbPort = cfg ["db"].getOr ("port", 3306);
-            this-> _context-> getCluster ()-> get (this-> _dbHost)-> addFlag ("db");
+            // Read db configuration
+            this-> _db.host = cfg ["db"]["host"].getStr ();
+            this-> _db.name = cfg ["db"]["name"].getStr ();
+            this-> _db.port = cfg ["db"].getOr ("port", (int64_t) this-> _db.port);
+            this-> _db.base = cfg ["db"].getOr ("base", this-> _db.base);
+            if (this-> _db.base != "") {
+                this-> _db.base = utils::join_path (this-> _context-> getConfigDirPath (), this-> _db.base);
+                if (!utils::file_exists (this-> _db.base)) {
+                    throw std::runtime_error ("Base sql file '" + this-> _db.base + "' not found");
+                }
+            }
+            this-> _context-> getCluster ()-> get (this-> _db.host)-> addFlag ("db");
 
-            this-> _frontHost = cfg ["front"]["host"].getStr ();
-            this-> _context-> getCluster ()-> get (this-> _frontHost)-> addFlag ("socialNet");
-            this-> _frontCache = this-> findCacheFromName (cfg ["front"].getOr ("cache", ""));
-            this-> _frontThreads = cfg ["front"].getOr ("threads", -1);
-            this-> _frontPort = cfg ["front"].getOr ("port", (int64_t) this-> _frontPort);
+            // Read front configuration
+            this-> _front.host = cfg ["front"]["host"].getStr ();
+            this-> _front.cache = this-> findCacheFromName (cfg ["front"].getOr ("cache", ""));
+            this-> _front.threads = cfg ["front"].getOr ("threads", -1);
+            this-> _front.port = cfg ["front"].getOr ("port", (int64_t) this-> _front.port);
+            this-> _context-> getCluster ()-> get (this-> _front.host)-> addFlag ("socialNet");
 
             LOG_INFO ("Register app registry for ", this-> _name, " on host ", this-> _registryHost);
-            if (this-> _frontCache.name == "") {
-                LOG_INFO ("Register app front for ", this-> _name, " on host ", this-> _frontHost, " without cache");
+            if (this-> _front.cache.name == "") {
+                LOG_INFO ("Register app front for ", this-> _name, " on host ", this-> _front.host, " without cache");
             } else {
-                LOG_INFO ("Register app front for ", this-> _name, " on host ", this-> _frontHost, " with cache ", this-> _frontCache.supervisor-> getName (), ".", this-> _frontCache.name);
+                LOG_INFO ("Register app front for ", this-> _name, " on host ", this-> _front.host, " with cache ", this-> _front.cache.supervisor-> getName (), ".", this-> _front.cache.name);
             }
             
-            LOG_INFO ("Register app database for ", this-> _name, " on host ", this-> _dbHost);
+            LOG_INFO ("Register app database for ", this-> _name, " on host ", this-> _db.host);
 
         } catch (const std::runtime_error & err) {
             LOG_ERROR ("Failed to read app configuration : ", err.what ());
@@ -190,10 +226,10 @@ namespace deployer {
             "    environment:\n"
             "      - MYSQL_ALLOW_EMPTY_PASSWORD=yes\n"
             "    ports:\n"
-            "      - " + std::to_string (this-> _dbPort) + ":3306\n"
+            "      - " + std::to_string (this-> _db.port) + ":3306\n"
             "    command: mysqld --lower_case_table_names=1 --skip-ssl --character_set_server=utf8mb4 --explicit_defaults_for_timestamp\n";
 
-        auto host = this-> _context-> getCluster ()-> get (this-> _dbHost);
+        auto host = this-> _context-> getCluster ()-> get (this-> _db.host);
         auto path = this-> appPath (host);
 
         auto script =
@@ -204,13 +240,21 @@ namespace deployer {
         host-> runScript (script)-> wait ();
         concurrency::timer t;
 
-        LOG_INFO ("Deploying DB on '", this-> _dbHost);
-        this-> _killing [this-> _dbHost].push_back ("cd " + path + "; docker-compose down");
-
+        LOG_INFO ("Deploying DB on '", this-> _db.host);
         t.sleep (1);
 
-        host-> runAndWait ("mysql -e \"create database if not exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _dbPort), 50, 0.2);
-        LOG_INFO ("Created db on ", this-> _dbHost, " (took : ", t.time_since_start (), "s)");
+        if (this-> _context-> installDB ()) {
+            host-> runAndWait ("mysql -e \"drop database if exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
+            host-> runAndWait ("mysql -e \"create database if not exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
+            LOG_INFO ("Upload sql file ", this-> _db.base, " to '", this-> _db.host, "':", utils::join_path (path, "dump.sql"));
+            host-> put (this-> _db.base, utils::join_path (path, "dump.sql"));
+
+            host-> runAndWait ("cd " + path + "; mysql -e \"use socialNet; source dump.sql;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
+            LOG_INFO ("Recreated db on ", this-> _db.host, " (took : ", t.time_since_start (), "s)");
+        } else {
+            host-> runAndWait ("mysql -e \"create database if not exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
+            LOG_INFO ("Created db on ", this-> _db.host, " (took : ", t.time_since_start (), "s)");
+        }
     }
 
     void Application::deployRegistry () {
@@ -254,6 +298,12 @@ namespace deployer {
         host-> putFromStr (cfg, utils::join_path (path, "res/services.toml"));
         LOG_INFO ("Launching app '", this-> _name , "' services on ", hostName);
 
+        if (this-> _context-> installDB ()) { // clean timelines
+            host-> run ("cd " + path + "; rm -rf .home")-> wait ();
+            host-> run ("cd " + path + "; rm -rf .post")-> wait ();
+            LOG_INFO ("Cleaned user timelines");
+        }
+
         this-> _running.push_back (host-> runScript (script));
         LOG_INFO ("Waiting for the services to be avaible");
 
@@ -261,11 +311,11 @@ namespace deployer {
         auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
         LOG_INFO ("App '", this-> _name, "' services are running on ", hostName, " pid = ", pid);
-        this-> _killing [this-> _registryHost].push_back ("kill -9 " + std::to_string (pid));
+        this-> _killing [hostName].push_back ("kill -9 " + std::to_string (pid));
     }
     
     void Application::deployFront () {
-        auto host = this-> _context-> getCluster ()-> get (this-> _frontHost);
+        auto host = this-> _context-> getCluster ()-> get (this-> _front.host);
         auto cfg = this-> createFrontConfig (host);
         auto path = this-> appPath (host);
 
@@ -276,7 +326,7 @@ namespace deployer {
             "echo -e $! > pidof_front\n";
 
         host-> putFromStr (cfg, utils::join_path (path, "res/front.toml"));
-        LOG_INFO ("Launching app '", this-> _name , "' front on ", this-> _frontHost);
+        LOG_INFO ("Launching app '", this-> _name , "' front on ", this-> _front.host);
 
         this-> _running.push_back (host-> runScript (script));
         LOG_INFO ("Waiting for the front to be avaible");
@@ -284,8 +334,8 @@ namespace deployer {
         auto pidStr = host-> getToStr (utils::join_path (path, "pidof_front"), 10, 0.1);
         auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
-        LOG_INFO ("App '", this-> _name, "' front is running on ", this-> _frontHost, " pid = ", pid);
-        this-> _killing [this-> _registryHost].push_back ("kill -9 " + std::to_string (pid));
+        LOG_INFO ("App '", this-> _name, "' front is running on ", this-> _front.host, " pid = ", pid);
+        this-> _killing [this-> _front.host].push_back ("kill -9 " + std::to_string (pid));
     }
 
 
@@ -332,9 +382,9 @@ namespace deployer {
         result-> insert ("sys", sys);
 
         auto server = std::make_shared <config::Dict> ();
-        server-> insert ("port", (int64_t) this-> _frontPort);
+        server-> insert ("port", (int64_t) this-> _front.port);
         server-> insert ("iface", host-> getIface ());
-        server-> insert ("threads", (int64_t) this-> _frontThreads);
+        server-> insert ("threads", (int64_t) this-> _front.threads);
         result-> insert ("server", server);
 
         auto reg = std::make_shared <config::Dict> ();
@@ -343,10 +393,10 @@ namespace deployer {
         reg-> insert ("port", (int64_t) this-> _registryPort);
         result-> insert ("registry", reg);
 
-        if (this-> _frontCache.name != "") {
+        if (this-> _front.cache.name != "") {
             auto cache = std::make_shared <config::Dict> ();
-            cache-> insert ("addr", this-> _frontCache.supervisor-> getHost ()-> getIp ());
-            cache-> insert ("port", (int64_t) this-> _frontCache.supervisor-> getPort (this-> _frontCache.name));
+            cache-> insert ("addr", this-> _front.cache.supervisor-> getHost ()-> getIp ());
+            cache-> insert ("port", (int64_t) this-> _front.cache.supervisor-> getPort (this-> _front.cache.name));
             result-> insert ("cache", cache);
         }
 
@@ -385,9 +435,9 @@ namespace deployer {
         if (needDb) {
             auto dbs = std::make_shared <config::Dict> ();
             auto db = std::make_shared <config::Dict> ();
-            db-> insert ("addr", this-> _context-> getCluster ()-> get (this-> _dbHost)-> getIp ());
-            db-> insert ("name", this-> _dbName);
-            db-> insert ("port", (int64_t) this-> _dbPort);
+            db-> insert ("addr", this-> _context-> getCluster ()-> get (this-> _db.host)-> getIp ());
+            db-> insert ("name", this-> _db.name);
+            db-> insert ("port", (int64_t) this-> _db.port);
             db-> insert ("user", "root");
             db-> insert ("pass", "");
 

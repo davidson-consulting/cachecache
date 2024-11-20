@@ -109,7 +109,9 @@ namespace deployer {
             this-> _context-> getCluster ()-> get (this-> _cacheHost)-> run (it)-> wait ();
         }
         this-> _killing.clear ();
+    }
 
+    void Cache::clean () {
         auto host = this-> _context-> getCluster ()-> get (this-> _cacheHost);
         LOG_INFO ("Remove cache directory  '", this-> _name, "' on : ", this-> _cacheHost);
         auto path = utils::join_path (host-> getHomeDir (), "run/caches/" + this-> _name);

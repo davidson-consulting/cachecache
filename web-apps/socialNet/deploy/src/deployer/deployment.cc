@@ -54,10 +54,12 @@ namespace deployer {
         CLI::App app;
         this-> _installNodes = false;
         this-> _installDB = false;
+        this-> _onlyClean = false;
 
         app.add_option("-c,--config-path", this-> _hostFile, "the path of the configuration file");
         app.add_flag ("--install", this-> _installNodes, "install applications on hosts");
         app.add_flag ("--install-db", this-> _installDB, "reset mysql volumes, and install base bdd (also reset user timelines)");
+        app.add_flag ("--clean", this-> _onlyClean, "clean temporary files created on remote nodes (does not consider other flags, and does not launch anything)");
 
         try {
             app.parse (argc, argv);
@@ -114,6 +116,11 @@ namespace deployer {
      */
 
     void Deployment::start () {
+        if (this-> _onlyClean) {
+            this-> clean ();
+            return;
+        }
+
         __GLOBAL_DEPLOY__ = this;
         ::signal (SIGINT, &ctrlCHandler);
         ::signal (SIGTERM, &ctrlCHandler);
@@ -152,9 +159,22 @@ namespace deployer {
         for (auto & it : this-> _caches) {
             it.second-> kill ();
         }
+    }
+
+    void Deployment::clean () {
+        LOG_INFO ("Clean deployement");
+        for (auto & it : this-> _apps) {
+            it.second-> clean ();
+        }
+
+        for (auto & it : this-> _caches) {
+            it.second-> clean ();
+        }
 
         this-> _cluster-> clean ();
+        this-> _sem.post (); // cleaning is directly joined
     }
+
 
     /*!
      * ====================================================================================================
@@ -175,6 +195,14 @@ namespace deployer {
         }
 
         return it-> second;
+    }
+
+    bool Deployment::installDB () const {
+        return this-> _installDB;
+    }
+
+    std::string Deployment::getConfigDirPath () const {
+        return utils::parent_directory (this-> _hostFile);
     }
     
 }

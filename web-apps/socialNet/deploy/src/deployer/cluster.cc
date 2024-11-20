@@ -13,8 +13,9 @@ namespace deployer {
                         auto hostname = (*machines) [mc]["hostname"].getStr ();
                         auto user = (*machines) [mc]["user"].getStr ();
                         auto iface = (*machines) [mc].getOr ("iface", "eth0");
+                        auto workDir = (*machines) [mc].getOr ("work-dir", "~/");
 
-                        this-> _machines.emplace (mc, std::make_shared <Machine> (hostname, user, iface));
+                        this-> _machines.emplace (mc, std::make_shared <Machine> (hostname, user, workDir, iface));
                     }
                 } catch (const std::runtime_error & err) {
                     LOG_ERROR ("Malformed configuration file : ", err.what ());

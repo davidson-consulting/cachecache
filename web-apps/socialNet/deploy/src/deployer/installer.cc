@@ -91,8 +91,8 @@ namespace deployer {
             "make -j12\n"
             "make install\n"
             "cd ~\n"
-            "rm -rf rd_utils\n";
-
+            "rm -rf rd_utils\n"
+            ;
         auto r = m-> runScript (script);
         r-> wait ();
         LOG_INFO (r-> stdout ());
@@ -114,7 +114,8 @@ namespace deployer {
             "mv reg ~/execs/socialNet\n"
             "mv services ~/execs/socialNet\n"
             "cd ~\n"
-            "rm -rf cachecache\n";
+            "rm -rf cachecache\n"
+            ;
 
         auto r = m-> runScript (script);
         r-> wait ();
