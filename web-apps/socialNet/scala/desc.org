@@ -1,0 +1,131 @@
+#+title: Social Network
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  fr
+#+OPTIONS:   H:2 num:t toc:t \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:https://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+HTML_LINK_UP:
+#+HTML_LINK_HOME:
+#+HTML_HEAD: <style type="text/css">body{ max-width:50%; }</style>
+
+
+* Description
+
+Implementation en scala akka du social network;
+
+* Fonctionnement
+
+** Compilation
+
+#+BEGIN_SRC
+sbt assembly
+#+END_SRC
+
+** Lancement
+
+Il y a trois service à lancer (ou plus en fonction de configuration), dans l'ordre
+
+*** Registry
+
+#+BEGIN_SRC
+java -cp target/scala-3.2.2/socialnetwork-assembly-1.0.jar com.socialnet.registry.main.Main resources/services/registry.yaml
+#+END_SRC
+
+
+*** Services
+
+#+BEGIN_SRC
+java -cp target/scala-3.2.2/socialnetwork-assembly-1.0.jar com.socialnet.master.main.Main resources/services/config.yaml
+#+END_SRC
+
+*** Front
+
+#+BEGIN_SRC
+java -cp target/scala-3.2.2/socialnetwork-assembly-1.0.jar com.socialnet.front.main.FrontApp resources/services/front.yaml
+#+END_SRC
+
+
+** Utilisation
+
+Routes :
+
+#+BEGIN_SRC
+POST /login
+body application/json
+{
+"login" : {user_name},
+"password" : {password}
+}
+#+END_SRC
+
+#+BEGIN_SRC
+POST /submit
+body application/json
+{
+"token": "jwt_token",
+"user_id": 2,
+"text": "contenu du post à submit"
+}
+#+END_SRC
+
+
+#+BEGIN_SRC
+GET /home-timeline?user_id={id}&page={page}&nb={nb per page}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /home-timeline-len?user_id={id}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /user-timeline?user_id={id}&page={page}&nb={nb per page}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /user-timeline-len?user_id={id}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /subscriptions?user_id={id}&page={page}&nb={nb per page}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /subscriptions-len?user_id={id}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /followers?user_id={id}&page={page}&nb={nb per page}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /followers-len?user_id={id}
+#+END_SRC
+
+#+BEGIN_SRC
+GET /is-following?user_id={id}&to_whom={id}
+#+END_SRC
+
+#+BEGIN_SRC
+POST /follow
+
+body application/json
+{
+"user_id" : id,
+"to_whom" : id,
+"token": "jwt_token"
+}
+#+END_SRC
+
+#+BEGIN_SRC
+POST /unfollow
+
+body application/json
+{
+"user_id" : id,
+"to_whom" : id,
+"token": "jwt_token"
+}
+#+END_SRC

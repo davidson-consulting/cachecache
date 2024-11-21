@@ -1,0 +1,73 @@
+package com.socialnet.utils.cache
+
+import redis.clients.jedis._
+import scala.reflect.ClassTag
+import com.socialnet.utils.serializer._
+
+abstract class CacheEntity {
+  def tableName (): String;
+  def format (sb: StringBuilder): Unit;
+}
+
+abstract class RedisCache (addr : String, port : Int) {
+
+  var pool : JedisPool = null;
+  var connection : Jedis = null;
+
+  def connect () = {
+    if (this.addr != null) {
+      this.pool = new JedisPool (addr, port);
+      this.connection = this.pool.getResource ();
+      this.postConnection ()
+    }
+  }
+
+  def getConnection () : Jedis = {
+    this.connection
+  }
+
+  def postConnection () = {}
+
+
+}
+
+class RequestCache (NAME : String, TTL : Int, addr : String, port : Int)
+    extends RedisCache (addr, port)
+{
+
+
+  var cacheAccess = 0
+  var cacheMiss = 0
+  var cacheWrite = 0
+
+  override def postConnection () = {}
+
+  def getRqtCache[U : ClassTag] (name : String, rqt : Any): Option[U] = {
+    val redis = this.connection;
+    if (redis != null) {
+      val sRqt = CacheSerial.serialize (rqt);
+      val sVal = redis.get (s"${name}:${sRqt}");
+      if (sVal != null) {
+        return CacheSerial.deserialize[U] (sVal);
+      }
+    }
+
+    None
+  }
+
+  def insertRqtCache[U: ClassTag] (name : String, rqt : Any, value : U) = {
+    val redis = this.connection;
+    if (redis != null) {
+      val sVal = CacheSerial.serialize (value);
+      val sRqt = CacheSerial.serialize (rqt);
+
+      try {
+        redis.set (s"${name}:${sRqt}", sVal);
+        redis.expire (s"${name}:${sRqt}", this.TTL);
+      } catch {
+        case e => {}
+      }
+    }
+  }
+
+}

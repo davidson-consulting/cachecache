@@ -216,7 +216,7 @@ class SocialNetworkSimulation extends Simulation {
   val newPost = postNewPostTask ();
 
   val httpProtocol =
-    http.baseUrl("http://192.168.1.18:8081")
+    http.baseUrl("http://127.0.0.1:8080")
       .acceptHeader("text/html,application/xhtml+xml,application/xml, application/json;q=0.9,*/*;q=0.8")
       .acceptLanguageHeader("en-US,en;q=0.5")
       .acceptEncodingHeader("gzip, deflate")
@@ -229,7 +229,7 @@ class SocialNetworkSimulation extends Simulation {
   val read = scenario ("Read").exec (readHome);
 
   setUp (
-    write.inject (
+    read.inject (
       constantConcurrentUsers(NB_AT_ONCE).during(SIM_SIZE)
       // nothingFor (2),
       // atOnceUsers (NB_AT_ONCE)
