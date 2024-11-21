@@ -30,6 +30,9 @@ namespace deployer {
                 // The result directory
                 std::string _resultDir;
 
+                // The configuration of the deployement
+                std::shared_ptr <rd_utils::utils::config::ConfigNode> _cfg;
+
                 // Install packages on nodes (otherwise assume everything is already installed)
                 bool _installNodes;
 

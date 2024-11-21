@@ -39,11 +39,11 @@ namespace deployer {
         this-> parseCmdOptions (argc, argv);
 
         try {
-            auto cfg = toml::parseFile (this-> _hostFile);
+            this-> _cfg = toml::parseFile (this-> _hostFile);
 
-            this-> configureCluster (*cfg);
-            this-> configureCaches (*cfg);
-            this-> configureApplications (*cfg);
+            this-> configureCluster (*this-> _cfg);
+            this-> configureCaches (*this-> _cfg);
+            this-> configureApplications (*this-> _cfg);
 
         } catch (const std::runtime_error & err) {
             LOG_ERROR ("Failed to configure deployement ", err.what ());
@@ -165,6 +165,10 @@ namespace deployer {
 
     void Deployment::downloadResults () {
         utils::create_directory (this-> _resultDir, true);
+
+        // Write the configuration that was used in this run
+        utils::write_file (utils::join_path (this-> _resultDir, "config.toml"), toml::dump (*this-> _cfg));
+
         try {
             this-> _cluster-> downloadVJouleTraces (this-> _resultDir);
         } catch (...) {}
