@@ -28,21 +28,21 @@ namespace deployer {
 
         if (mch-> hasFlag ("social") || mch-> hasFlag ("cache")) {
             this-> runConfigureVjoule (mch);
-            // this-> runRdUtilsInstall (mch);
+            this-> runRdUtilsInstall (mch);
         }
 
-        // if (mch-> hasFlag ("social")) {
-        //     this-> runHttpInstall (mch);
-        //     this-> runSocialNetInstall (mch);
-        // }
+        if (mch-> hasFlag ("social")) {
+            this-> runHttpInstall (mch);
+            this-> runSocialNetInstall (mch);
+        }
 
-        // if (mch-> hasFlag ("gatling")) {
-        //     this-> runGatlingInstall (mch);
-        // }
+        if (mch-> hasFlag ("gatling")) {
+            this-> runGatlingInstall (mch);
+        }
 
-        // if (mch-> hasFlag ("cache")) {
-        //     this-> runCacheInstall (mch);
-        // }
+        if (mch-> hasFlag ("cache")) {
+            this-> runCacheInstall (mch);
+        }
     }
 
     void Installer::runAptInstalls (std::shared_ptr <Machine> m) {
@@ -55,7 +55,7 @@ namespace deployer {
             "wget https://github.com/davidson-consulting/vjoule/releases/download/v1.3.0/vjoule-tools_1.3.0.deb\n"
             "dpkg -i vjoule-tools_1.3.0.deb\n"
             "rm vjoule-tools_1.3.0.deb\n"
-            "mkdir ~/traces/\n";
+            "mkdir " + m-> getHomeDir () + "/traces/\n";
 
         auto r = m-> runScript (script);
         r-> wait ();
@@ -65,17 +65,18 @@ namespace deployer {
 
     void Installer::runHttpInstall (std::shared_ptr <Machine> m) {
         LOG_INFO ("Install libhttpd on : ", m-> getName ());
-        auto script = "cd ~\n"
+        auto script = "mkdir -p " + m-> getHomeDir () + "\n"
+            "cd " + m-> getHomeDir () + "\n"
             "git clone https://github.com/etr/libhttpserver.git\n"
             "cd libhttpserver\n"
             "./bootstrap\n"
-            "mkdir ~/libhttpserver/build\n"
-            "cd ~/libhttpserver/build\n"
+            "mkdir " + m-> getHomeDir () + "/libhttpserver/build\n"
+            "cd " + m-> getHomeDir () + "/libhttpserver/build\n"
             "../configure\n"
             "make\n"
             "make install\n"
             "mv /usr/local/lib/libhttp* /usr/lib/\n"
-            "rm -rf ~/libhttpserver\n";
+            "rm -rf " + m-> getHomeDir () + "/libhttpserver\n";
 
         auto r = m-> runScript (script);
         r-> wait ();
@@ -84,7 +85,8 @@ namespace deployer {
 
     void Installer::runRdUtilsInstall (std::shared_ptr <Machine> m) {
         LOG_INFO ("Install rd_utils on : ", m-> getName ());
-        auto script = "cd ~\n"
+        auto script = "mkdir -p " + m-> getHomeDir () + "\n"
+            "cd " + m-> getHomeDir () + "\n"
             "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone --depth=1 git@github.com:davidson-consulting/rd_utils.git\n"
             "cd rd_utils\n"
             "mkdir .build\n"
@@ -92,7 +94,7 @@ namespace deployer {
             "cmake ..\n"
             "make -j12\n"
             "make install\n"
-            "cd ~\n"
+            "cd " + m-> getHomeDir () + "\n"
             "rm -rf rd_utils\n"
             ;
         auto r = m-> runScript (script);
@@ -102,20 +104,21 @@ namespace deployer {
 
     void Installer::runSocialNetInstall (std::shared_ptr <Machine> m) {
         LOG_INFO ("Install socialNet on : ", m-> getName ());
-        auto script = "cd ~\n"
+        auto script = "mkdir -p " + m-> getHomeDir () + "\n"
+            "cd " + m-> getHomeDir () + "\n"
             "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
             "cd cachecache/\n"
             "git checkout net\n"
-            "cd web-apps/socialNet/cpp\n"
+            "cd web-apps/socialNet/app\n"
             "mkdir .build\n"
             "cd .build\n"
             "cmake ..\n"
             "make -j12\n"
-            "mkdir -p ~/execs/socialNet\n"
-            "mv front ~/execs/socialNet\n"
-            "mv reg ~/execs/socialNet\n"
-            "mv services ~/execs/socialNet\n"
-            "cd ~\n"
+            "mkdir -p " + m-> getHomeDir () + "/execs/socialNet\n"
+            "mv front " + m-> getHomeDir () + "/execs/socialNet\n"
+            "mv reg " + m-> getHomeDir () + "/execs/socialNet\n"
+            "mv services " + m-> getHomeDir () + "/execs/socialNet\n"
+            "cd " + m-> getHomeDir () + "\n"
             "rm -rf cachecache\n"
             ;
 
@@ -126,7 +129,8 @@ namespace deployer {
 
     void Installer::runCacheInstall (std::shared_ptr <Machine> m) {
         LOG_INFO ("Install cache on : ", m-> getName ());
-        auto script = "cd ~\n"
+        auto script = "mkdir -p " + m-> getHomeDir () + "\n"
+            "cd " + m-> getHomeDir () + "\n"
             "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
             "cd cachecache/\n"
             "git checkout net\n"
@@ -136,16 +140,29 @@ namespace deployer {
             "cd .build\n"
             "make -j12\n"
 
-            "mkdir -p ~/execs/cache\n"
-            "mkdir ~/execs/cache/libs\n"
-            "mv ~/cachecache/cachecache/CacheLib/opt/cachelib/lib/lib* ~/execs/cache/libs\n"
-            "mv ~/cachecache/cachecache/.build/supervisor ~/execs/cache/\n"
-            "mv ~/cachecache/cachecache/.build/cache ~/execs/cache/\n"
-            "cd ~/execs/cache\n"
-            "for i in $(ldd supervisor | grep \"not found\" | awk '{ print $1 }');  do  patchelf --add-needed \"./libs/${i}\" supervisor; done\n"
-            "for i in $(ldd cache | grep \"not found\" | awk '{ print $1 }');  do  patchelf --add-needed \"./libs/${i}\" cache; done\n"
-
-            "rm -rf ~/cachecache/"
+            "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
+            "mkdir " + m-> getHomeDir () + "/execs/cache/libs\n"
+            "mv " + m-> getHomeDir () + "/cachecache/cachecache/CacheLib/opt/cachelib/lib/lib* " + m-> getHomeDir () + "/execs/cache/libs\n"
+            "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
+            "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
+            "cd " + m-> getHomeDir () + "/execs/cache\n"
+            "for j in {0..3};\n"
+            "do\n"
+            "    for i in $(ldd supervisor | grep \"not found\" | awk '{ print $1 }');\n"
+            "    do\n"
+            "        patchelf --add-needed ./libs/${i} supervisor;\n"
+            "    done\n"
+            "done\n"
+            "\n"
+            "for j in {0..3};\n"
+            "do\n"
+            "    for i in $(ldd cache | grep \"not found\" | awk '{ print $1 }');\n"
+            "    do\n"
+            "        patchelf --add-needed ./libs/${i} cache;\n"
+            "    done\n"
+            "done\n"
+            "\n"
+            "rm -rf " + m-> getHomeDir () + "/cachecache/"
             ;
 
         auto r = m-> runScript (script);
@@ -159,12 +176,12 @@ namespace deployer {
             "echo \"deb https://repo.scala-sbt.org/scalasbt/debian /\" | sudo tee /etc/apt/sources.list.d/sbt_old.list\n"
             "curl -sL \"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823\" | sudo apt-key add\n"
             "sudo apt-get update\n"
-            "sudo apt-get install sbt openjdk-18-jdk\n"
+            "sudo apt-get install -y sbt openjdk-18-jdk\n"
             "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
             "cd cachecache/\n"
             "git checkout net\n"
-            "mkdir ~/gatling\n"
-            "mv web-apps/socialNet/workload/ ~/gatling\n"
+            "mkdir " + m-> getHomeDir () + "/gatling\n"
+            "mv web-apps/socialNet/workload/ " + m-> getHomeDir () + "/gatling\n"
             "rm -rf cachecache/\n";
 
         auto r = m-> runScript (script);

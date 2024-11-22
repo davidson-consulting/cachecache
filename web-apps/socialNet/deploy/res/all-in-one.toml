@@ -1,6 +1,6 @@
 [machines.nuc-intel]
 hostname = "nuc-intel"
-work-dir = "~/"
+work-dir = "/tmp/tests1"
 user = "root"
 iface = "eth0"
 has-pdu = true
