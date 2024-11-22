@@ -14,6 +14,7 @@ namespace socialNet::utils {
     FIND_BY_ID,
     FIND_BY_LOGIN,
     FOLLOWERS,
+    FOLLOWERS_TIMELINE,
     FOLLOWERS_LEN,
     HOME_TIMELINE,
     HOME_TIMELINE_LEN,

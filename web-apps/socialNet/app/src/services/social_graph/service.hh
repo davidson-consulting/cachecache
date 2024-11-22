@@ -53,6 +53,8 @@ namespace socialNet::social_graph {
 
     void streamFollowers (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
 
+    void streamFollowerForTimeline (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
+
     void streamSubs (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
   };
 

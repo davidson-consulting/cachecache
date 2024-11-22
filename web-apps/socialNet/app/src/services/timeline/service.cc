@@ -298,12 +298,25 @@ namespace socialNet::timeline {
           cp = std::move (this-> _toUpdates);
         }
 
-        for (auto & it : cp) {
-          LOG_INFO ("Starting update : ", it.first);
-          this-> updateForFollowers (it.first, it.second);
-        }
-
         if (cp.size () != 0) {
+          auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
+          if (socialService == nullptr) {
+            throw std::runtime_error ("No social graph service found");
+          }
+
+          auto req = config::Dict ().insert ("type", RequestCode::FOLLOWERS_TIMELINE);
+          auto followStream = socialService-> requestStream (req).wait ();
+
+          if (followStream == nullptr || followStream-> readU32 () != ResponseCode::OK) {
+            throw std::runtime_error ("Failed to connect to stream");
+          }
+
+          for (auto & it : cp) {
+            LOG_INFO ("Starting update : ", it.first);
+            this-> updateForFollowers (it.first, it.second, *followStream);
+          }
+
+          followStream-> writeU8 (0);
           this-> _db.commit ();
           LOG_INFO ("Iteration took : ", t.time_since_start ());
         }
@@ -323,16 +336,9 @@ namespace socialNet::timeline {
     }
   }
 
-  void TimelineService::updateForFollowers (uint32_t uid, const std::vector <TimelineService::PostUpdate> & updates) {
-    auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
-    if (socialService == nullptr) {
-      throw std::runtime_error ("No social graph service found");
-    }
-
-    auto req = config::Dict ()
-      .insert ("type", RequestCode::FOLLOWERS)
-      .insert ("userId", (int64_t) uid);
-    auto followStreamReq = socialService-> requestStream (req);
+  void TimelineService::updateForFollowers (uint32_t uid, const std::vector <TimelineService::PostUpdate> & updates, rd_utils::concurrency::actor::ActorStream & followerStream) {
+    followerStream.writeU8 (1);
+    followerStream.writeU32 (uid);
 
     for (auto up : updates) {
       this-> _db.insertHome (uid, up.pid);
@@ -342,13 +348,8 @@ namespace socialNet::timeline {
       }
     }
 
-    auto followStream = followStreamReq.wait ();
-    if (followStream == nullptr || followStream-> readU32 () != ResponseCode::OK) {
-      throw std::runtime_error ("Failed to connect to stream");
-    }
-
-    while (followStream-> readOr (0) == 1) {
-      auto follower = followStream-> readU32 ();
+    while (followerStream.readOr (0) == 1) {
+      auto follower = followerStream.readU32 ();
       for (auto & up : updates) {
         if (up.tagged.find (follower) == up.tagged.end ()) {
           this-> _db.insertHome (follower, up.pid);

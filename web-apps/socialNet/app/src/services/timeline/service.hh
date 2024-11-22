@@ -70,9 +70,8 @@ namespace socialNet::timeline {
         void streamHome (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
         void streamPosts (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
 
-
         void treatRoutine (rd_utils::concurrency::Thread);
-        void updateForFollowers (uint32_t uid, const std::vector <PostUpdate> & up);
+        void updateForFollowers (uint32_t uid, const std::vector <PostUpdate> & up, rd_utils::concurrency::actor::ActorStream & followerStream);
 
     };
 
