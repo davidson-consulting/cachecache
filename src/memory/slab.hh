@@ -14,6 +14,7 @@
 
 namespace kv_store::memory {
 
+    class MetaRamCollection;
     class KVMapSlab {
     private:
 
@@ -29,6 +30,9 @@ namespace kv_store::memory {
         };
 
     private:
+
+        // The global uniq id
+        static uint32_t __ID__;
 
         // The uniq Id of the slab
         uint32_t _uniqId;
@@ -59,6 +63,9 @@ namespace kv_store::memory {
 
         };
 
+    public:
+
+        friend MetaRamCollection;
 
     public:
 
@@ -75,7 +82,7 @@ namespace kv_store::memory {
          * @params:
          *    - id: the uniq id of the slab
          */
-        KVMapSlab (uint32_t id);
+        KVMapSlab ();
 
         /*!
          * ====================================================================================================
@@ -105,8 +112,9 @@ namespace kv_store::memory {
         /**
          * Remove a key from the memory segment in the slab
          * @info: does nothing if the key is not found
+         * @returns: true if memory was freed, false if nothing was changed
          */
-        void remove (const Key & key);
+        bool remove (const Key & key);
 
         /*!
          * ====================================================================================================
@@ -158,6 +166,11 @@ namespace kv_store::memory {
          * @returns: the sum of remaining free memory size
          */
         rd_utils::utils::MemorySize remainingSize () const;
+
+        /**
+         * @returns: the uniq id of the slab
+         */
+        uint32_t getUniqId () const;
 
         /*!
          * ====================================================================================================

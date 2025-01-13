@@ -6,6 +6,8 @@ using namespace rd_utils::utils;
 
 namespace kv_store::memory {
 
+    uint32_t KVMapSlab::__ID__ = 0;
+
     KVMapSlab::KVMapSlab (uint8_t * memory, uint32_t id)
         : _uniqId (id)
         , _context (memory, kv_store::memory::KVMAP_SLAB_SIZE.bytes ())
@@ -13,10 +15,11 @@ namespace kv_store::memory {
         this-> load ();
     }
 
-    KVMapSlab::KVMapSlab (uint32_t id)
-        : _uniqId (id)
+    KVMapSlab::KVMapSlab ()
+        : _uniqId (__ID__ + 1)
         , _context (nullptr, 0)
     {
+        __ID__ += 1;
         uint8_t * memory = reinterpret_cast <uint8_t*> (malloc (kv_store::memory::KVMAP_SLAB_SIZE.bytes ()));
         if (memory == nullptr) {
             throw std::runtime_error ("Out of memory");
@@ -148,15 +151,18 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    void KVMapSlab::remove (const Key & key) {
+    bool KVMapSlab::remove (const Key & key) {
         uint64_t h = key.hash () % kv_store::memory::NB_KVMAP_SLAB_ENTRIES;
         instance* inst = reinterpret_cast <instance*> (this-> _context.data () + sizeof (uint32_t));
         if (inst-> lst [h] != 0) {
             node* n = reinterpret_cast <node*> (this-> _context.data () + inst-> lst [h]);
             if (this-> removeInList (key, n, inst-> lst [h])) {
                 inst-> len -= 1;
+                return true; // something was removed from the slab
             }
         }
+
+        return false;
     }
 
     bool KVMapSlab::removeInList (const Key & k, node *n, uint32_t & prevPtr) {
@@ -269,7 +275,10 @@ namespace kv_store::memory {
     MemorySize KVMapSlab::remainingSize () const {
         return MemorySize::B (this-> _context.remainingSize ());
     }
-    
+
+    uint32_t KVMapSlab::getUniqId () const {
+        return this-> _uniqId;
+    }
 
     KVMapSlab::Iterator KVMapSlab::begin () const {
         const instance* inst = reinterpret_cast <const instance*> (this-> _context.data () + sizeof (uint32_t));
