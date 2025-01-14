@@ -1,9 +1,11 @@
 #include <iostream>
 
-#include "memory/ram/meta.hh"
+#include "cache/ram/meta.hh"
+#include "cache/common/_.hh"
 #include <string.h>
 
 using namespace kv_store::memory;
+using namespace kv_store::common;
 
 #define NB_KEYS 1000
 

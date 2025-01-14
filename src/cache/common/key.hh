@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-namespace kv_store::memory {
+namespace kv_store::common {
 
     class Key {
     private:

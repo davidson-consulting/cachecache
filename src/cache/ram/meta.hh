@@ -4,7 +4,7 @@
 #include <map>
 #include <unordered_map>
 #include <list>
-#include "../slab.hh"
+#include "slab.hh"
 
 namespace kv_store::memory {
 
@@ -17,7 +17,7 @@ namespace kv_store::memory {
         uint32_t _maxNbSlabs;
 
         // The RAM slabs storing KVs
-        std::map <uint32_t, std::shared_ptr <KVMapSlab> > _loadedSlabs;
+        std::map <uint32_t, std::shared_ptr <KVMapRAMSlab> > _loadedSlabs;
 
         // The list of slabs containing a key
         std::map <uint64_t, std::map <uint32_t, uint32_t> > _slabHeads;
@@ -32,18 +32,18 @@ namespace kv_store::memory {
         /**
          * Insert a key value in the collection
          */
-        void insert (const Key & k, const Value & v);
+        void insert (const common::Key & k, const common::Value & v);
 
         /**
          * Find the key in the collection
          */
-        std::shared_ptr <Value> find (const Key & k);
+        std::shared_ptr <common::Value> find (const common::Key & k);
 
         /**
          * Remove the key in the collection
          * @info: does nothing if the key is not found
          */
-        void remove (const Key & k);
+        void remove (const common::Key & k);
 
         /*!
          * ====================================================================================================

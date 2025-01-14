@@ -103,7 +103,7 @@ namespace kv_store::memory {
         /**
          * @returns: true if the list is empty
          */
-        bool isEmpty ();
+        bool isEmpty () const;
 
         /**
          * @returns: the size of the biggest free block in the list

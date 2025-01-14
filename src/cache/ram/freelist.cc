@@ -1,4 +1,4 @@
-#include "free_list.hh"
+#include "freelist.hh"
 #include <iostream>
 #include <cstring>
 
@@ -76,7 +76,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    bool FreeList::isEmpty () {
+    bool FreeList::isEmpty () const {
         instance * inst = reinterpret_cast <instance*> (this-> _memory);
         if (inst-> head == sizeof (instance)) {
             auto head = reinterpret_cast <node*> (this-> _memory + inst-> head);
@@ -106,7 +106,7 @@ namespace kv_store::memory {
         uint32_t nodeOffset = inst-> head, sum = 0;
         while (nodeOffset != 0) {
             const node* n = reinterpret_cast <const node*> (this-> _memory + nodeOffset);
-            sum += n-> size;
+            sum += (n-> size - sizeof (uint32_t));
             nodeOffset = n-> next;
         }
 
@@ -261,6 +261,7 @@ namespace kv_store::memory {
                     new_node-> next = next-> next;
                 }
 
+                // touching prev
                 if (prev && prevOffset + prev-> size == newNodeOffset) {
                     auto next = reinterpret_cast<node*> (this-> _memory + new_node-> next);
                     prev-> size += new_node-> size;

@@ -3,29 +3,30 @@
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
+using namespace kv_store::common;
 
 namespace kv_store::memory {
 
-    uint32_t KVMapSlab::__ID__ = 0;
+    uint32_t KVMapRAMSlab::__ID__ = 0;
 
-    KVMapSlab::KVMapSlab (uint8_t * memory, uint32_t id)
+    KVMapRAMSlab::KVMapRAMSlab (uint8_t * memory, uint32_t id)
         : _uniqId (id)
-        , _context (memory, kv_store::memory::KVMAP_SLAB_SIZE.bytes ())
+        , _context (memory, kv_store::common::KVMAP_SLAB_SIZE.bytes ())
     {
         this-> load ();
     }
 
-    KVMapSlab::KVMapSlab ()
+    KVMapRAMSlab::KVMapRAMSlab ()
         : _uniqId (__ID__ + 1)
         , _context (nullptr, 0)
     {
         __ID__ += 1;
-        uint8_t * memory = reinterpret_cast <uint8_t*> (malloc (kv_store::memory::KVMAP_SLAB_SIZE.bytes ()));
+        uint8_t * memory = reinterpret_cast <uint8_t*> (malloc (kv_store::common::KVMAP_SLAB_SIZE.bytes ()));
         if (memory == nullptr) {
             throw std::runtime_error ("Out of memory");
         }
 
-        this-> _context = FreeList (memory, kv_store::memory::KVMAP_SLAB_SIZE.bytes ());
+        this-> _context = FreeList (memory, kv_store::common::KVMAP_SLAB_SIZE.bytes ());
         this-> init ();
     }
 
@@ -38,8 +39,8 @@ namespace kv_store::memory {
      */
 
 
-    bool KVMapSlab::alloc (const Key & key, const Value & value) {
-        uint64_t h = key.hash () % kv_store::memory::NB_KVMAP_SLAB_ENTRIES;
+    bool KVMapRAMSlab::alloc (const Key & key, const Value & value) {
+        uint64_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         instance* inst = reinterpret_cast <instance*> (this-> _context.data () + sizeof (uint32_t));
 
         if (inst-> lst [h] == 0) {
@@ -60,7 +61,7 @@ namespace kv_store::memory {
         return false;
     }
 
-    bool KVMapSlab::insertAfter (const Key & k, const Value & v, node* n) {
+    bool KVMapRAMSlab::insertAfter (const Key & k, const Value & v, node* n) {
         uint8_t * keyData = reinterpret_cast <uint8_t*> (n) + sizeof (node);
         if (n-> keySize == k.len () && ::memcmp (k.data (), keyData, k.len ()) == 0) {
             if (n-> valueSize != v.len ()) { // need to erase the k/v and reinsert
@@ -81,7 +82,7 @@ namespace kv_store::memory {
         return this-> insertAfter (k, v, next);
     }
 
-    bool KVMapSlab::createNewEntry (const Key & k, const Value & v, uint32_t & prevPtr) {
+    bool KVMapRAMSlab::createNewEntry (const Key & k, const Value & v, uint32_t & prevPtr) {
         uint32_t offset = this-> _context.alloc (k.len () + v.len () + sizeof (node));
         if (offset == 0) {
             // No memory left in the slab
@@ -113,8 +114,8 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    std::shared_ptr <Value> KVMapSlab::find (const Key & key) const {
-        uint64_t h = key.hash () % kv_store::memory::NB_KVMAP_SLAB_ENTRIES;
+    std::shared_ptr <Value> KVMapRAMSlab::find (const Key & key) const {
+        uint64_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         const instance* inst = reinterpret_cast <const instance*> (this-> _context.data () + sizeof (uint32_t));
 
         if (inst-> lst [h] != 0) { // there is a chained list for this hashmap
@@ -125,7 +126,7 @@ namespace kv_store::memory {
         return nullptr;
     }
 
-    std::shared_ptr <Value> KVMapSlab::findInList (const Key & k, const node* n) const {
+    std::shared_ptr <Value> KVMapRAMSlab::findInList (const Key & k, const node* n) const {
         const uint8_t * keyData = reinterpret_cast <const uint8_t*> (n) + sizeof (node);
         if (n-> keySize == k.len () && ::memcmp (k.data (), keyData, k.len ()) == 0) {
             std::shared_ptr <Value> v = std::make_shared <Value> (n-> valueSize);
@@ -151,8 +152,8 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    bool KVMapSlab::remove (const Key & key) {
-        uint64_t h = key.hash () % kv_store::memory::NB_KVMAP_SLAB_ENTRIES;
+    bool KVMapRAMSlab::remove (const Key & key) {
+        uint64_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         instance* inst = reinterpret_cast <instance*> (this-> _context.data () + sizeof (uint32_t));
         if (inst-> lst [h] != 0) {
             node* n = reinterpret_cast <node*> (this-> _context.data () + inst-> lst [h]);
@@ -165,7 +166,7 @@ namespace kv_store::memory {
         return false;
     }
 
-    bool KVMapSlab::removeInList (const Key & k, node *n, uint32_t & prevPtr) {
+    bool KVMapRAMSlab::removeInList (const Key & k, node *n, uint32_t & prevPtr) {
         uint8_t * keyData = reinterpret_cast <uint8_t*> (n) + sizeof (node);
         if (n-> keySize == k.len () && ::memcmp (k.data (), keyData, k.len ()) == 0) {
             uint32_t nodeOffset = prevPtr;
@@ -191,14 +192,14 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    void KVMapSlab::dispose () {
+    void KVMapRAMSlab::dispose () {
         if (this-> _context.data () != nullptr) {
             ::free (this-> _context.metadata ());
             this-> _context = FreeList (nullptr, 0);
         }
     }
 
-    KVMapSlab::~KVMapSlab () {
+    KVMapRAMSlab::~KVMapRAMSlab () {
         this-> dispose ();
     }
 
@@ -210,7 +211,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    void KVMapSlab::init () {
+    void KVMapRAMSlab::init () {
         if (this-> _context.data () == nullptr) {
             throw std::runtime_error ("Out of memory");
         }
@@ -222,7 +223,7 @@ namespace kv_store::memory {
         ::memset (memory, 0, sizeof (instance));
     }
 
-    void KVMapSlab::load () {
+    void KVMapRAMSlab::load () {
         if (this-> _context.data () == nullptr) {
             throw std::runtime_error ("Malformed slab");
         }
@@ -239,7 +240,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    std::ostream & operator<< (std::ostream & s, const KVMapSlab & mp) {
+    std::ostream & operator<< (std::ostream & s, const KVMapRAMSlab & mp) {
         s << "KVMap[" << mp.maxAllocSize ().bytes () << "/" << mp.remainingSize ().bytes () << "] {";
         uint32_t i = 0;
         for (auto it : mp) {
@@ -263,26 +264,26 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    uint32_t KVMapSlab::len () const {
+    uint32_t KVMapRAMSlab::len () const {
         const instance* inst = reinterpret_cast <const instance*> (this-> _context.data () + sizeof (uint32_t));
         return inst-> len;
     }
 
-    MemorySize KVMapSlab::maxAllocSize () const {
+    MemorySize KVMapRAMSlab::maxAllocSize () const {
         return MemorySize::B (this-> _context.maxAllocSize ());
     }
 
-    MemorySize KVMapSlab::remainingSize () const {
+    MemorySize KVMapRAMSlab::remainingSize () const {
         return MemorySize::B (this-> _context.remainingSize ());
     }
 
-    uint32_t KVMapSlab::getUniqId () const {
+    uint32_t KVMapRAMSlab::getUniqId () const {
         return this-> _uniqId;
     }
 
-    KVMapSlab::Iterator KVMapSlab::begin () const {
+    KVMapRAMSlab::Iterator KVMapRAMSlab::begin () const {
         const instance* inst = reinterpret_cast <const instance*> (this-> _context.data () + sizeof (uint32_t));
-        for (uint32_t i = 0 ; i < kv_store::memory::NB_KVMAP_SLAB_ENTRIES ; i++) {
+        for (uint32_t i = 0 ; i < kv_store::common::NB_KVMAP_SLAB_ENTRIES ; i++) {
             if (inst-> lst [i] != 0) {
                 return Iterator (this, i, inst-> lst [i]);
             }
@@ -291,23 +292,23 @@ namespace kv_store::memory {
         return Iterator ();
     }
 
-    KVMapSlab::Iterator KVMapSlab::end () const {
+    KVMapRAMSlab::Iterator KVMapRAMSlab::end () const {
         return Iterator ();
     }
 
-    KVMapSlab::Iterator::Iterator ()
+    KVMapRAMSlab::Iterator::Iterator ()
         : context (nullptr)
         , currListIndex (0)
         , currListOffset (0)
     {}
 
-    KVMapSlab::Iterator::Iterator (const KVMapSlab* context, uint32_t baseIndex, uint32_t listOffset)
+    KVMapRAMSlab::Iterator::Iterator (const KVMapRAMSlab* context, uint32_t baseIndex, uint32_t listOffset)
         : context (context)
         , currListIndex (baseIndex)
         , currListOffset (listOffset)
     {}
 
-    std::pair <std::shared_ptr <Key>, std::shared_ptr <Value> > KVMapSlab::Iterator::operator* () const {
+    std::pair <std::shared_ptr <Key>, std::shared_ptr <Value> > KVMapRAMSlab::Iterator::operator* () const {
         if (this-> currListOffset != 0) {
             const node* n = reinterpret_cast <const node*> (this-> context-> _context.data () + this-> currListOffset);
             const uint8_t* keyData = reinterpret_cast <const uint8_t*> (this-> context-> _context.data () + this-> currListOffset + sizeof (node));
@@ -325,12 +326,12 @@ namespace kv_store::memory {
         return std::make_pair <std::shared_ptr <Key>, std::shared_ptr <Value> > (nullptr, nullptr);
     }
 
-    KVMapSlab::Iterator& KVMapSlab::Iterator::operator++ () {
+    KVMapRAMSlab::Iterator& KVMapRAMSlab::Iterator::operator++ () {
         if (this-> currListOffset != 0) {
             const node* n = reinterpret_cast <const node*> (this-> context-> _context.data () + this-> currListOffset);
             if (n-> next == 0) {
                 const instance* inst = reinterpret_cast <const instance*> (this-> context-> _context.data () + sizeof (uint32_t));
-                for (uint32_t i = this-> currListIndex + 1 ; i < kv_store::memory::NB_KVMAP_SLAB_ENTRIES ; i++) {
+                for (uint32_t i = this-> currListIndex + 1 ; i < kv_store::common::NB_KVMAP_SLAB_ENTRIES ; i++) {
                     if (inst-> lst [i] != 0) {
                         this-> currListOffset = inst-> lst [i];
                         this-> currListIndex = i;
@@ -350,11 +351,11 @@ namespace kv_store::memory {
         return *this;
     }
 
-    bool operator== (KVMapSlab::Iterator & a, KVMapSlab::Iterator & b) {
+    bool operator== (KVMapRAMSlab::Iterator & a, KVMapRAMSlab::Iterator & b) {
         return  (a.currListIndex == b.currListIndex && a.currListOffset == b.currListOffset);
     }
 
-    bool operator!= (KVMapSlab::Iterator & a, KVMapSlab::Iterator & b) {
+    bool operator!= (KVMapRAMSlab::Iterator & a, KVMapRAMSlab::Iterator & b) {
         return (a.currListIndex != b.currListIndex || a.currListOffset != b.currListOffset);
     }
 

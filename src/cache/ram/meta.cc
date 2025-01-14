@@ -3,6 +3,7 @@
 #include <rd_utils/utils/print.hh>
 
 using namespace rd_utils::utils;
+using namespace kv_store::common;
 
 namespace kv_store::memory {
 
@@ -19,7 +20,7 @@ namespace kv_store::memory {
      */
 
     void MetaRamCollection::insert (const Key & k, const Value & v) {
-        MemorySize neededSize = MemorySize::B (k.len () + v.len () + sizeof (KVMapSlab::node));
+        MemorySize neededSize = MemorySize::B (k.len () + v.len () + sizeof (KVMapRAMSlab::node));
         for (auto & it : this-> _loadedSlabs) {
             auto & slab = it.second;
             if (slab-> maxAllocSize () > neededSize || slab-> maxAllocSize () == neededSize) {
@@ -31,7 +32,7 @@ namespace kv_store::memory {
 
         // Failed to allocate in already loaded slabs
         if (this-> _loadedSlabs.size () < this-> _maxNbSlabs) {
-            std::shared_ptr <KVMapSlab> slab = std::make_shared <KVMapSlab> ();
+            std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
             slab-> alloc (k, v);
             this-> _loadedSlabs.emplace (slab-> getUniqId (), slab);
             this-> insertMetaData (k.hash (), slab-> getUniqId ());

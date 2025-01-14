@@ -1,10 +1,10 @@
 #include "value.hh"
-#include "utils/csts.hh"
+#include "csts.hh"
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
 
-namespace kv_store::memory {
+namespace kv_store::common {
 
     Value::Value (uint32_t len)
         : _data (nullptr)

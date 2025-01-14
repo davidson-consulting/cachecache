@@ -1,12 +1,12 @@
 #include "key.hh"
-#include "utils/csts.hh"
+#include "csts.hh"
 
 #include <string.h>
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
 
-namespace kv_store::memory {
+namespace kv_store::common {
 
     Key::Key ()
     : _data (nullptr)
@@ -109,7 +109,7 @@ namespace kv_store::memory {
             for (uint32_t i = 0 ; i < k.len () ; i++) {
                 s << k.data ()[i];
             }
-            s << "(" << (k.hash () % kv_store::memory::NB_KVMAP_SLAB_ENTRIES) << ")";
+            s << "(" << (k.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES) << ")";
         }
 
         return s;
