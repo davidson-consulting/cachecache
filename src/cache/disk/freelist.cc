@@ -2,13 +2,13 @@
 #include "../common/csts.hh"
 #include <rd_utils/utils/files.hh>
 #include <string.h>
+#include <unistd.h>
 
 namespace kv_store::disk {
 
-    FreeList::FreeList (uint32_t id, uint32_t size)
+    FreeList::FreeList (uint32_t id)
         : _id (id)
         , _handle (nullptr)
-        , _size (size)
     {}
 
     /*!
@@ -19,64 +19,32 @@ namespace kv_store::disk {
      * ====================================================================================================
      */
 
-    void FreeList::load () {
-        auto path = std::string (common::KVMAP_DISK_PATH) + std::to_string (this-> _id);
-        if (!rd_utils::utils::file_exists (path)) {
-            this-> init ();
-            return;
-        }
-
+    void FreeList::load (const std::string & slabPath) {
+        auto path = slabPath + std::to_string (this-> _id);
         this-> _handle = fopen (path.c_str (), "rb+");
         if (this-> _handle == nullptr) {
             throw std::runtime_error ("Failed to open freelist file : " + path);
         }
     }
 
-    void FreeList::init () {
-        auto path = std::string (common::KVMAP_DISK_PATH) + std::to_string (this-> _id);
-        if (!rd_utils::utils::directory_exists (common::KVMAP_DISK_PATH)) {
-            rd_utils::utils::create_directory (common::KVMAP_DISK_PATH, true);
-        }
-
+    void FreeList::init (uint32_t size, const std::string & slabPath) {
+        auto path = slabPath + std::to_string (this-> _id);
         this-> _handle = fopen (path.c_str (), "wb+");
         if (this-> _handle == nullptr) {
             throw std::runtime_error ("Failed to open freelist file : " + path);
         }
 
-        uint8_t * buffer = new uint8_t [1024];
-        uint32_t nbPass = this-> _size / 1024;
-        uint32_t remain = this-> _size % 1024;
-
-        fseek (this-> _handle, 0, SEEK_SET);
-        for (uint32_t i = 0 ; i < nbPass ; i++) {
-            if (fwrite (buffer, sizeof (uint8_t), 1024, this-> _handle) != 1024) {
-                throw std::runtime_error (std::string ("Failed to init freelist file : ") + strerror (errno));
-            }
-        }
-
-        if (remain != 0) {
-            if (fwrite (buffer, sizeof (uint8_t), remain, this-> _handle) != remain) {
-                throw std::runtime_error (std::string ("Failed to init freelist file : ") + strerror (errno));
-            }
-        }
-
-        delete [] buffer;
+        // resize the file to the correct length
+        ftruncate (fileno (this-> _handle), size);
 
         // list-> size
-        fseek (this-> _handle, 0, SEEK_SET);
-        fwrite (&this-> _size, sizeof (uint32_t), 1, this-> _handle);
+        this-> write <uint32_t> (__SIZE_OFFSET__, size);
 
         // list-> head
-        uint32_t len = sizeof (instance);
-        fseek (this-> _handle, sizeof (uint32_t), SEEK_SET);
-        fwrite (&len, sizeof (uint32_t), 1, this-> _handle);
+        this-> write <uint32_t> (__HEAD_OFFSET__, __CONTENT_OFFSET__);
 
         // head-> size
-        len = this-> _size - sizeof (instance);
-        fseek (this-> _handle, sizeof (instance), SEEK_SET);
-        fwrite (&len, sizeof (uint32_t), 1, this-> _handle);
-
-        // head-> next is already equal to 0
+        this-> write <uint32_t> (__CONTENT_OFFSET__, size - __CONTENT_OFFSET__);
     }
 
     /*!
@@ -94,9 +62,9 @@ namespace kv_store::disk {
         }
     }
 
-    void FreeList::erase () {
+    void FreeList::erase (const std::string & dpath) {
         this-> dispose ();
-        auto path = std::string (common::KVMAP_DISK_PATH) + std::to_string (this-> _id);
+        auto path = dpath + std::to_string (this-> _id);
         rd_utils::utils::remove (path);
     }
 
@@ -117,7 +85,7 @@ namespace kv_store::disk {
         uint32_t offset = 0;
 
         if (this-> performAlloc (reqSize, offset)) {
-            this-> writeIntAt (offset, reqSize);
+            this-> write <uint32_t> (offset, reqSize);
             return offset + sizeof (uint32_t);
         }
 
@@ -125,8 +93,50 @@ namespace kv_store::disk {
     }
 
     bool FreeList::free (uint32_t offset) {
-        uint32_t len = this-> readIntAt (offset - sizeof (uint32_t));
+        uint32_t len = this-> read <uint32_t> (offset - sizeof (uint32_t));
         return this-> performFree (offset - sizeof (uint32_t), len);
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          INCREASE          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    void FreeList::increaseSize (uint32_t size) {
+        uint32_t oldSize = this-> read <uint32_t> (__SIZE_OFFSET__);
+        if (oldSize < size) {
+            ftruncate (fileno (this-> _handle), size);
+            this-> write <uint32_t> (__SIZE_OFFSET__, size);
+            this-> performFree (oldSize, size - oldSize);
+        }
+    }
+
+    void FreeList::decreaseSize (uint32_t size) {
+        uint32_t oldSize = this-> read <uint32_t> (__SIZE_OFFSET__);
+
+        if (oldSize > size) {
+            uint32_t nodeOffset = this-> read <uint32_t> (__HEAD_OFFSET__);
+            uint32_t prev = 0;
+            while (nodeOffset != 0) {
+                if (nodeOffset == size) {
+                    this-> write <uint32_t> (prev + sizeof (uint32_t), 0);
+                    break;
+                } else if (nodeOffset <= size) {
+                    node n = this-> readNodeAt (nodeOffset);
+                    if (n.size + nodeOffset >= size) {
+                        this-> write <uint32_t> (nodeOffset, size - nodeOffset);
+                        break;
+                    }
+
+                    nodeOffset = n.next;
+                } else throw std::runtime_error ("Decreasing not free nodes");
+            }
+
+            ftruncate (fileno (this-> _handle), size);
+        }
     }
 
     /*!
@@ -148,11 +158,11 @@ namespace kv_store::disk {
 
     bool FreeList::isEmpty () const {
         uint32_t head = 0, size = 0;
-        fseek (this-> _handle, 0, SEEK_SET);
+        fseek (this-> _handle, __SIZE_OFFSET__, SEEK_SET);
         fread (&size, sizeof (uint32_t), 1, this-> _handle);
         fread (&head, sizeof (uint32_t), 1, this-> _handle);
 
-        if (head == sizeof (instance)) {
+        if (head == __CONTENT_OFFSET__) {
             fread (&head, sizeof (uint32_t), 1, this-> _handle);
             return head == size;
         }
@@ -161,19 +171,15 @@ namespace kv_store::disk {
     }
 
     uint32_t FreeList::maxAllocSize () const {
-        uint32_t nodeOffset = this-> readIntAt (sizeof (uint32_t));
-        uint32_t len = 0, next = 0;
+        uint32_t nodeOffset = this-> read <uint32_t> (__HEAD_OFFSET__);
         uint32_t max = 0;
         while (nodeOffset != 0) {
-            fseek (this-> _handle, nodeOffset, SEEK_SET);
-            fread (&len, sizeof (uint32_t), 1, this-> _handle);
-            fread (&next, sizeof (uint32_t), 1, this-> _handle);
-
-            if (len > max) {
-                max = len;
+            node n = this-> readNodeAt (nodeOffset);
+            if (n.size > max) {
+                max = n.size;
             }
 
-            nodeOffset = next;
+            nodeOffset = n.next;
         }
 
         if (max > sizeof (uint32_t)) {
@@ -184,19 +190,20 @@ namespace kv_store::disk {
     }
 
     uint32_t FreeList::remainingSize () const {
-        uint32_t nodeOffset = this-> readIntAt (sizeof (uint32_t));
-        uint32_t len = 0, next = 0;
+        uint32_t nodeOffset = this-> read <uint32_t> (__HEAD_OFFSET__);
         uint32_t sum = 0;
         while (nodeOffset != 0) {
-            fseek (this-> _handle, nodeOffset, SEEK_SET);
-            fread (&len, sizeof (uint32_t), 1, this-> _handle);
-            fread (&next, sizeof (uint32_t), 1, this-> _handle);
+            node n = this-> readNodeAt (nodeOffset);
 
-            sum += (len - sizeof (uint32_t));
-            nodeOffset = next;
+            sum += (n.size - sizeof (uint32_t));
+            nodeOffset = n.next;
         }
 
         return sum;
+    }
+
+    uint32_t FreeList::allSize () const {
+        return this-> read <uint32_t> (__SIZE_OFFSET__);
     }
 
     /*!
@@ -208,28 +215,25 @@ namespace kv_store::disk {
      */
 
     bool FreeList::findBestFit (uint32_t size, uint32_t & offset, uint32_t & prevOffset, uint32_t & nodeSize, uint32_t & nodeNext) const {
-        uint32_t nodeOffset = this-> readIntAt (sizeof (uint32_t));
+        uint32_t nodeOffset = this-> read <uint32_t> (sizeof (uint32_t));
         uint32_t prev = 0;
-        uint32_t minFound = this-> _size + 1;
+        uint32_t minFound = UINT32_MAX;
         bool found = false;
-        uint32_t len = 0, next = 0;
 
         while (nodeOffset != 0) {
-            fseek (this-> _handle, nodeOffset, SEEK_SET);
-            fread (&len, sizeof (uint32_t), 1, this-> _handle);
-            fread (&next, sizeof (uint32_t), 1, this-> _handle);
+            node n = this-> readNodeAt (nodeOffset);
 
-            if (len >= size && (minFound > len || !found)) {
+            if (n.size >= size && (minFound > n.size || !found)) {
                 offset = nodeOffset;
                 prevOffset = prev;
-                minFound = len;
-                nodeSize = len;
-                nodeNext = next;
+                minFound = n.size;
+                nodeSize = n.size;
+                nodeNext = n.next;
                 found = true;
             }
 
             prev = nodeOffset;
-            nodeOffset = next;
+            nodeOffset = n.next;
         }
 
         return found;
@@ -246,22 +250,21 @@ namespace kv_store::disk {
         uint32_t restSize = nodeSize - size;
         if (restSize >= 2 * sizeof (uint32_t)) { // create a new node
             uint32_t newNodeOffset = nodeOffset + size;
-            fseek (this-> _handle, newNodeOffset, SEEK_SET);
-            fwrite (&restSize, sizeof (uint32_t), 1, this-> _handle);
-            fwrite (&nodeNext, sizeof (uint32_t), 1, this-> _handle);
+            node n {.size = restSize, .next = nodeNext};
+            this-> writeNodeAt (newNodeOffset, n);
 
             if (prevOffset != 0) {
-                this-> writeIntAt (prevOffset + sizeof (uint32_t), newNodeOffset);
+                this-> write <uint32_t> (prevOffset + sizeof (uint32_t), newNodeOffset);
             } else {
-                this-> writeIntAt (sizeof (uint32_t), newNodeOffset);
+                this-> write <uint32_t> (__HEAD_OFFSET__, newNodeOffset);
             }
         } else { // not enough size for a new node, use it all
             size = nodeSize;
 
             if (prevOffset != 0) {
-                this-> writeIntAt (prevOffset + sizeof (uint32_t), nodeNext);
+                this-> write <uint32_t> (prevOffset + sizeof (uint32_t), nodeNext);
             } else {
-                this-> writeIntAt (sizeof (uint32_t), nodeNext);
+                this-> write <uint32_t> (__HEAD_OFFSET__, nodeNext);
             }
         }
 
@@ -277,40 +280,26 @@ namespace kv_store::disk {
      */
 
     bool FreeList::performFree (uint32_t offset, uint32_t size) {
-        uint32_t nodeOffset = this-> readIntAt (sizeof (uint32_t));
+        uint32_t nodeOffset = this-> read <uint32_t> (__HEAD_OFFSET__);
         uint32_t prevOffset = 0, prevSize = 0;
 
         if (nodeOffset == 0) {
-            this-> writeIntAt (sizeof (uint32_t), offset);
-            fseek (this-> _handle, offset, SEEK_SET);
-            fwrite (&size, sizeof (uint32_t), 1, this-> _handle);
-            uint32_t zero = 0;
-            fwrite (&zero, sizeof (uint32_t), 1, this-> _handle);
+            this-> write <uint32_t> (__HEAD_OFFSET__, offset);
+            this-> writeNodeAt (offset, {.size = size, .next = 0});
 
             return true;
         }
 
-        uint32_t nodeSize = 0, nodeNext = 0;
         while (nodeOffset != 0) {
-            fseek (this-> _handle, nodeOffset, SEEK_SET);
-            fread (&nodeSize, sizeof (uint32_t), 1, this-> _handle);
-            fread (&nodeNext, sizeof (uint32_t), 1, this-> _handle);
+            node n = this-> readNodeAt (nodeOffset);
 
-            if (nodeOffset + nodeSize == offset) {
-                if (nodeNext == nodeOffset + (nodeSize + size)) {
-                    uint32_t nextSize = 0, nextNext = 0;
-                    fseek (this-> _handle, nodeNext, SEEK_SET);
-                    fread (&nextSize, sizeof (uint32_t), 1, this-> _handle);
-                    fread (&nextNext, sizeof (uint32_t), 1, this-> _handle);
-
-                    nodeSize = nodeSize + size + nextSize;
-                    fseek (this-> _handle, nodeOffset, SEEK_SET);
-                    fwrite (&nodeSize, sizeof (uint32_t), 1, this-> _handle);
-                    fwrite (&nextNext, sizeof (uint32_t), 1, this-> _handle);
+            if (nodeOffset + n.size == offset) {
+                if (n.next == nodeOffset + (n.size + size)) {
+                    node af = this-> readNodeAt (n.next);
+                    node result {.size = n.size + size + af.size, .next = af.next};
+                    this-> writeNodeAt (nodeOffset, result);
                 } else {
-                    nodeSize = nodeSize + size;
-                    fseek (this-> _handle, nodeOffset, SEEK_SET);
-                    fwrite (&nodeSize, sizeof (uint32_t), 1, this-> _handle);
+                    this-> write <uint32_t> (nodeOffset, n.size + size);
                 }
 
                 return true;
@@ -323,64 +312,42 @@ namespace kv_store::disk {
                 bool touchNext = (newNodeOffset + size == nodeOffset);
 
                 if (touchNext && touchPrev) { // fusion the three nodes
-                    uint32_t nextSize = 0, nextNext = 0;
-                    fseek (this-> _handle, nodeNext, SEEK_SET);
-                    fread (&nextSize, sizeof (uint32_t), 1, this-> _handle);
-                    fread (&nextNext, sizeof (uint32_t), 1, this-> _handle);
-
-                    fseek (this-> _handle, prevOffset, SEEK_SET);
-                    prevSize = prevSize + size + nextSize;
-                    fwrite (&prevSize, sizeof (uint32_t), 1, this-> _handle);
-                    fwrite (&nextNext, sizeof (uint32_t), 1, this-> _handle);
+                    node af = this-> readNodeAt (n.next);
+                    node result {.size = prevSize + size + af.size, .next = af.next};
+                    this-> writeNodeAt (prevOffset, result);
                 }
 
                 else if (touchPrev) { // fusion prev and new node
-                    prevSize = prevSize + size;
-                    fseek (this-> _handle, prevOffset, SEEK_SET);
-                    fwrite (&prevSize, sizeof (uint32_t), 1, this-> _handle);
+                    this-> write <uint32_t> (prevOffset, prevSize + size);
                 }
 
                 else if (touchNext) { // fusion new node and next
-                    fseek (this-> _handle, newNodeOffset, SEEK_SET);
-                    nodeSize = size + nodeSize;
-                    fwrite (&nodeSize, sizeof (uint32_t), 1, this-> _handle);
-                    fwrite (&nodeNext, sizeof (uint32_t), 1, this-> _handle);
-
-                    fseek (this-> _handle, prevOffset + sizeof (uint32_t), SEEK_SET);
-                    fwrite (&newNodeOffset, sizeof (uint32_t), 1, this-> _handle);
+                    node result {.size = size + n.size, .next = n.next};
+                    this-> writeNodeAt (newNodeOffset, result);
+                    this-> write <uint32_t> (prevOffset + sizeof (uint32_t), newNodeOffset);
                 }
                 
                 else { // insert a new node
-                    fseek (this-> _handle, newNodeOffset, SEEK_SET);
-                    fwrite (&size, sizeof (uint32_t), 1, this-> _handle);
-                    fwrite (&nodeOffset, sizeof (uint32_t), 1, this-> _handle);
-
-                    fseek (this-> _handle, prevOffset + sizeof (uint32_t), SEEK_SET);
-                    fwrite (&newNodeOffset, sizeof (uint32_t), 1, this-> _handle);
+                    node result {.size = size, .next = nodeOffset};
+                    this-> writeNodeAt (newNodeOffset, result);
+                    this-> write <uint32_t> (prevOffset + sizeof (uint32_t), newNodeOffset);
                 }
 
                 return true;
             }
 
             // Last node but the offset of after it
-            if (nodeNext == 0 && nodeOffset + nodeSize < offset) {
-                fseek (this-> _handle, offset, SEEK_SET);
-                fwrite (&size, sizeof (uint32_t), 1, this-> _handle);
-
-                uint32_t zero = 0;
-                fwrite (&zero, sizeof (uint32_t), 1, this-> _handle);
-
-                // prev-> next = newNode
-                fseek (this-> _handle, nodeOffset + sizeof (uint32_t), SEEK_SET);
-                fwrite (&offset, sizeof (uint32_t), 1, this-> _handle);
+            if (n.next == 0 && nodeOffset + n.size < offset) {
+                this-> writeNodeAt (offset, {.size = size, .next = 0});
+                this-> write <uint32_t> (nodeOffset + sizeof (uint32_t), offset);
 
                 return true;
             }
 
 
             prevOffset = nodeOffset;
-            prevSize = nodeSize;
-            nodeOffset = nodeNext;
+            prevSize = n.size;
+            nodeOffset = n.next;
         }
 
         return false;
@@ -435,16 +402,20 @@ namespace kv_store::disk {
      * ====================================================================================================
      */
 
-    uint32_t FreeList::readIntAt (uint32_t offset) const {
+
+    FreeList::node FreeList::readNodeAt (uint32_t offset) const {
         fseek (this-> _handle, offset, SEEK_SET);
-        uint32_t result = 0;
-        fread (&result, sizeof (uint32_t), 1, this-> _handle);
-        return result;
+        node n;
+        fread (&n.size, sizeof (uint32_t), 1, this-> _handle);
+        fread (&n.next, sizeof (uint32_t), 1, this-> _handle);
+
+        return n;
     }
 
-    void FreeList::writeIntAt (uint32_t offset, uint32_t value) {
+    void FreeList::writeNodeAt (uint32_t offset, FreeList::node n) {
         fseek (this-> _handle, offset, SEEK_SET);
-        fwrite (&value, sizeof (uint32_t), 1, this-> _handle);
+        fwrite (&n.size, sizeof (uint32_t), 1, this-> _handle);
+        fwrite (&n.next, sizeof (uint32_t), 1, this-> _handle);
     }
 
     /*!
@@ -457,7 +428,7 @@ namespace kv_store::disk {
 
     std::ostream & operator<< (std::ostream & s, const FreeList & lst) {
         s << "LIST{";
-        uint32_t nodeOffset = lst.readIntAt (sizeof (uint32_t));
+        uint32_t nodeOffset = lst.read <uint32_t> (sizeof (uint32_t));
         uint32_t len = 0, next = 0;
         while (nodeOffset != 0) {
             fseek (lst._handle, nodeOffset, SEEK_SET);

@@ -13,10 +13,13 @@
 
 namespace kv_store::disk {
 
-    constexpr uint32_t __HEAD_OFFSET__ = 4 * sizeof (uint32_t);
-    constexpr uint32_t __LEN_OFFSET__  = 3 * sizeof (uint32_t);
-
+    class MetaDiskCollection;
     class KVMapDiskSlab {
+    private:
+
+        static constexpr uint32_t __HEAD_OFFSET__ = 4 * sizeof (uint32_t);
+        static constexpr uint32_t __LEN_OFFSET__  = 3 * sizeof (uint32_t);
+
     private:
 
         struct node {
@@ -58,6 +61,10 @@ namespace kv_store::disk {
             friend bool operator!= (Iterator & a, Iterator & b);
 
         };
+
+    public:
+
+        friend MetaDiskCollection;
 
     public:
 
@@ -224,7 +231,7 @@ namespace kv_store::disk {
          *    - v: the value to put in the entry
          *    - prevPtr: the offset pointer in the chained list to update
          */
-        bool createNewEntry (const common::Key & k, const common::Value & v, uint32_t & prevPtr);
+        bool createNewEntry (const common::Key & k, const common::Value & v, uint32_t & offset);
 
         /*!
          * ====================================================================================================

@@ -10,14 +10,15 @@ namespace kv_store::disk {
         class FreeList {
         private:
 
+                static constexpr uint32_t __SIZE_OFFSET__ = 0;
+                static constexpr uint32_t __HEAD_OFFSET__ = sizeof (uint32_t);
+                static constexpr uint32_t __CONTENT_OFFSET__ = (2 * sizeof (uint32_t));
+
+        private:
+
                 struct node {
                         uint32_t size;
                         uint32_t next;
-                };
-
-                struct instance {
-                        uint32_t size;
-                        uint32_t head;
                 };
 
                 // The memory managed by the free list
@@ -26,15 +27,12 @@ namespace kv_store::disk {
                 // the handle to the segment file
                 FILE * _handle;
 
-                // The size of the segment
-                uint32_t _size;
-
         public:
 
                 /**
                  *
                  */
-                FreeList (uint32_t id, uint32_t totalSize);
+                FreeList (uint32_t id);
 
                 /*!
                  * ====================================================================================================
@@ -47,12 +45,12 @@ namespace kv_store::disk {
                 /**
                  * Load the free list from the content of the file
                  */
-                void load ();
+                void load (const std::string & slabPath);
 
                 /**
                  * Initialize the freelist memory segment and write the default layout to the file
                  */
-                void init ();
+                void init (uint32_t size, const std::string & slabPath);
 
                 /*!
                  * ====================================================================================================
@@ -101,6 +99,30 @@ namespace kv_store::disk {
                  */
                 uint32_t remainingSize () const;
 
+                /**
+                 * @returns: the size of the free list memory segment
+                 */
+                uint32_t allSize () const;
+
+                /*!
+                 * ====================================================================================================
+                 * ====================================================================================================
+                 * ===============================          INCREASE/DECREASE          ================================
+                 * ====================================================================================================
+                 * ====================================================================================================
+                 */
+
+                /**
+                 * Increase the size of the free list by adding empty free space at its end
+                 * @info: does nothing if newSize is smaller than old size (call decrease instead)
+                 */
+                void increaseSize (uint32_t newSize);
+
+                /**
+                 * Decrease the size of the free list by removing or decreasing the size of the last free block of the list
+                 * @throws: throw if decrease memory is not free
+                 */
+                void decreaseSize (uint32_t newSize);
 
                 /*!
                  * ====================================================================================================
@@ -119,6 +141,17 @@ namespace kv_store::disk {
                  */
                 void write (uint32_t offset, const uint8_t * data, uint32_t len);
 
+
+                /**
+                 * read a custom struct from disk
+                 */
+                template <typename T>
+                void write (uint32_t offset, const T & value) {
+                        this-> write (offset, reinterpret_cast <const uint8_t*> (&value), static_cast <uint32_t> (sizeof (T)));
+                }
+
+
+
                 /**
                  * Set bytes to a certain value
                  * @params:
@@ -136,6 +169,16 @@ namespace kv_store::disk {
                  *    - len: the length to read
                  */
                 void read (uint32_t offset, uint8_t * data, uint32_t len) const;
+
+                /**
+                 * read a custom struct from disk
+                 */
+                template <typename T>
+                T read (uint32_t offset) const {
+                        T result;
+                        this-> read (offset, reinterpret_cast <uint8_t*> (&result), sizeof (T));
+                        return result;
+                }
 
                 /**
                  * Compare disk content with a segment of memory
@@ -158,7 +201,7 @@ namespace kv_store::disk {
                 /**
                  * Close the handle and remove the file
                  */
-                void erase ();
+                void erase (const std::string & path);
 
                 /**
                  * this-> dispose ();
@@ -211,16 +254,16 @@ namespace kv_store::disk {
                  */
                 bool performFree (uint32_t offset, uint32_t size);
 
-                /**
-                 * Read an int at offset
-                 */
-                uint32_t readIntAt (uint32_t offset) const;
 
                 /**
-                 * write an int at offset
+                 * Read a node in the list at a given offset
                  */
-                void writeIntAt (uint32_t offset, uint32_t value);
+                node readNodeAt (uint32_t offset) const;
 
+                /**
+                 * Write a node in the list at a given offset
+                 */
+                void writeNodeAt (uint32_t offset, node n);
         };
 
 }

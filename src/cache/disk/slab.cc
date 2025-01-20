@@ -1,6 +1,8 @@
 #include "slab.hh"
 #include <string.h>
 
+#include <rd_utils/utils/files.hh>
+
 using namespace rd_utils;
 using namespace rd_utils::utils;
 using namespace kv_store::common;
@@ -11,14 +13,14 @@ namespace kv_store::disk {
 
     KVMapDiskSlab::KVMapDiskSlab (uint32_t id)
         : _uniqId (id)
-        , _context (id, kv_store::common::KVMAP_SLAB_SIZE.bytes ())
+        , _context (id)
     {
         this-> load ();
     }
 
     KVMapDiskSlab::KVMapDiskSlab ()
         : _uniqId (__ID__ + 1)
-        , _context (__ID__ + 1, kv_store::common::KVMAP_SLAB_SIZE.bytes ())
+        , _context (__ID__ + 1)
     {
         __ID__ += 1;
         this-> init ();
@@ -35,12 +37,11 @@ namespace kv_store::disk {
 
     bool KVMapDiskSlab::insert (const Key & key, const Value & value) {
         uint32_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
-        uint32_t n = 0;
-        this-> _context.read ((h * sizeof (uint32_t)) + __HEAD_OFFSET__, reinterpret_cast <uint8_t*> (&n), sizeof (uint32_t));
+        uint32_t n = this-> _context.read <uint32_t> ((h * sizeof (uint32_t)) + __HEAD_OFFSET__);
 
         if (n == 0) {
             if (this-> createNewEntry (key, value, n)) {
-                this-> _context.write ((h * sizeof (uint32_t)) + __HEAD_OFFSET__, reinterpret_cast <uint8_t*> (&n), sizeof (uint32_t));
+                this-> _context.write <uint32_t> ((h * sizeof (uint32_t)) + __HEAD_OFFSET__, n);
                 return true;
             }
 
@@ -55,8 +56,7 @@ namespace kv_store::disk {
     }
 
     bool KVMapDiskSlab::insertAfter (const Key & k, const Value & v, uint32_t offset) {
-        node n;
-        this-> _context.read (offset, reinterpret_cast <uint8_t*> (&n), sizeof (node));
+        node n = this-> _context.read<node> (offset);
 
         if (n.keySize == k.len ()) {
             if (this-> _context.compare (offset + sizeof (node), k.data (), k.len ())) {
@@ -71,7 +71,7 @@ namespace kv_store::disk {
 
         if (n.next == 0) {
             if (this-> createNewEntry (k, v, n.next)) {
-                this-> _context.write (offset + (2 * sizeof (uint32_t)), reinterpret_cast <uint8_t*> (&n.next), sizeof (uint32_t));
+                this-> _context.write<uint32_t> (offset + (2 * sizeof (uint32_t)), n.next);
                 return true;
             }
 
@@ -81,7 +81,7 @@ namespace kv_store::disk {
         return this-> insertAfter (k, v, n.next);
     }
 
-    bool KVMapDiskSlab::createNewEntry (const Key & k, const Value & v, uint32_t & prevPtr) {
+    bool KVMapDiskSlab::createNewEntry (const Key & k, const Value & v, uint32_t & result) {
         uint32_t offset = this-> _context.alloc (k.len () + v.len () + sizeof (node));
         if (offset == 0) {
             // No memory left in the slab
@@ -89,16 +89,15 @@ namespace kv_store::disk {
         }
 
         // Update the chained list
-        prevPtr = offset;
+        result = offset;
 
         // Write down the data of the entry
         node n {.keySize = k.len (), .valueSize = v.len (), .next = 0};
-        this-> _context.write (offset, reinterpret_cast <uint8_t*> (&n), sizeof (node));
+        this-> _context.write <node> (offset, n);
         this-> _context.write (offset + sizeof (node), k.data (), k.len ());
         this-> _context.write (offset + sizeof (node) + k.len (), v.data (), v.len ());
 
-        uint32_t len = this-> len () + 1;
-        this-> _context.write (__LEN_OFFSET__, reinterpret_cast <uint8_t*> (&len), sizeof (uint32_t));
+        this-> _context.write<uint32_t> (__LEN_OFFSET__, this-> _context.read<uint32_t> (__LEN_OFFSET__) + 1);
 
         return true;
     }
@@ -113,8 +112,7 @@ namespace kv_store::disk {
 
     std::shared_ptr <Value> KVMapDiskSlab::find (const Key & key) const {
         uint32_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
-        uint32_t offset = 0;
-        this-> _context.read ((h * sizeof (uint32_t)) + __HEAD_OFFSET__, reinterpret_cast <uint8_t*> (&offset), sizeof (uint32_t));
+        uint32_t offset = this-> _context.read<uint32_t> ((h * sizeof (uint32_t)) + __HEAD_OFFSET__);
 
         if (offset != 0) { // there is a chained list for this hashmap
             return this-> findInList (key, offset);
@@ -124,8 +122,7 @@ namespace kv_store::disk {
     }
 
     std::shared_ptr <Value> KVMapDiskSlab::findInList (const Key & k, uint32_t offset) const {
-        node n;
-        this-> _context.read (offset, reinterpret_cast <uint8_t*> (&n), sizeof (node));
+        node n = this-> _context.read <node> (offset);
         if (n.keySize == k.len ()) {
             if (this-> _context.compare (offset + sizeof (node), k.data (), k.len ())) {
                 std::shared_ptr <Value> v = std::make_shared <Value> (n.valueSize);
@@ -152,8 +149,7 @@ namespace kv_store::disk {
 
     bool KVMapDiskSlab::remove (const Key & key) {
         uint32_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
-        uint32_t offset = 0;
-        this-> _context.read ((h * sizeof (uint32_t)) + __HEAD_OFFSET__, reinterpret_cast <uint8_t*> (&offset), sizeof (uint32_t));
+        uint32_t offset = this-> _context.read<uint32_t> ((h * sizeof (uint32_t)) + __HEAD_OFFSET__);
 
         if (offset != 0) {
             return this-> removeInList (key, offset, (h * sizeof (uint32_t)) + __HEAD_OFFSET__);
@@ -163,15 +159,13 @@ namespace kv_store::disk {
     }
 
     bool KVMapDiskSlab::removeInList (const Key & k, uint32_t offset, uint32_t prevOffset) {
-        node n;
-        this-> _context.read (offset, reinterpret_cast <uint8_t*> (&n), sizeof (node));
+        node n = this-> _context.read <node> (offset);
 
         if (n.keySize == k.len ()) {
             if (this-> _context.compare (offset + sizeof (node), k.data (), k.len ())) {
                 this-> _context.free (offset);
-                this-> _context.write (prevOffset, reinterpret_cast <uint8_t*> (&n.next), sizeof (uint32_t));
-                uint32_t len = this-> len () - 1;
-                this-> _context.write (__LEN_OFFSET__, reinterpret_cast <uint8_t*> (&len), sizeof (uint32_t));
+                this-> _context.write <uint32_t> (prevOffset, n.next);
+                this-> _context.write<uint32_t> (__LEN_OFFSET__, this-> _context.read<uint32_t> (__LEN_OFFSET__) + 1);
 
                 return true;
             }
@@ -197,7 +191,7 @@ namespace kv_store::disk {
     }
 
     void KVMapDiskSlab::erase () {
-        this-> _context.erase ();
+        this-> _context.erase (common::KVMAP_SLAB_DISK_PATH);
     }
 
     KVMapDiskSlab::~KVMapDiskSlab () {
@@ -213,13 +207,17 @@ namespace kv_store::disk {
      */
 
     void KVMapDiskSlab::init () {
-        this-> _context.init ();
+        if (!rd_utils::utils::directory_exists (kv_store::common::KVMAP_SLAB_DISK_PATH)) {
+            rd_utils::utils::create_directory (kv_store::common::KVMAP_SLAB_DISK_PATH, true);
+        }
+
+        this-> _context.init (kv_store::common::KVMAP_SLAB_SIZE.bytes (), kv_store::common::KVMAP_SLAB_DISK_PATH);
         uint32_t offset = this-> _context.alloc ((kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
         this-> _context.set (offset, 0, (kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
     }
 
     void KVMapDiskSlab::load () {
-        this-> _context.load ();
+        this-> _context.load (kv_store::common::KVMAP_SLAB_DISK_PATH);
     }
 
     /*!
@@ -267,9 +265,8 @@ namespace kv_store::disk {
     }
 
     KVMapDiskSlab::Iterator KVMapDiskSlab::begin () const {
-        uint32_t n = 0;
         for (uint32_t i = 0 ; i < kv_store::common::NB_KVMAP_SLAB_ENTRIES ; i++) {
-            this-> _context.read ((i * sizeof (uint32_t)) + __HEAD_OFFSET__, reinterpret_cast <uint8_t*> (&n), sizeof (uint32_t));
+            uint32_t n = this-> _context.read <uint32_t> ((i * sizeof (uint32_t)) + __HEAD_OFFSET__);
             if (n != 0) {
                 return Iterator (this, i, n);
             }
@@ -283,9 +280,7 @@ namespace kv_store::disk {
     }
 
     uint32_t KVMapDiskSlab::len () const {
-        uint32_t len;
-        this-> _context.read (__LEN_OFFSET__, reinterpret_cast <uint8_t*> (&len), sizeof (uint32_t));
-        return len;
+        return this-> _context.read <uint32_t> (__LEN_OFFSET__);
     }
 
     KVMapDiskSlab::Iterator::Iterator ()
@@ -302,8 +297,7 @@ namespace kv_store::disk {
 
     std::pair <std::shared_ptr <Key>, std::shared_ptr <Value> > KVMapDiskSlab::Iterator::operator* () const {
         if (this-> currListOffset != 0) {
-            node n;
-            this-> context-> _context.read (this-> currListOffset, reinterpret_cast <uint8_t*> (&n), sizeof (node));
+            node n = this-> context-> _context.read <node> (this-> currListOffset);
             std::shared_ptr <Key> k = std::make_shared <Key> (n.keySize);
             std::shared_ptr <Value> v = std::make_shared <Value> (n.valueSize);
 
@@ -318,12 +312,10 @@ namespace kv_store::disk {
 
     KVMapDiskSlab::Iterator& KVMapDiskSlab::Iterator::operator++ () {
         if (this-> currListOffset != 0) {
-            node n;
-            this-> context-> _context.read (this-> currListOffset, reinterpret_cast <uint8_t*> (&n), sizeof (node));
+            node n = this-> context-> _context.read<node> (this-> currListOffset);
             if (n.next == 0) {
-                uint32_t off;
                 for (uint32_t i = this-> currListIndex + 1 ; i < kv_store::common::NB_KVMAP_SLAB_ENTRIES ; i++) {
-                    this-> context-> _context.read ((i * sizeof (uint32_t)) + __HEAD_OFFSET__, reinterpret_cast <uint8_t*> (&off), sizeof (uint32_t));
+                    uint32_t off = this-> context-> _context.read <uint32_t> ((i * sizeof (uint32_t)) + __HEAD_OFFSET__);
                     if (off != 0) {
                         this-> currListOffset = off;
                         this-> currListIndex = i;

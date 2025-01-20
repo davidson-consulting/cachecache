@@ -25,7 +25,7 @@ namespace kv_store::memory {
             auto & slab = it.second;
             if (slab-> maxAllocSize () > neededSize || slab-> maxAllocSize () == neededSize) {
                 slab-> insert (k, v);
-                this-> insertMetaData (k.hash (), slab-> getUniqId ());
+                this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
                 return;
             }
         }
@@ -35,7 +35,7 @@ namespace kv_store::memory {
             std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
             slab-> insert (k, v);
             this-> _loadedSlabs.emplace (slab-> getUniqId (), slab);
-            this-> insertMetaData (k.hash (), slab-> getUniqId ());
+            this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
             return;
         }
 
@@ -51,7 +51,7 @@ namespace kv_store::memory {
      */
 
     void MetaRamCollection::remove (const Key & k) {
-        auto h =  k.hash ();
+        auto h =  k.hash () % common::KVMAP_META_LIST_SIZE;
         auto fnd = this-> _slabHeads.find (h);
         if (fnd == this-> _slabHeads.end ()) return;
 
@@ -73,7 +73,7 @@ namespace kv_store::memory {
      */
 
     std::shared_ptr <Value> MetaRamCollection::find (const Key & k) {
-        auto h = k.hash ();
+        auto h = k.hash () % KVMAP_META_LIST_SIZE;
         auto fnd = this-> _slabHeads.find (h);
         if (fnd == this-> _slabHeads.end ()) return nullptr;
 
