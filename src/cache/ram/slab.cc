@@ -39,7 +39,7 @@ namespace kv_store::memory {
      */
 
 
-    bool KVMapRAMSlab::alloc (const Key & key, const Value & value) {
+    bool KVMapRAMSlab::insert (const Key & key, const Value & value) {
         uint64_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         instance* inst = reinterpret_cast <instance*> (this-> _context.data () + sizeof (uint32_t));
 

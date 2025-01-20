@@ -11,10 +11,12 @@
 #include "../common/key.hh"
 #include "../common/value.hh"
 
-namespace kv_store::memory {
+namespace kv_store::disk {
 
-    class MetaRamCollection;
-    class KVMapRAMSlab {
+    constexpr uint32_t __HEAD_OFFSET__ = 4 * sizeof (uint32_t);
+    constexpr uint32_t __LEN_OFFSET__  = 3 * sizeof (uint32_t);
+
+    class KVMapDiskSlab {
     private:
 
         struct node {
@@ -23,20 +25,15 @@ namespace kv_store::memory {
             uint32_t next;
         };
 
-        struct instance {
-            uint32_t lst [kv_store::common::NB_KVMAP_SLAB_ENTRIES];
-            uint32_t len;
-        };
-
     private:
 
         // The global uniq id
         static uint32_t __ID__;
 
-        // The uniq Id of the slab
+        // The uniq id of the slab
         uint32_t _uniqId;
 
-        // The free list used to allocate
+        // The freelist used to allocate
         FreeList _context;
 
     public:
@@ -44,7 +41,7 @@ namespace kv_store::memory {
         class Iterator {
         private:
 
-            const KVMapRAMSlab * context;
+            const KVMapDiskSlab * context;
             uint32_t currListIndex;
             uint32_t currListOffset;
             uint32_t currentIndex;
@@ -52,7 +49,7 @@ namespace kv_store::memory {
         public:
 
             Iterator ();
-            Iterator (const KVMapRAMSlab * context, uint32_t baseIndex, uint32_t listOffset);
+            Iterator (const KVMapDiskSlab * context, uint32_t baseIndex, uint32_t listOffset);
 
             std::pair <std::shared_ptr <common::Key>, std::shared_ptr <common::Value> > operator* () const;
             Iterator& operator++ ();
@@ -64,37 +61,32 @@ namespace kv_store::memory {
 
     public:
 
-        friend MetaRamCollection;
-
-    public:
-
         /**
-         * Load a slab from memory segment (RAM)
+         * Load a slab from disk
          * @params:
-         *    - memory: the memory content of the slab
-         *    - id: the uniq id of the slab
+         *   - id: the id of the slab to load
          */
-        KVMapRAMSlab (uint8_t * memory, uint32_t id);
+        KVMapDiskSlab (uint32_t id);
 
         /**
-         * Allocate a new slab in memory (RAM)
+         * Create a new slab on disk
          */
-        KVMapRAMSlab ();
+        KVMapDiskSlab ();
 
         /*!
          * ====================================================================================================
          * ====================================================================================================
-         * =================================          INSERT/FIND/RM          =================================
+         * ===============================          INSERT/LOAD/REMOVE          ===============================
          * ====================================================================================================
          * ====================================================================================================
          */
 
         /**
-         * Insert a key/value in the slab
+         * Perform an allocation in the slab and returns the pointer to the memory segment
          * @params:
          *    - key: the key
          *    - value: the value to write in the slab
-         * @returns: true iif the insertion was successful
+         * @returns: true iif the allocation was successful
          */
         bool insert (const common::Key & key, const common::Value & value);
 
@@ -122,14 +114,21 @@ namespace kv_store::memory {
          */
 
         /**
-         * Dispose the slab memory segment
+         * Close all handles
+         * @info: does not remove the slab from the disk
          */
         void dispose ();
 
         /**
+         * Erase the slab from the disk
+         */
+        void erase ();
+
+        /**
          * this-> dispose ();
          */
-        ~KVMapRAMSlab ();
+        ~KVMapDiskSlab ();
+
 
         /*!
          * ====================================================================================================
@@ -142,15 +141,15 @@ namespace kv_store::memory {
         /**
          * Begin iterator to iterate over the key/value in the map
          */
-        KVMapRAMSlab::Iterator begin () const;
+        KVMapDiskSlab::Iterator begin () const;
 
         /**
          * End iterator to iterate over the key/value in the map
          */
-        KVMapRAMSlab::Iterator end () const;
+        KVMapDiskSlab::Iterator end () const;
 
         /**
-         * @returns: the number of elements in the map
+         * @returns: the number of elements in the slab
          */
         uint32_t len () const;
 
@@ -177,7 +176,7 @@ namespace kv_store::memory {
          * ====================================================================================================
          */
 
-        friend std::ostream & operator<< (std::ostream & s, const KVMapRAMSlab & mp);
+        friend std::ostream & operator<< (std::ostream & s, const KVMapDiskSlab & mp);
 
     private:
 
@@ -190,12 +189,12 @@ namespace kv_store::memory {
          */
 
         /**
-         * Initialize the key/value store in the slab
+         * Initialize the key value store in the slab
          */
         void init ();
 
         /**
-         * Load the configuration of the key/value store (where current memory allocation was already prev configured)
+         * Load the configuration of the k/v store
          */
         void load ();
 
@@ -213,9 +212,10 @@ namespace kv_store::memory {
          * @params:
          *    - k: the key to insert
          *    - v: the value to insert
-         *    - n: the node in the chained list
+         *    - offset: the offset of the node in the chained list
          */
-        bool insertAfter (const common::Key & k, const common::Value & v, node * n);
+        bool insertAfter (const common::Key & k, const common::Value & v, uint32_t offset);
+
 
         /**
          * Create a new entry to store the key/value
@@ -234,7 +234,7 @@ namespace kv_store::memory {
          * ====================================================================================================
          */
 
-        std::shared_ptr <common::Value> findInList (const common::Key & k, const node* n) const;
+        std::shared_ptr <common::Value> findInList (const common::Key & k, uint32_t offset) const;
 
         /*!
          * ====================================================================================================
@@ -247,8 +247,9 @@ namespace kv_store::memory {
         /**
          * Remove an entry in the list
          */
-        bool removeInList (const common::Key & k, node * n, uint32_t & prevPtr);
+        bool removeInList (const common::Key & k, uint32_t offset, uint32_t prevOffset);
 
     };
+
 
 }

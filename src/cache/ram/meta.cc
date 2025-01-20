@@ -24,7 +24,7 @@ namespace kv_store::memory {
         for (auto & it : this-> _loadedSlabs) {
             auto & slab = it.second;
             if (slab-> maxAllocSize () > neededSize || slab-> maxAllocSize () == neededSize) {
-                slab-> alloc (k, v);
+                slab-> insert (k, v);
                 this-> insertMetaData (k.hash (), slab-> getUniqId ());
                 return;
             }
@@ -33,7 +33,7 @@ namespace kv_store::memory {
         // Failed to allocate in already loaded slabs
         if (this-> _loadedSlabs.size () < this-> _maxNbSlabs) {
             std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
-            slab-> alloc (k, v);
+            slab-> insert (k, v);
             this-> _loadedSlabs.emplace (slab-> getUniqId (), slab);
             this-> insertMetaData (k.hash (), slab-> getUniqId ());
             return;
