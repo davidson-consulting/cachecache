@@ -9,7 +9,8 @@ namespace kv_store {
 
     void HybridKVStore::insert (const common::Key & k, const common::Value & v) {
         if (!this-> _ramColl.insert (k, v)) {
-            this-> _diskColl.insert (k, v);
+            this-> _ramColl.evictSlab (*this);
+            this-> _ramColl.insert (k, v);
         }
     }
 
@@ -43,7 +44,9 @@ namespace kv_store {
         if (!this-> _ramColl.insert (k, v)) {
             if (this-> _ramColl.evictUntilFit (k, v, *this)) {
                 this-> _diskColl.remove (k);
-            }
+            } else {} // keep on disk
+        } else {
+            this-> _diskColl.remove (k);
         }
     }
 
@@ -51,6 +54,10 @@ namespace kv_store {
         this-> _diskColl.insert (k, v);
     }
 
+
+    disk::MetaDiskCollection & HybridKVStore::getDiskColl () {
+        return this-> _diskColl;
+    }
 
 
     std::ostream & operator<< (std::ostream & s, const kv_store::HybridKVStore & coll) {

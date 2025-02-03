@@ -144,6 +144,15 @@ namespace kv_store::memory {
         return this-> _memory;
     }
 
+    const uint8_t* FreeList::metadata () const {
+        return this-> _memory;
+    }
+
+    uint32_t FreeList::size () const {
+        instance * inst = reinterpret_cast <instance*> (this-> _memory);
+        return inst-> size;
+    }
+
     /*!
      * ====================================================================================================
      * ====================================================================================================

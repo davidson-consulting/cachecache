@@ -36,8 +36,8 @@ namespace kv_store::disk {
 
     void DiskMap::init () {
         this-> _context.init (kv_store::common::KVMAP_META_INIT_SIZE.bytes (), kv_store::common::KVMAP_META_DISK_PATH);
-        uint32_t offset = this-> _context.alloc ((kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
-        this-> _context.set (offset, 0, (kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
+        uint32_t offset = this-> _context.alloc (kv_store::common::NB_KVMAP_SLAB_ENTRIES * sizeof (uint32_t));
+        this-> _context.set (offset, 0, kv_store::common::NB_KVMAP_SLAB_ENTRIES * sizeof (uint32_t));
     }
 
     void DiskMap::load () {

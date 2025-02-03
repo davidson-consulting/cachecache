@@ -98,6 +98,11 @@ namespace kv_store::memory {
                 uint8_t* metadata ();
 
                 /**
+                 * @returns: the pointer to the start of the segment managed by the freelist (including free list metadata)
+                 */
+                const uint8_t* metadata () const;
+
+                /**
                  * @returns: the size that will be allocated to store an object of size size
                  */
                 uint32_t realAllocSize (uint32_t size);
@@ -116,6 +121,11 @@ namespace kv_store::memory {
                  * @returns: the sum of remaining size
                  */
                 uint32_t remainingSize () const;
+
+                /**
+                 * @returns: the size of the allocated segment
+                 */
+                uint32_t size () const;
 
                 /*!
                  * ====================================================================================================

@@ -1,7 +1,8 @@
 #include "slab.hh"
 #include <string.h>
-
+#include "../ram/slab.hh"
 #include <rd_utils/utils/files.hh>
+
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
@@ -24,6 +25,14 @@ namespace kv_store::disk {
     {
         __ID__ += 1;
         this-> init ();
+    }
+
+    KVMapDiskSlab::KVMapDiskSlab (const memory::KVMapRAMSlab & slab)
+        : _uniqId (__ID__ + 1)
+        , _context (__ID__ + 1)
+    {
+        __ID__ += 1;
+        this-> initFromMemory (slab.getMemory ().size (), slab.getMemory ().metadata ());
     }
 
     /*!
@@ -83,6 +92,7 @@ namespace kv_store::disk {
 
     bool KVMapDiskSlab::createNewEntry (const Key & k, const Value & v, uint32_t & result) {
         uint32_t offset = this-> _context.alloc (k.len () + v.len () + sizeof (node));
+
         if (offset == 0) {
             // No memory left in the slab
             return false;
@@ -214,6 +224,15 @@ namespace kv_store::disk {
         this-> _context.init (kv_store::common::KVMAP_SLAB_SIZE.bytes (), kv_store::common::KVMAP_SLAB_DISK_PATH);
         uint32_t offset = this-> _context.alloc ((kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
         this-> _context.set (offset, 0, (kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
+    }
+
+    void KVMapDiskSlab::initFromMemory (uint32_t size, const uint8_t* data) {
+        if (!rd_utils::utils::directory_exists (kv_store::common::KVMAP_SLAB_DISK_PATH)) {
+            rd_utils::utils::create_directory (kv_store::common::KVMAP_SLAB_DISK_PATH, true);
+        }
+
+        this-> _context.init (kv_store::common::KVMAP_SLAB_SIZE.bytes (), kv_store::common::KVMAP_SLAB_DISK_PATH);
+        this-> _context.writeMeta (0, data, size);
     }
 
     void KVMapDiskSlab::load () {

@@ -2,10 +2,14 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <unordered_map>
 #include <list>
 #include "slab.hh"
 #include "map.hh"
+
+#include "../ram/slab.hh"
+
 
 namespace kv_store::disk {
 
@@ -23,6 +27,15 @@ namespace kv_store::disk {
          * The maximum number of slabs that can be stored in the collection
          */
         MetaDiskCollection ();
+
+        /**
+         * Create a new slab from a memory slab
+         * @params:
+         *    - slab: the memory slab
+         *    - hash: the list of hashs that can be found in the slab
+         * @returns: the id of the created slab
+         */
+        void createSlabFromRAM (const memory::KVMapRAMSlab & slab, const std::set <uint64_t> & hash);
 
         /**
          * Insert a key value in the collection

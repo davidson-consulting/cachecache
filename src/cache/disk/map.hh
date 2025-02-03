@@ -21,7 +21,7 @@ namespace kv_store::disk {
      */
     class DiskMap {
 
-        static constexpr uint32_t __HEAD_OFFSET__ = 4 * sizeof (uint32_t);
+        static constexpr uint32_t __HEAD_OFFSET__ = sizeof (uint32_t);
 
         struct node {
             uint32_t slabId;

@@ -41,6 +41,11 @@ namespace kv_store {
          */
         void demote (const common::Key & k, const common::Value & v);
 
+        /**
+         * @returns: the disk collection
+         */
+        disk::MetaDiskCollection& getDiskColl ();
+
         /*!
          * ====================================================================================================
          * ====================================================================================================

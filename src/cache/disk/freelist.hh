@@ -11,8 +11,10 @@ namespace kv_store::disk {
         private:
 
                 static constexpr uint32_t __SIZE_OFFSET__ = 0;
-                static constexpr uint32_t __HEAD_OFFSET__ = sizeof (uint32_t);
-                static constexpr uint32_t __CONTENT_OFFSET__ = (2 * sizeof (uint32_t));
+                static constexpr uint32_t __MAX_ALLOC_OFFSET__ = sizeof (uint32_t);
+                static constexpr uint32_t __REMAIN_SIZE_OFFSET__ = (2 * sizeof (uint32_t));
+                static constexpr uint32_t __HEAD_OFFSET__ = (3 * sizeof (uint32_t));
+                static constexpr uint32_t __CONTENT_OFFSET__ = (4 * sizeof (uint32_t));
 
         private:
 
@@ -51,6 +53,11 @@ namespace kv_store::disk {
                  * Initialize the freelist memory segment and write the default layout to the file
                  */
                 void init (uint32_t size, const std::string & slabPath);
+
+                /**
+                   Init the freelist from memory segment
+                 */
+                void initFromMemory (uint32_t size, const std::string & slabPath, const uint8_t* data);
 
                 /*!
                  * ====================================================================================================
@@ -139,8 +146,25 @@ namespace kv_store::disk {
                  *    - data: the data to write
                  *    - len: the size of the data to write
                  */
+                void writeMeta (uint32_t offset, const uint8_t * data, uint32_t len);
+
+                                /**
+                 * Write data to the file segment
+                 * @params:
+                 *    - offset: the offset of the writing
+                 *    - data: the data to write
+                 *    - len: the size of the data to write
+                 */
                 void write (uint32_t offset, const uint8_t * data, uint32_t len);
 
+
+                /**
+                 * read a custom struct from disk
+                 */
+                template <typename T>
+                void writeMeta (uint32_t offset, const T & value) {
+                        this-> writeMeta (offset, reinterpret_cast <const uint8_t*> (&value), static_cast <uint32_t> (sizeof (T)));
+                }
 
                 /**
                  * read a custom struct from disk
@@ -149,8 +173,6 @@ namespace kv_store::disk {
                 void write (uint32_t offset, const T & value) {
                         this-> write (offset, reinterpret_cast <const uint8_t*> (&value), static_cast <uint32_t> (sizeof (T)));
                 }
-
-
 
                 /**
                  * Set bytes to a certain value
@@ -168,11 +190,27 @@ namespace kv_store::disk {
                  *    - data: the data to read
                  *    - len: the length to read
                  */
+                void readMeta (uint32_t offset, uint8_t * data, uint32_t len) const;
+
+                /**
+                 * Read data from the file segment
+                 * @params:
+                 *    - offset: the offset of the reading
+                 *    - data: the data to read
+                 *    - len: the length to read
+                 */
                 void read (uint32_t offset, uint8_t * data, uint32_t len) const;
 
                 /**
                  * read a custom struct from disk
                  */
+                template <typename T>
+                T readMeta (uint32_t offset) const {
+                        T result;
+                        this-> readMeta (offset, reinterpret_cast <uint8_t*> (&result), sizeof (T));
+                        return result;
+                }
+
                 template <typename T>
                 T read (uint32_t offset) const {
                         T result;
@@ -264,6 +302,13 @@ namespace kv_store::disk {
                  * Write a node in the list at a given offset
                  */
                 void writeNodeAt (uint32_t offset, node n);
+
+
+                /**
+                 * Compute the max alloc and remaining size of the slab
+                 */
+                void computeMaxRemainAllocSize ();
+
         };
 
 }

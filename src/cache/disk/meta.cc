@@ -36,6 +36,13 @@ namespace kv_store::disk {
         }
     }
 
+    void MetaDiskCollection::createSlabFromRAM (const memory::KVMapRAMSlab & ram, const std::set <uint64_t> & hashs) {
+        KVMapDiskSlab newSlab (ram);
+        for (auto & h : hashs) {
+            this-> _metaColl.insert (h, newSlab.getUniqId ());
+        }
+    }
+
     /*!
      * ====================================================================================================
      * ====================================================================================================

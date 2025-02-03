@@ -11,14 +11,18 @@
 #include "../common/key.hh"
 #include "../common/value.hh"
 
+namespace kv_store::memory {
+    class KVMapRAMSlab;
+}
+
 namespace kv_store::disk {
 
     class MetaDiskCollection;
     class KVMapDiskSlab {
     private:
 
-        static constexpr uint32_t __HEAD_OFFSET__ = 4 * sizeof (uint32_t);
-        static constexpr uint32_t __LEN_OFFSET__  = 3 * sizeof (uint32_t);
+        static constexpr uint32_t __HEAD_OFFSET__ = 2 * sizeof (uint32_t);
+        static constexpr uint32_t __LEN_OFFSET__  = sizeof (uint32_t);
 
     private:
 
@@ -79,6 +83,11 @@ namespace kv_store::disk {
          * Create a new slab on disk
          */
         KVMapDiskSlab ();
+
+        /**
+         * Copy a memory slab to disk
+         */
+        KVMapDiskSlab (const memory::KVMapRAMSlab & mem);
 
         /*!
          * ====================================================================================================
@@ -205,6 +214,10 @@ namespace kv_store::disk {
          */
         void load ();
 
+        /**
+         * Init the slab from memory slab
+         */
+        void initFromMemory (uint32_t size, const uint8_t* data);
 
         /*!
          * ====================================================================================================

@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <set>
 #include <list>
 #include "slab.hh"
 
@@ -24,10 +25,10 @@ namespace kv_store::memory {
                 std::map <uint32_t, std::shared_ptr <KVMapRAMSlab> > _loadedSlabs;
 
                 // The list of slabs containing a key
-                std::map <uint64_t, std::map <uint32_t, uint32_t> > _slabHeads;
+                std::unordered_map <uint64_t, std::unordered_map <uint32_t, uint32_t> > _slabHeads;
 
-                // The lru of the ram collection
-                SlabLRU _lru;
+                // The usage of slabs
+                std::unordered_map <uint32_t, uint64_t> _used;
 
         public:
 
@@ -53,7 +54,7 @@ namespace kv_store::memory {
                 void remove (const common::Key & k);
 
                 /**
-                 * Evict kvs in the collection (according to LRU order) until the memory fits
+                 * Evict kvs in the collection until the memory fits
                  * @info: insert the KV values in the memory
                  * @returns:
                  *   - maxAllocable: the maximum allocable size in the slab that freed the memory space
@@ -61,6 +62,11 @@ namespace kv_store::memory {
                  *   - v: the value
                  */
                  bool evictUntilFit (const common::Key & k, const common::Value & v, HybridKVStore & store);
+
+                /**
+                 * Evict a slab and write it to disk
+                 **/
+                void evictSlab (HybridKVStore & store);
 
                 /*!
                  * ====================================================================================================
@@ -84,6 +90,15 @@ namespace kv_store::memory {
                  */
                 void removeMetaData (uint64_t hash, uint32_t slabId);
 
+                /**
+                 * @returns: the slab the less used in memory
+                 */
+                std::shared_ptr <KVMapRAMSlab> getLessUsed ();
+
+                /**
+                 * Remove a slab from the list of loaded slabs
+                 */
+                std::set <uint64_t> removeSlab (uint32_t slabId);
         };
 
 }
