@@ -22,6 +22,8 @@ namespace kv_store::memory {
         instance * list = reinterpret_cast <instance*> (this-> _memory);
 
         list-> size = this-> _size;
+        list-> maxAlloc = this-> _size - sizeof (instance);
+        list-> remainingSize = this-> _size - sizeof (instance);
         list-> head = sizeof (instance);
 
         node* head = reinterpret_cast <node*> (this-> _memory + list-> head);
@@ -53,6 +55,7 @@ namespace kv_store::memory {
         if (this-> performAlloc (reqSize, offset)) {
             uint32_t* n = reinterpret_cast<uint32_t*> (this-> _memory + offset);
             n [0] = reqSize;
+            this-> computeMaxRemainAllocSize ();
 
             return offset + sizeof (uint32_t) - sizeof (instance);
         }
@@ -63,9 +66,12 @@ namespace kv_store::memory {
     bool FreeList::free (uint32_t offset) {
         offset = offset + sizeof (instance);
         auto size = *reinterpret_cast<uint32_t*> (this-> _memory + (offset - sizeof (uint32_t)));
-        auto ret = this-> performFree (offset - sizeof (uint32_t), size);
+        if (this-> performFree (offset - sizeof (uint32_t), size)) {
+            this-> computeMaxRemainAllocSize ();
+            return true;
+        }
 
-        return ret;
+        return false;
     }
 
     /*!
@@ -88,29 +94,29 @@ namespace kv_store::memory {
 
     uint32_t FreeList::maxAllocSize () const {
         instance * inst = reinterpret_cast <instance*> (this-> _memory);
-        uint32_t nodeOffset = inst-> head, max = 0;
+        return inst-> maxAlloc;
+    }
+
+    uint32_t FreeList::remainingSize () const {
+        instance * inst = reinterpret_cast <instance*> (this-> _memory);
+        return inst-> remainingSize;
+    }
+
+    void FreeList::computeMaxRemainAllocSize () {
+        instance * inst = reinterpret_cast <instance*> (this-> _memory);
+        uint32_t nodeOffset = inst-> head, max = 0, sum = 0;
         while (nodeOffset != 0) {
             const node* n = reinterpret_cast <const node*> (this-> _memory + nodeOffset);
             if (n-> size - sizeof (uint32_t) > max) {
                 max = n-> size - sizeof (uint32_t);
             }
 
-            nodeOffset = n-> next;
-        }
-
-        return max;
-    }
-
-    uint32_t FreeList::remainingSize () const {
-        instance * inst = reinterpret_cast <instance*> (this-> _memory);
-        uint32_t nodeOffset = inst-> head, sum = 0;
-        while (nodeOffset != 0) {
-            const node* n = reinterpret_cast <const node*> (this-> _memory + nodeOffset);
             sum += (n-> size - sizeof (uint32_t));
             nodeOffset = n-> next;
         }
 
-        return sum;
+        inst-> maxAlloc = max;
+        inst-> remainingSize = sum;
     }
 
     uint32_t FreeList::realAllocSize (uint32_t size) {

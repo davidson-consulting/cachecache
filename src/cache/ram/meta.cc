@@ -1,6 +1,7 @@
 #include "meta.hh"
 #include <rd_utils/utils/mem_size.hh>
 #include <rd_utils/utils/print.hh>
+#include "../global.hh"
 
 using namespace rd_utils::utils;
 using namespace kv_store::common;
@@ -8,8 +9,12 @@ using namespace kv_store::common;
 namespace kv_store::memory {
 
     MetaRamCollection::MetaRamCollection (uint32_t maxNbSlabs)
-        : _maxNbSlabs (maxNbSlabs)
-    {}
+        : _maxNbSlabs (maxNbSlabs - 1)
+    {
+        if (maxNbSlabs < 2) {
+            throw std::runtime_error ("At least 2 slabs are mandatory (a slab for LRU and a slab for values)");
+        }
+    }
 
     /*!
      * ====================================================================================================
@@ -19,27 +24,27 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    void MetaRamCollection::insert (const Key & k, const Value & v) {
+    bool MetaRamCollection::insert (const Key & k, const Value & v) {
         MemorySize neededSize = MemorySize::B (k.len () + v.len () + sizeof (KVMapRAMSlab::node));
         for (auto & it : this-> _loadedSlabs) {
             auto & slab = it.second;
-            if (slab-> maxAllocSize () > neededSize || slab-> maxAllocSize () == neededSize) {
-                slab-> insert (k, v);
+            if (slab-> maxAllocSize ().bytes () >= neededSize.bytes ()) {
+                slab-> insert (k, v, this-> _lru);
                 this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
-                return;
+                return true;
             }
         }
 
         // Failed to allocate in already loaded slabs
         if (this-> _loadedSlabs.size () < this-> _maxNbSlabs) {
             std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
-            slab-> insert (k, v);
+            slab-> insert (k, v, this-> _lru);
             this-> _loadedSlabs.emplace (slab-> getUniqId (), slab);
             this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
-            return;
+            return true;
         }
 
-        throw std::runtime_error ("Failed to insert in slab no memory left");
+        return false;
     }
 
     /*!
@@ -57,7 +62,7 @@ namespace kv_store::memory {
 
         for (auto & scd : fnd-> second) {
             auto & slab = this-> _loadedSlabs [scd.first];
-            if (slab-> remove (k)) {
+            if (slab-> remove (k, this-> _lru)) {
                 this-> removeMetaData (h, slab-> getUniqId ());
                 return;
             }
@@ -79,11 +84,45 @@ namespace kv_store::memory {
 
         for (auto & scd : fnd-> second) {
             auto & slab = this-> _loadedSlabs [scd.first];
-            auto val = slab-> find (k);
+            auto val = slab-> find (k, this-> _lru);
             if (val != nullptr) return val;
         }
 
         return nullptr;
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          EVICTION          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    bool MetaRamCollection::evictUntilFit (const common::Key & k, const common::Value & v, HybridKVStore & store) {
+        MemorySize neededSize = MemorySize::B (k.len () + v.len () + sizeof (KVMapRAMSlab::node));
+        for (;;) {
+            SlabLRU::LRUInfo info;
+            if (this-> _lru.getOldest (info)) {
+                std::shared_ptr <common::Key> demoteK = nullptr;
+                std::shared_ptr <common::Value> demoteV = nullptr;
+                auto slb = this-> _loadedSlabs.find (info.slabId);
+                if (slb == this-> _loadedSlabs.end ()) throw std::runtime_error ("Malformed lru");
+
+                slb-> second-> getFromOffset (info.offset, demoteK, demoteV);
+                store.demote (*demoteK, *demoteV);
+
+                std::cout << "Eviction : " << *demoteK << std::endl;
+
+                slb-> second-> remove (*demoteK, this-> _lru);
+                this-> removeMetaData (demoteK-> hash () % common::KVMAP_META_LIST_SIZE, slb-> second-> getUniqId ());
+                if (slb-> second-> maxAllocSize ().bytes () >= neededSize.bytes ()) {
+                    slb-> second-> insert (k, v, this-> _lru);
+                    this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slb-> second-> getUniqId ());
+                    return true;
+                }
+            } else return false;
+        }
     }
 
     /*!
@@ -144,6 +183,7 @@ namespace kv_store::memory {
             s << "SLAB : " << it.second-> getUniqId () << std::endl;
             s << *(it.second) << std::endl;
         }
+        s << coll._lru << std::endl;
 
         return s;
     }

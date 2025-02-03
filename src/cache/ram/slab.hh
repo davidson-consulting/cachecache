@@ -6,6 +6,7 @@
 
 #include <rd_utils/utils/mem_size.hh>
 
+#include "lru.hh"
 #include "freelist.hh"
 #include "../common/csts.hh"
 #include "../common/key.hh"
@@ -20,6 +21,7 @@ namespace kv_store::memory {
         struct node {
             uint32_t keySize;
             uint32_t valueSize;
+            uint32_t lruInfo;
             uint32_t next;
         };
 
@@ -96,7 +98,7 @@ namespace kv_store::memory {
          *    - value: the value to write in the slab
          * @returns: true iif the insertion was successful
          */
-        bool insert (const common::Key & key, const common::Value & value);
+        bool insert (const common::Key & key, const common::Value & value, SlabLRU & lru);
 
         /**
          * Find a value using a key in the slab and return a copy of it
@@ -104,14 +106,27 @@ namespace kv_store::memory {
          *    - key: the key to find
          * @returns: the value (nullptr if not found)
          */
-        std::shared_ptr <common::Value> find (const common::Key & key) const;
+        std::shared_ptr <common::Value> find (const common::Key & key, SlabLRU & lru) const;
 
         /**
          * Remove a key from the memory segment in the slab
          * @info: does nothing if the key is not found
          * @returns: true if memory was freed, false if nothing was changed
          */
-        bool remove (const common::Key & key);
+        bool remove (const common::Key & key, SlabLRU & lru);
+
+        /*!
+         * ====================================================================================================
+         * ====================================================================================================
+         * ==================================          DIRECT GETS          ===================================
+         * ====================================================================================================
+         * ====================================================================================================
+         */
+
+        /**
+         * Get a KV in the store from its direct offset
+         */
+        void getFromOffset (uint32_t offset, std::shared_ptr <common::Key> & k, std::shared_ptr <common::Value> & v);
 
         /*!
          * ====================================================================================================
@@ -214,8 +229,9 @@ namespace kv_store::memory {
          *    - k: the key to insert
          *    - v: the value to insert
          *    - n: the node in the chained list
+         * @returns: the offset of the insertion (0 if failed)
          */
-        bool insertAfter (const common::Key & k, const common::Value & v, node * n);
+        bool insertAfter (const common::Key & k, const common::Value & v, node * n, SlabLRU & lru);
 
         /**
          * Create a new entry to store the key/value
@@ -224,7 +240,7 @@ namespace kv_store::memory {
          *    - v: the value to put in the entry
          *    - prevPtr: the offset pointer in the chained list to update
          */
-        bool createNewEntry (const common::Key & k, const common::Value & v, uint32_t & prevPtr);
+        bool createNewEntry (const common::Key & k, const common::Value & v, uint32_t & prevPtr, SlabLRU & lru);
 
         /*!
          * ====================================================================================================
@@ -234,7 +250,7 @@ namespace kv_store::memory {
          * ====================================================================================================
          */
 
-        std::shared_ptr <common::Value> findInList (const common::Key & k, const node* n) const;
+        std::shared_ptr <common::Value> findInList (const common::Key & k, const node* n, SlabLRU & lru) const;
 
         /*!
          * ====================================================================================================
@@ -247,7 +263,7 @@ namespace kv_store::memory {
         /**
          * Remove an entry in the list
          */
-        bool removeInList (const common::Key & k, node * n, uint32_t & prevPtr);
+        bool removeInList (const common::Key & k, node * n, uint32_t & prevPtr, SlabLRU & lru);
 
     };
 

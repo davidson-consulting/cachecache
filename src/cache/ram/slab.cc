@@ -39,12 +39,12 @@ namespace kv_store::memory {
      */
 
 
-    bool KVMapRAMSlab::insert (const Key & key, const Value & value) {
+    bool KVMapRAMSlab::insert (const Key & key, const Value & value, SlabLRU & lru) {
         uint64_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         instance* inst = reinterpret_cast <instance*> (this-> _context.data () + sizeof (uint32_t));
 
         if (inst-> lst [h] == 0) {
-            if (this-> createNewEntry (key, value, inst-> lst [h])) {
+            if (this-> createNewEntry (key, value, inst-> lst [h], lru)) {
                 inst-> len += 1;
                 return true;
             }
@@ -53,7 +53,8 @@ namespace kv_store::memory {
         }
 
         node* n = reinterpret_cast <node*> (this-> _context.data () + inst-> lst [h]);
-        if (this-> insertAfter (key, value, n)) {
+        uint32_t offset = this-> insertAfter (key, value, n, lru);
+        if (offset != 0) {
             inst-> len += 1;
             return true;
         }
@@ -61,7 +62,7 @@ namespace kv_store::memory {
         return false;
     }
 
-    bool KVMapRAMSlab::insertAfter (const Key & k, const Value & v, node* n) {
+    bool KVMapRAMSlab::insertAfter (const Key & k, const Value & v, node* n, SlabLRU & lru) {
         uint8_t * keyData = reinterpret_cast <uint8_t*> (n) + sizeof (node);
         if (n-> keySize == k.len () && ::memcmp (k.data (), keyData, k.len ()) == 0) {
             if (n-> valueSize != v.len ()) { // need to erase the k/v and reinsert
@@ -71,18 +72,19 @@ namespace kv_store::memory {
             // values have the same size, we just update it
             uint8_t* valData = keyData + n-> keySize;
             ::memcpy (valData, v.data (), v.len ());
-            return false;
+            lru.pushFront (n-> lruInfo);
+            return true;
         }
 
         if (n-> next == 0) {
-            return this-> createNewEntry (k, v, n-> next);
+            return this-> createNewEntry (k, v, n-> next, lru);
         }
 
         node* next = reinterpret_cast<node*> (this-> _context.data () + n-> next);
-        return this-> insertAfter (k, v, next);
+        return this-> insertAfter (k, v, next, lru);
     }
 
-    bool KVMapRAMSlab::createNewEntry (const Key & k, const Value & v, uint32_t & prevPtr) {
+    bool KVMapRAMSlab::createNewEntry (const Key & k, const Value & v, uint32_t & prevPtr, SlabLRU & lru) {
         uint32_t offset = this-> _context.alloc (k.len () + v.len () + sizeof (node));
         if (offset == 0) {
             // No memory left in the slab
@@ -92,11 +94,14 @@ namespace kv_store::memory {
         // Update the chained list
         prevPtr = offset;
 
+        uint32_t lruInfo = lru.insert (this-> _uniqId, offset);
+
         // Write down the data of the entry
         node* n = reinterpret_cast <node*> (this-> _context.data () + offset);
         n-> next = 0;
         n-> keySize = k.len ();
         n-> valueSize = v.len ();
+        n-> lruInfo = lruInfo;
 
         uint8_t* keyData = reinterpret_cast <uint8_t*> (this-> _context.data () + offset + sizeof (node));
         uint8_t* valueData = reinterpret_cast <uint8_t*> (this-> _context.data () + offset + sizeof (node) + n-> keySize);
@@ -114,25 +119,38 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    std::shared_ptr <Value> KVMapRAMSlab::find (const Key & key) const {
+    void KVMapRAMSlab::getFromOffset (uint32_t offset, std::shared_ptr <common::Key> & k, std::shared_ptr <common::Value> & v) {
+        const node* n = reinterpret_cast <const node*> (this-> _context.data () + offset);
+        const uint8_t * keyData = reinterpret_cast <const uint8_t*> (n) + sizeof (node);
+        const uint8_t * valueData = keyData + n-> keySize;
+
+        k = std::make_shared <Key> (n-> keySize);
+        ::memcpy (k-> data (), keyData, n-> keySize);
+
+        v = std::make_shared <Value> (n-> valueSize);
+        ::memcpy (v-> data (), valueData, n-> valueSize);
+    }
+
+    std::shared_ptr <Value> KVMapRAMSlab::find (const Key & key, SlabLRU & lru) const {
         uint64_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         const instance* inst = reinterpret_cast <const instance*> (this-> _context.data () + sizeof (uint32_t));
 
         if (inst-> lst [h] != 0) { // there is a chained list for this hashmap
             const node* n = reinterpret_cast <const node*> (this-> _context.data () + inst-> lst [h]);
-            return this-> findInList (key, n);
+            return this-> findInList (key, n, lru);
         }
 
         return nullptr;
     }
 
-    std::shared_ptr <Value> KVMapRAMSlab::findInList (const Key & k, const node* n) const {
+    std::shared_ptr <Value> KVMapRAMSlab::findInList (const Key & k, const node* n, SlabLRU & lru) const {
         const uint8_t * keyData = reinterpret_cast <const uint8_t*> (n) + sizeof (node);
         if (n-> keySize == k.len () && ::memcmp (k.data (), keyData, k.len ()) == 0) {
             std::shared_ptr <Value> v = std::make_shared <Value> (n-> valueSize);
 
             const uint8_t* valData = keyData + n-> keySize;
             ::memcpy (v-> data (), valData, v-> len ());
+            lru.pushFront (n-> lruInfo);
             return v;
         }
 
@@ -141,7 +159,7 @@ namespace kv_store::memory {
         }
 
         const node* next = reinterpret_cast <const node*> (this-> _context.data () + n-> next);
-        return this-> findInList (k, next);
+        return this-> findInList (k, next, lru);
     }
 
     /*!
@@ -152,12 +170,12 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    bool KVMapRAMSlab::remove (const Key & key) {
+    bool KVMapRAMSlab::remove (const Key & key, SlabLRU & lru) {
         uint64_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         instance* inst = reinterpret_cast <instance*> (this-> _context.data () + sizeof (uint32_t));
         if (inst-> lst [h] != 0) {
             node* n = reinterpret_cast <node*> (this-> _context.data () + inst-> lst [h]);
-            if (this-> removeInList (key, n, inst-> lst [h])) {
+            if (this-> removeInList (key, n, inst-> lst [h], lru)) {
                 inst-> len -= 1;
                 return true; // something was removed from the slab
             }
@@ -166,11 +184,12 @@ namespace kv_store::memory {
         return false;
     }
 
-    bool KVMapRAMSlab::removeInList (const Key & k, node *n, uint32_t & prevPtr) {
+    bool KVMapRAMSlab::removeInList (const Key & k, node *n, uint32_t & prevPtr, SlabLRU & lru) {
         uint8_t * keyData = reinterpret_cast <uint8_t*> (n) + sizeof (node);
         if (n-> keySize == k.len () && ::memcmp (k.data (), keyData, k.len ()) == 0) {
             uint32_t nodeOffset = prevPtr;
             prevPtr = n-> next;
+            lru.erase (n-> lruInfo);
 
             this-> _context.free (nodeOffset);
             return true;
@@ -178,7 +197,7 @@ namespace kv_store::memory {
 
         if (n-> next != 0) {
             node* next = reinterpret_cast <node*> (this-> _context.data () + n-> next);
-            return this-> removeInList (k, next, n-> next);
+            return this-> removeInList (k, next, n-> next, lru);
         }
 
         return false;
