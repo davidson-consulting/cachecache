@@ -184,19 +184,20 @@ namespace kv_store::memory {
         store.getDiskColl ().createSlabFromRAM (*slb, hash);
     }
 
-
     void MetaRamCollection::evictOldSlabs (uint64_t currentTime, HybridKVStore & store) {
         this-> _currentTime = currentTime;
-        for (auto it = this-> _used.cbegin(); it != this-> _used.cend() /* not hoisted */; /* no increment */) {
-            if (this-> _currentTime - it-> second.lastTouch > this-> _slabTTL) {
-                this-> _used.erase (it++);
-                LOG_INFO ("Eviction of old slab : ", it-> first, " ", it-> second.lastTouch);
-                auto slb = this-> _loadedSlabs [it-> first];
-                auto hash = this-> removeSlab (slb-> getUniqId ());
-                store.getDiskColl ().createSlabFromRAM (*slb, hash);
-            } else {
-                ++it;
+        std::vector <uint32_t> toRemove;
+        for (auto it : this-> _used) {
+            if (this-> _currentTime - it.second.lastTouch > this-> _slabTTL) {
+                LOG_INFO ("Eviction of old slab : ", it.first, " ", it.second.lastTouch);
+                toRemove.push_back (it.first);
             }
+        }
+
+        for (auto & it : toRemove) {
+            auto slb = this-> _loadedSlabs [it];
+            auto hash = this-> removeSlab (slb-> getUniqId ());
+            store.getDiskColl ().createSlabFromRAM (*slb, hash);
         }
     }
 
