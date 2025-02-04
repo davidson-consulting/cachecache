@@ -189,10 +189,13 @@ namespace kv_store::memory {
         this-> _currentTime = currentTime;
         for (auto it = this-> _used.cbegin(); it != this-> _used.cend() /* not hoisted */; /* no increment */) {
             if (this-> _currentTime - it-> second.lastTouch > this-> _slabTTL) {
+                this-> _used.erase (it++);
                 LOG_INFO ("Eviction of old slab : ", it-> first, " ", it-> second.lastTouch);
                 auto slb = this-> _loadedSlabs [it-> first];
                 auto hash = this-> removeSlab (slb-> getUniqId ());
                 store.getDiskColl ().createSlabFromRAM (*slb, hash);
+            } else {
+                ++it;
             }
         }
     }
