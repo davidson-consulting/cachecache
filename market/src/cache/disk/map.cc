@@ -1,5 +1,7 @@
 #include "map.hh"
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
@@ -35,7 +37,8 @@ namespace kv_store::disk {
      */
 
     void DiskMap::init () {
-        this-> _context.init (kv_store::common::KVMAP_META_INIT_SIZE.bytes (), kv_store::common::KVMAP_META_DISK_PATH);
+        std::string path = std::string (kv_store::common::KVMAP_META_DISK_PATH) + std::to_string (getpid ()) + "_";
+        this-> _context.init (kv_store::common::KVMAP_META_INIT_SIZE.bytes (), path);
         uint32_t offset = this-> _context.alloc (kv_store::common::NB_KVMAP_SLAB_ENTRIES * sizeof (uint32_t));
         this-> _context.set (offset, 0, kv_store::common::NB_KVMAP_SLAB_ENTRIES * sizeof (uint32_t));
     }

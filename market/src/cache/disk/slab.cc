@@ -2,7 +2,8 @@
 #include <string.h>
 #include "../ram/slab.hh"
 #include <rd_utils/utils/files.hh>
-
+#include <sys/types.h>
+#include <unistd.h>
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
@@ -11,11 +12,17 @@ using namespace kv_store::common;
 namespace kv_store::disk {
 
     uint32_t KVMapDiskSlab::__ID__ = 0;
+    std::string KVMapDiskSlab::__SLAB_PATH__ = "";
 
     KVMapDiskSlab::KVMapDiskSlab (uint32_t id)
         : _uniqId (id)
         , _context (id)
     {
+        if (__SLAB_PATH__ == "") {
+            __SLAB_PATH__ = common::KVMAP_SLAB_DISK_PATH + std::to_string (getpid ()) + "_";
+            rd_utils::utils::create_directory (common::KVMAP_SLAB_DISK_PATH, true);
+        }
+
         this-> load ();
     }
 
@@ -23,6 +30,11 @@ namespace kv_store::disk {
         : _uniqId (__ID__ + 1)
         , _context (__ID__ + 1)
     {
+        if (__SLAB_PATH__ == "") {
+            __SLAB_PATH__ = common::KVMAP_SLAB_DISK_PATH + std::to_string (getpid ()) + "_";
+            rd_utils::utils::create_directory (common::KVMAP_SLAB_DISK_PATH, true);
+        }
+
         __ID__ += 1;
         this-> init ();
     }
@@ -31,6 +43,11 @@ namespace kv_store::disk {
         : _uniqId (__ID__ + 1)
         , _context (__ID__ + 1)
     {
+        if (__SLAB_PATH__ == "") {
+            __SLAB_PATH__ = common::KVMAP_SLAB_DISK_PATH + std::to_string (getpid ()) + "_";
+            rd_utils::utils::create_directory (common::KVMAP_SLAB_DISK_PATH, true);
+        }
+
         __ID__ += 1;
         this-> initFromMemory (slab.getMemory ().size (), slab.getMemory ().metadata ());
     }
@@ -217,26 +234,18 @@ namespace kv_store::disk {
      */
 
     void KVMapDiskSlab::init () {
-        if (!rd_utils::utils::directory_exists (kv_store::common::KVMAP_SLAB_DISK_PATH)) {
-            rd_utils::utils::create_directory (kv_store::common::KVMAP_SLAB_DISK_PATH, true);
-        }
-
-        this-> _context.init (kv_store::common::KVMAP_SLAB_SIZE.bytes (), kv_store::common::KVMAP_SLAB_DISK_PATH);
+        this-> _context.init (kv_store::common::KVMAP_SLAB_SIZE.bytes (), __SLAB_PATH__);
         uint32_t offset = this-> _context.alloc ((kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
         this-> _context.set (offset, 0, (kv_store::common::NB_KVMAP_SLAB_ENTRIES + 1) * sizeof (uint32_t));
     }
 
     void KVMapDiskSlab::initFromMemory (uint32_t size, const uint8_t* data) {
-        if (!rd_utils::utils::directory_exists (kv_store::common::KVMAP_SLAB_DISK_PATH)) {
-            rd_utils::utils::create_directory (kv_store::common::KVMAP_SLAB_DISK_PATH, true);
-        }
-
-        this-> _context.init (kv_store::common::KVMAP_SLAB_SIZE.bytes (), kv_store::common::KVMAP_SLAB_DISK_PATH);
+        this-> _context.init (kv_store::common::KVMAP_SLAB_SIZE.bytes (), __SLAB_PATH__);
         this-> _context.writeMeta (0, data, size);
     }
 
     void KVMapDiskSlab::load () {
-        this-> _context.load (kv_store::common::KVMAP_SLAB_DISK_PATH);
+        this-> _context.load (__SLAB_PATH__);
     }
 
     /*!

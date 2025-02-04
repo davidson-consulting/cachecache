@@ -324,8 +324,8 @@ namespace kv_store::supervisor {
         auto size = MemorySize::unit ((*res)["content"]["size"].getI (), unit);
         LOG_INFO ("Current infos of (", inst-> first, " aka ", inst-> second.name, ") : [Usage ", usage.megabytes (), " MB] [Size ", size.megabytes(), " MB]");
         rests.emplace (inst-> first, CacheInfo {.remote = std::move (inst-> second.remote),
-                                              .name = inst-> second.name,
-                                              .uid = inst-> second.uid});
+                                                .name = inst-> second.name,
+                                                .uid = inst-> second.uid});
 
         this-> _market.updateUsage (inst-> first, usage);
       } catch (const std::runtime_error & e) {
@@ -333,7 +333,7 @@ namespace kv_store::supervisor {
         LOG_INFO ("Killing cache (", inst-> first, " aka ", inst-> second.name, ")");
         try {
           inst-> second.remote-> send (config::Dict ()
-                                     .insert ("type", RequestIds::POISON_PILL));
+                                       .insert ("type", RequestIds::POISON_PILL));
         } catch (const std::runtime_error & e) {
           LOG_ERROR ("Failed to send kill signal to entity (", inst-> first, " aka ", inst-> second.name, ") ", e.what ());
         }
@@ -366,8 +366,8 @@ namespace kv_store::supervisor {
         }
 
         rests.emplace (inst.first, CacheInfo {.remote = std::move (inst.second.remote),
-                                                .name = inst.second.name,
-                                                .uid = inst.second.uid});
+                                              .name = inst.second.name,
+                                              .uid = inst.second.uid});
 
         trace.insert (inst.second.name, (int64_t) newSize.kilobytes ());
       } catch (...) {

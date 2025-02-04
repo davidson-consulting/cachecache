@@ -21,6 +21,8 @@ namespace kv_store::memory {
                 // The number of slabs that can be managed by the collection
                 uint32_t _maxNbSlabs;
 
+                uint32_t _slabTTL;
+
                 // The RAM slabs storing KVs
                 std::map <uint32_t, std::shared_ptr <KVMapRAMSlab> > _loadedSlabs;
 
@@ -28,14 +30,14 @@ namespace kv_store::memory {
                 std::unordered_map <uint64_t, std::unordered_map <uint32_t, uint32_t> > _slabHeads;
 
                 // The usage of slabs
-                std::unordered_map <uint32_t, uint64_t> _used;
+                std::unordered_map <uint32_t, std::pair <uint64_t, time_t> > _used;
 
         public:
 
                 /**
                  * The maximum number of slabs that can be stored in the collection
                  */
-                MetaRamCollection (uint32_t maxNbSlabs);
+                MetaRamCollection (uint32_t maxNbSlabs, uint32_t slabTTL = 20);
 
                 /*!
                  * ====================================================================================================
@@ -89,6 +91,11 @@ namespace kv_store::memory {
                  * Set the maximum number of slabs available in memory
                  */
                 void setNbSlabs (uint32_t nbSlabs, HybridKVStore & store);
+
+                /**
+                 * Evict the slabs that are older than the collection TTL (to reduce the memory usage in RAM)
+                 */
+                void evictOldSlabs (HybridKVStore & store);
 
                 /*!
                  * ====================================================================================================

@@ -37,6 +37,8 @@ namespace kv_store::disk {
         // The global uniq id
         static uint32_t __ID__;
 
+        static std::string __SLAB_PATH__;
+
         // The uniq id of the slab
         uint32_t _uniqId;
 

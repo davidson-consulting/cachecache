@@ -140,7 +140,7 @@ namespace kv_store::supervisor {
       LOG_INFO ("Cache ", id, " Req ", cache.req.kilobytes(), "kb - Usage ", cache.usages.current().kilobytes(), "kb - Size ", cache.last.kilobytes(), ">", cache.size.kilobytes(), "kb - Wallet", cache.wallet.kilobytes());
     }
 
-    LOG_DEBUG ("After fourth step : ", allocated, " ", buyers, " ", market);
+    LOG_INFO ("After fourth step : ", allocated, " ", buyers, " ", market, " ", adding);
   }
 
   std::map<uint64_t, MemorySize> Market::sellBaseMemory (MemorySize& market

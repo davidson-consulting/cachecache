@@ -11,7 +11,7 @@ namespace kv_store::common {
         , _length (0)
     {
         if (MAX_VALUE_SIZE < MemorySize::B (len)) {
-            throw std::runtime_error ("Value is too big");
+            throw std::runtime_error ("Value is too big " + std::to_string (len) + " > " + std::to_string (MAX_VALUE_SIZE.bytes ()));
         }
 
         uint8_t * mem = reinterpret_cast <uint8_t*> (malloc (len));

@@ -12,8 +12,9 @@ using namespace kv_store::common;
 
 namespace kv_store::memory {
 
-    MetaRamCollection::MetaRamCollection (uint32_t maxNbSlabs)
+    MetaRamCollection::MetaRamCollection (uint32_t maxNbSlabs, uint32_t slabTTL)
         : _maxNbSlabs (maxNbSlabs - 1)
+        , _slabTTL (slabTTL)
     {}
 
 
@@ -62,6 +63,8 @@ namespace kv_store::memory {
         if (this-> _loadedSlabs.size () < this-> _maxNbSlabs) {
             std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
             slab-> insert (k, v);
+
+            this-> _used [slab-> getUniqId ()] = std::make_pair <uint64_t, uint64_t> (1, time (NULL));
             this-> _loadedSlabs.emplace (slab-> getUniqId (), slab);
             this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
             return true;
@@ -108,7 +111,11 @@ namespace kv_store::memory {
         for (auto & scd : fnd-> second) {
             auto & slab = this-> _loadedSlabs [scd.first];
             auto val = slab-> find (k);
-            if (val != nullptr) return val;
+            if (val != nullptr) {
+                auto old = this-> _used [slab-> getUniqId ()];
+                this-> _used [slab-> getUniqId ()] = std::make_pair <uint64_t, uint64_t> (old.first + 1, time (NULL));
+                return val;
+            }
         }
 
         return nullptr;
@@ -177,6 +184,19 @@ namespace kv_store::memory {
         store.getDiskColl ().createSlabFromRAM (*slb, hash);
     }
 
+
+    void MetaRamCollection::evictOldSlabs (HybridKVStore & store) {
+        time_t current = time (NULL);
+        for (auto it = this-> _used.cbegin(); it != this-> _used.cend() /* not hoisted */; /* no increment */) {
+            if (difftime (current, it-> second.second) > this-> _slabTTL) {
+                LOG_INFO ("Eviction of old slab : ", it-> first);
+                auto slb = this-> _loadedSlabs [it-> first];
+                auto hash = this-> removeSlab (slb-> getUniqId ());
+                store.getDiskColl ().createSlabFromRAM (*slb, hash);
+            }
+        }
+    }
+
     /*!
      * ====================================================================================================
      * ====================================================================================================
@@ -186,13 +206,6 @@ namespace kv_store::memory {
      */
 
     void MetaRamCollection::insertMetaData (uint64_t hash, uint32_t slabId) {
-        auto usd = this-> _used.find (slabId);
-        if (usd == this-> _used.end ()) {
-            this-> _used.emplace (slabId, 0);
-        } else {
-            usd-> second += 1;
-        }
-
         auto fnd = this-> _slabHeads.find (hash);
         if (fnd != this-> _slabHeads.end ()) {
             auto scd = fnd-> second.find (slabId);
@@ -232,9 +245,9 @@ namespace kv_store::memory {
         uint64_t nb = 0xFFFFFFFFFFFFFFFF;
         uint32_t id = 0;
         for (auto &it : this-> _used) {
-            if (it.second < nb) {
+            if (it.second.first < nb) {
                 id = it.first;
-                nb = it.second;
+                nb = it.second.first;
             }
         }
 
