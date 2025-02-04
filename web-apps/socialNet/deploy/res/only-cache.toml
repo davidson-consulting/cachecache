@@ -1,0 +1,15 @@
+[machines.nuc-intel]
+hostname = "nuc-intel"
+user = "root"
+iface = "eth0"
+work-dir = "~/"
+has-pdu = true
+
+[caches.cache1]
+host = "nuc-intel"
+size = 256
+unit = "MB"
+entities = {
+     service = { size = 64, ttl = 100 },
+     front = { size = 128 }
+}
