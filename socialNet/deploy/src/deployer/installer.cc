@@ -40,8 +40,10 @@ namespace deployer {
             this-> runGatlingInstall (mch);
         }
 
-        if (mch-> hasFlag ("cache")) {
-            this-> runCacheInstall (mch);
+        if (mch-> hasFlag ("cache-disk")) {
+            this-> runCacheInstall (mch, "disk");
+        } else if (mch-> hasFlag ("cache-cachelib")) {
+            this-> runCacheInstall (mch, "cachelib");
         }
     }
 
@@ -108,8 +110,8 @@ namespace deployer {
             "cd " + m-> getHomeDir () + "\n"
             "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
             "cd cachecache/\n"
-            "git checkout disk\n"
-            "cd web-apps/socialNet/app\n"
+            "git checkout webapp\n"
+            "cd socialNet/app\n"
             "mkdir .build\n"
             "cd .build\n"
             "cmake ..\n"
@@ -127,24 +129,60 @@ namespace deployer {
         LOG_INFO (r-> stdout ());
     }
 
-    void Installer::runCacheInstall (std::shared_ptr <Machine> m) {
-        LOG_INFO ("Install cache on : ", m-> getName ());
+    void Installer::runCacheInstall (std::shared_ptr <Machine> m, const std::string & version) {
+        LOG_INFO ("Install cache (", version, ") on : ", m-> getName ());
         auto script = "mkdir -p " + m-> getHomeDir () + "\n"
             "cd " + m-> getHomeDir () + "\n"
             "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
             "cd cachecache/\n"
-            "git checkout disk\n"
-            "cd market/\n"
-            "mkdir .build\n"
-            "cd .build\n"
-            "cmake ..\n"
-            "make -j12\n"
-
-            "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
-            "mv " + m-> getHomeDir () + "/cachecache/market/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
-            "mv " + m-> getHomeDir () + "/cachecache/market/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
-            // "rm -rf " + m-> getHomeDir () + "/cachecache/"
+            "git checkout " + version + "\n"
             ;
+
+        if (version == "disk") {
+            script += "mkdir .build\n"
+                "cd .build\n"
+                "cmake ..\n"
+                "make -j12\n"
+                "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
+                "mv " + m-> getHomeDir () + "/cachecache/market/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
+                "mv " + m-> getHomeDir () + "/cachecache/market/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
+                // "rm -rf " + m-> getHomeDir () + "/cachecache/"
+                ;
+        } else if (version == "cachelib") {
+            script += "mkdir .build\n"
+                "./clone_cachelib.sh\n"
+                "./build.sh\n"
+                "cd .build\n"
+                "cmake ..\n"
+                "make -j12\n"
+                "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
+                "mkdir " + m-> getHomeDir () + "/execs/cache/libs\n"
+                "mv " + m-> getHomeDir () + "/cachecache/cachecache/CacheLib/opt/cachelib/lib/lib* " + m-> getHomeDir () + "/execs/cache/libs\n"
+                "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
+                "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
+                "cd " + m-> getHomeDir () + "/execs/cache\n"
+                "for j in {0..3};\n"
+                "do\n"
+                "    for i in $(ldd supervisor | grep \"not found\" | awk '{ print $1 }');\n"
+                "    do\n"
+                "        patchelf --add-needed ./libs/${i} supervisor;\n"
+                "    done\n"
+                "done\n"
+                "\n"
+                "for j in {0..3};\n"
+                "do\n"
+                "    for i in $(ldd cache | grep \"not found\" | awk '{ print $1 }');\n"
+                "    do\n"
+                "        patchelf --add-needed ./libs/${i} cache;\n"
+                "    done\n"
+                "done\n"
+                "\n"
+                "rm -rf " + m-> getHomeDir () + "/cachecache/"
+                ;
+        } else {
+            LOG_ERROR ("Unkown cache version : ", version);
+        }
+
 
         auto r = m-> runScript (script);
         r-> wait ();

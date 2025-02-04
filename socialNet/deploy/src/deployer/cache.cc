@@ -33,9 +33,14 @@ namespace deployer {
     void Cache::readCacheConfiguration (const config::Dict & cfg) {
         try {
             this-> _cacheHost = cfg ["host"].getStr ();
+            std::string version = cfg ["version"].getStr ();
+            if (version != "disk" && version != "cachelib") {
+                throw std::runtime_error ("Cache versions are 'disk' and 'cachelib'");
+            }
+
             auto unit = cfg ["unit"].getStr ();
             this-> _size = MemorySize::unit (cfg ["size"].getI (), unit);
-            this-> _context-> getCluster ()-> get (this-> _cacheHost)-> addFlag ("cache");
+            this-> _context-> getCluster ()-> get (this-> _cacheHost)-> addFlag ("cache-" + version);
             LOG_INFO ("Register cache supervisor ", this-> _name, " of size ", this-> _size.megabytes (), "MB, on host ", this-> _cacheHost);
 
             match (cfg ["entities"]) {
