@@ -32,7 +32,7 @@ void foo () {
 
 auto main(int argc, char *argv[]) -> int {
     // foo ();
-    HybridKVStore store (6);
+    HybridKVStore store (6, 1);
 
     srand (0); // time (NULL));
 

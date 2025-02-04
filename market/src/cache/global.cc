@@ -3,8 +3,9 @@
 
 namespace kv_store {
 
-    HybridKVStore::HybridKVStore (uint32_t maxRamSlabs)
-        : _ramColl (maxRamSlabs)
+    HybridKVStore::HybridKVStore (uint32_t maxRamSlabs, uint32_t slabTTL)
+        : _ramColl (maxRamSlabs, slabTTL)
+        , _currentTime (0)
     {}
 
     /*!
@@ -50,6 +51,11 @@ namespace kv_store {
 
     void HybridKVStore::resizeRamColl (uint32_t maxRamSlabs) {
         this-> _ramColl.setNbSlabs (maxRamSlabs, *this);
+    }
+
+    void HybridKVStore::loop () {
+        this-> _currentTime += 1;
+        this-> _ramColl.evictOldSlabs (this-> _currentTime, *this);
     }
 
     /*!

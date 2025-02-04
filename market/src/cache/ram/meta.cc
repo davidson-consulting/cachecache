@@ -64,7 +64,7 @@ namespace kv_store::memory {
             std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
             slab-> insert (k, v);
 
-            this-> _used [slab-> getUniqId ()] = std::make_pair <uint64_t, uint64_t> (1, time (NULL));
+            this-> _used [slab-> getUniqId ()] = {.nbHits = 1, .lastTouch = this-> _currentTime};
             this-> _loadedSlabs.emplace (slab-> getUniqId (), slab);
             this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
             return true;
@@ -113,7 +113,7 @@ namespace kv_store::memory {
             auto val = slab-> find (k);
             if (val != nullptr) {
                 auto old = this-> _used [slab-> getUniqId ()];
-                this-> _used [slab-> getUniqId ()] = std::make_pair <uint64_t, uint64_t> (old.first + 1, time (NULL));
+                this-> _used [slab-> getUniqId ()] = {.nbHits = old.nbHits + 1, .lastTouch = this-> _currentTime};
                 return val;
             }
         }
@@ -185,11 +185,11 @@ namespace kv_store::memory {
     }
 
 
-    void MetaRamCollection::evictOldSlabs (HybridKVStore & store) {
-        time_t current = time (NULL);
+    void MetaRamCollection::evictOldSlabs (uint64_t currentTime, HybridKVStore & store) {
+        this-> _currentTime = currentTime;
         for (auto it = this-> _used.cbegin(); it != this-> _used.cend() /* not hoisted */; /* no increment */) {
-            if (difftime (current, it-> second.second) > this-> _slabTTL) {
-                LOG_INFO ("Eviction of old slab : ", it-> first);
+            if (this-> _currentTime - it-> second.lastTouch > this-> _slabTTL) {
+                LOG_INFO ("Eviction of old slab : ", it-> first, " ", it-> second.lastTouch);
                 auto slb = this-> _loadedSlabs [it-> first];
                 auto hash = this-> removeSlab (slb-> getUniqId ());
                 store.getDiskColl ().createSlabFromRAM (*slb, hash);
@@ -245,9 +245,9 @@ namespace kv_store::memory {
         uint64_t nb = 0xFFFFFFFFFFFFFFFF;
         uint32_t id = 0;
         for (auto &it : this-> _used) {
-            if (it.second.first < nb) {
+            if (it.second.nbHits < nb) {
                 id = it.first;
-                nb = it.second.first;
+                nb = it.second.nbHits;
             }
         }
 

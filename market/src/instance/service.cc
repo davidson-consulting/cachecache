@@ -147,13 +147,15 @@ namespace kv_store::instance {
     try {
       auto & conf = *cfg;
       std::string name = "cache";
+      int64_t ttl = 20;
 
       if (conf.contains ("cache")) {
         name = conf ["cache"].getOr ("name", name);
+        ttl = conf ["cache"].getOr ("ttl", ttl);
       }
 
       this-> _entity = std::make_shared <CacheEntity> ();
-      this-> _entity-> configure (name, this-> _regSize);
+      this-> _entity-> configure (name, this-> _regSize, ttl);
     } catch (std::runtime_error & e) {
       LOG_ERROR ("Cache entity configuration failed (", e.what (), "). Abort");
       throw std::runtime_error ("in entity configuration");
@@ -256,6 +258,7 @@ namespace kv_store::instance {
     int64_t size = 0;
     WITH_LOCK (this-> _m) {
       if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to have a size
+        this-> _entity-> loop ();
         usage = (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ();
         size = this-> _entity-> getSize ().kilobytes ();
       }

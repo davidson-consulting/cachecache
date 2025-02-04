@@ -19,9 +19,9 @@ namespace kv_store::instance {
    * ============================================================================================================
    */
 
-  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize) {
+  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t slabTTL) {
     uint32_t nbSlabs = maxSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
-    this-> _entity = std::make_unique <HybridKVStore> (nbSlabs);
+    this-> _entity = std::make_unique <HybridKVStore> (nbSlabs, slabTTL);
   }
 
   /**
@@ -31,6 +31,10 @@ namespace kv_store::instance {
    * ============================================================================================================
    * ============================================================================================================
    */
+
+  void CacheEntity::loop () {
+    this-> _entity-> loop ();
+  }
 
   bool CacheEntity::resize (rd_utils::utils::MemorySize newSize) {
     if (this-> _entity == nullptr) return false;

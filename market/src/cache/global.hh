@@ -13,13 +13,16 @@ namespace kv_store {
                 // The collection on the disk
                 disk::MetaDiskCollection _diskColl;
 
+                // The routine time incrementation
+                uint64_t _currentTime;
+
         public :
 
                 /**
                  * @params:
                  *    - maxRamSlabs: the number of slabs in the RAM
                  */
-                HybridKVStore (uint32_t maxRamSlabs);
+                HybridKVStore (uint32_t maxRamSlabs, uint32_t slabTTL);
 
 
                 /*!
@@ -101,6 +104,20 @@ namespace kv_store {
                  * ====================================================================================================
                  * ====================================================================================================
                  */
+
+                /**
+                 * Update the collection to make the memory usage decrease if possible
+                 */
+                void loop ();
+
+                /*!
+                 * ====================================================================================================
+                 * ====================================================================================================
+                 * ====================================          ROUTINE          =====================================
+                 * ====================================================================================================
+                 * ====================================================================================================
+                 */
+
 
                 friend std::ostream & operator<< (std::ostream & s, const HybridKVStore & mp);
 

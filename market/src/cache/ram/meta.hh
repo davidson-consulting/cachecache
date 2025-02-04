@@ -13,6 +13,11 @@ namespace kv_store {
 
 namespace kv_store::memory {
 
+        struct SlabUsageInfo {
+                uint64_t nbHits;
+                uint64_t lastTouch;
+        };
+
         /**
          * The meta ram collection stores the informations of the keys stored in the RAM
          */
@@ -23,6 +28,8 @@ namespace kv_store::memory {
 
                 uint32_t _slabTTL;
 
+                uint64_t _currentTime;
+
                 // The RAM slabs storing KVs
                 std::map <uint32_t, std::shared_ptr <KVMapRAMSlab> > _loadedSlabs;
 
@@ -30,7 +37,7 @@ namespace kv_store::memory {
                 std::unordered_map <uint64_t, std::unordered_map <uint32_t, uint32_t> > _slabHeads;
 
                 // The usage of slabs
-                std::unordered_map <uint32_t, std::pair <uint64_t, time_t> > _used;
+                std::unordered_map <uint32_t, SlabUsageInfo>  _used;
 
         public:
 
@@ -95,7 +102,7 @@ namespace kv_store::memory {
                 /**
                  * Evict the slabs that are older than the collection TTL (to reduce the memory usage in RAM)
                  */
-                void evictOldSlabs (HybridKVStore & store);
+                void evictOldSlabs (uint64_t currentTime, HybridKVStore & store);
 
                 /*!
                  * ====================================================================================================

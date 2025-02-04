@@ -56,7 +56,7 @@ namespace kv_store::instance {
                  *    - name: the uniq name of the cache
                  *    - maxSize: the maximum size the cache can take
                  */
-                void configure (const std::string & name, rd_utils::utils::MemorySize maxSize);
+                void configure (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t slabTTL);
 
                 /**
                  * Resize the cache entity to take a new memory space
@@ -65,6 +65,11 @@ namespace kv_store::instance {
                  * @assume: 'newSize' < this-> getMaxSize ()
                  */
                 bool resize (rd_utils::utils::MemorySize newSize);
+
+                /**
+                 * Update the memory usage and clear what can be cleared
+                 */
+                void loop () ;
 
                 /**
                  * @returns: the maximum size that can be taken by the cache
