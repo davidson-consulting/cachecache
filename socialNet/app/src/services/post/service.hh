@@ -36,26 +36,16 @@ namespace socialNet::post {
      */
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
-    void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
-
     void onMessage (const rd_utils::utils::config::ConfigNode & msg);
 
     void onQuit () override;
 
   private :
 
-    /**
-     * Store a new post
-     */
     std::shared_ptr <rd_utils::utils::config::ConfigNode> store (const rd_utils::utils::config::ConfigNode & msg);
-
-    /**
-     * Read one post
-     */
     std::shared_ptr <rd_utils::utils::config::ConfigNode> readOne (const rd_utils::utils::config::ConfigNode & msg);
+    std::shared_ptr <rd_utils::utils::config::ConfigNode> readMultiple (const rd_utils::utils::config::ConfigNode & msg);
 
-
-    void streamPosts (rd_utils::concurrency::actor::ActorStream & stream);
 
   };
 

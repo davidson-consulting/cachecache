@@ -143,6 +143,14 @@ namespace socialNet::timeline {
         return this-> countHome (msg);
       }
 
+      elof_v (RequestCode::HOME_TIMELINE) {
+        return this-> readHome (msg);
+      }
+
+      elof_v (RequestCode::USER_TIMELINE) {
+        return this-> readPost (msg);
+      }
+
       elfo {
         return response (ResponseCode::NOT_FOUND);
       }
@@ -184,97 +192,48 @@ namespace socialNet::timeline {
   /*!
    * ====================================================================================================
    * ====================================================================================================
-   * ===================================          STREAMING          ====================================
+   * ====================================          READING          =====================================
    * ====================================================================================================
    * ====================================================================================================
    */
 
-  void TimelineService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    match_v (msg.getOr ("type", RequestCode::NONE)) {
-      of_v (RequestCode::HOME_TIMELINE) {
-        this-> streamHome (msg, stream);
-      }
-
-      elof_v (RequestCode::USER_TIMELINE) {
-        this-> streamPosts (msg, stream);
-      }
-
-      elfo {
-        stream.writeU32 (ResponseCode::NOT_FOUND);
-      }
-    }
-  }
-
-  void TimelineService::streamHome (const config::ConfigNode & msg, actor::ActorStream & stream) {
+  std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::readHome (const config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      int32_t nb = msg.getOr ("nb", -1);
-      int32_t page = msg.getOr ("page", -1);
-      if (page >= 0) page *= nb;
-      if (nb <= 1024 && nb > 0) { // Cacheable
-        stream.writeU32 (ResponseCode::OK);
-        auto values = this-> _db.findHomeCacheable (uid, page, nb);
-        for (auto & it : values) {
-          stream.writeU8 (1);
-          stream.writeU32 (it);
-        }
-        stream.writeU8 (0);
-      } else { // streaming
-        stream.writeU32 (ResponseCode::OK);
-        uint32_t nb = 2048, page = 0;
-        for (;;) {
-          auto values = this-> _db.findHomeCacheable (uid, page, nb);
-          for (auto & it : values) {
-            stream.writeU8 (1);
-            stream.writeU32 (it);
-          }
-          if (values.size () != nb) break;
-          page += nb;
-        }
+      int32_t nb = msg ["nb"].getI ();
+      int32_t page = msg ["page"].getI ();
 
-        stream.writeU8 (0);
+      auto result = std::make_shared <config::Array> ();
+      auto values = this-> _db.findHomeCacheable (uid, page, nb);
+      for (auto & it : values) {
+        result-> insert (std::make_shared <config::Int> (it));
       }
+
+      return response (ResponseCode::OK, result);
     } catch (std::runtime_error & err) {
       LOG_ERROR ("TimelineService::streamHome : ", err.what ());
+      return response (ResponseCode::MALFORMED);
     }
   }
 
-  void TimelineService::streamPosts (const config::ConfigNode & msg, actor::ActorStream & stream) {
+  std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::readPost (const config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      int32_t nb = msg.getOr ("nb", -1);
-      int32_t page = msg.getOr ("page", -1);
-      if (page >= 0) page *= nb;
-      if (nb <= 1024 && nb > 0) { // Cacheable
-        stream.writeU32 (ResponseCode::OK);
-        auto values = this-> _db.findPostCacheable (uid, page, nb);
-        for (auto & it : values) {
-          stream.writeU8 (1);
-          stream.writeU32 (it);
-        }
+      int32_t nb = msg ["nb"].getI ();
+      int32_t page = msg ["page"].getI ();
 
-        stream.writeU8 (0);
-
-      } else { // streaming
-        stream.writeU32 (ResponseCode::OK);
-        uint32_t nb = 2048, page = 0;
-        for (;;) {
-          auto values = this-> _db.findPostCacheable (uid, page, nb);
-          for (auto & it : values) {
-            stream.writeU8 (1);
-            stream.writeU32 (it);
-          }
-          if (values.size () != nb) break;
-          page += nb;
-        }
-
-        stream.writeU8 (0);
+      auto result = std::make_shared <config::Array> ();
+      auto values = this-> _db.findPostCacheable (uid, page, nb);
+      for (auto & it : values) {
+        result-> insert (std::make_shared <config::Int> (it));
       }
+
+      return response (ResponseCode::OK, result);
     } catch (std::runtime_error & err) {
-      LOG_ERROR ("TimelineService::streamPosts : ", err.what ());
+      LOG_ERROR ("TimelineService::streamHome : ", err.what ());
+      return response (ResponseCode::MALFORMED);
     }
   }
-
 
   /*!
    * ====================================================================================================
@@ -298,28 +257,13 @@ namespace socialNet::timeline {
           cp = std::move (this-> _toUpdates);
         }
 
-        if (cp.size () != 0) {
-          auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
-          if (socialService == nullptr) {
-            throw std::runtime_error ("No social graph service found");
-          }
-
-          auto req = config::Dict ().insert ("type", RequestCode::FOLLOWERS_TIMELINE);
-          auto followStream = socialService-> requestStream (req).wait ();
-
-          if (followStream == nullptr || followStream-> readU32 () != ResponseCode::OK) {
-            throw std::runtime_error ("Failed to connect to stream");
-          }
-
-          for (auto & it : cp) {
-            LOG_INFO ("Starting update : ", it.first);
-            this-> updateForFollowers (it.first, it.second, *followStream);
-          }
-
-          followStream-> writeU8 (0);
-          this-> _db.commit ();
-          LOG_INFO ("Iteration took : ", t.time_since_start ());
+        for (auto & it : cp) {
+          LOG_INFO ("Starting update : ", it.first);
+          this-> updateForFollowers (it.first, it.second);
         }
+
+        this-> _db.commit ();
+        LOG_INFO ("Iteration took : ", t.time_since_start ());
       } catch (const std::runtime_error & err) {
         LOG_ERROR ("Error in timeline update : ", err.what ());
       }
@@ -336,9 +280,11 @@ namespace socialNet::timeline {
     }
   }
 
-  void TimelineService::updateForFollowers (uint32_t uid, const std::vector <TimelineService::PostUpdate> & updates, rd_utils::concurrency::actor::ActorStream & followerStream) {
-    followerStream.writeU8 (1);
-    followerStream.writeU32 (uid);
+  void TimelineService::updateForFollowers (uint32_t uid, const std::vector <TimelineService::PostUpdate> & updates) {
+    auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
+    if (socialService == nullptr) {
+      throw std::runtime_error ("No social graph service found");
+    }
 
     for (auto up : updates) {
       this-> _db.insertHome (uid, up.pid);
@@ -348,12 +294,32 @@ namespace socialNet::timeline {
       }
     }
 
-    while (followerStream.readOr (0) == 1) {
-      auto follower = followerStream.readU32 ();
-      for (auto & up : updates) {
-        if (up.tagged.find (follower) == up.tagged.end ()) {
-          this-> _db.insertHome (follower, up.pid);
+    for (uint32_t page = 0 ;; page++) {
+      auto msg = config::Dict ()
+        .insert ("type", RequestCode::FOLLOWERS)
+        .insert ("uid", std::make_shared <config::Int> (uid))
+        .insert ("page", std::make_shared <config::Int> (page))
+        .insert ("nb", std::make_shared <config::Int> (50));
+
+      auto resp = socialService-> request (msg).wait ();
+      if (resp && resp-> getOr ("code", -1) == 200) {
+        match ((*resp) ["content"]) {
+          of (config::Array, arr) {
+            for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
+              CONF_LET (follower, (*arr) [i].getI (), 0);
+              for (auto & up : updates) {
+                if (up.tagged.find (follower) == up.tagged.end ()) {
+                  this-> _db.insertHome (follower, up.pid);
+                }
+              }
+            }
+
+            if (arr-> getLen () < 50) break;
+          } fo;
         }
+      } else {
+        LOG_ERROR ("Failed updating timelines");
+        break;
       }
     }
   }

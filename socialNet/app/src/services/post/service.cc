@@ -126,7 +126,7 @@ namespace socialNet::post {
   std::shared_ptr <config::ConfigNode> PostStorageService::readOne (const config::ConfigNode & msg) {
     try {
       Post p;
-      if (this-> _db.findPost (msg ["post_id"].getI (), p)) {
+      if (this-> _db.findPost (msg ["postId"].getI (), p)) {
         auto result = std::make_shared<config::Dict> ();
         result-> insert ("userId", std::make_shared <config::Int> (p.userId));
         result-> insert ("userLogin", std::string (p.userLogin));
@@ -144,45 +144,6 @@ namespace socialNet::post {
       }
     } catch (...) {
       return response (ResponseCode::MALFORMED);
-    }
-  }
-
-
-  /**
-   * ====================================================================================================
-   * ====================================================================================================
-   * =================================          STREAMING         =======================================
-   * ====================================================================================================
-   * ====================================================================================================
-   */
-
-  void PostStorageService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    match_v (msg.getOr ("type", RequestCode::NONE)) {
-      of_v (RequestCode::READ_POST) {
-        stream.writeU32 (ResponseCode::OK);
-        this-> streamPosts (stream);
-      }
-
-      elfo {
-        stream.writeU32 (ResponseCode::NOT_FOUND);
-      }
-    }
-  }
-
-  void PostStorageService::streamPosts (rd_utils::concurrency::actor::ActorStream & stream) {
-    try {
-      Post p;
-      while (stream.readOr ((uint8_t) 0) != 0) {
-        auto id = stream.readU32 ();
-        if (this-> _db.findPost (id, p)) {
-          stream.writeU8 (1);
-          stream.writeRaw (p);
-        } else {
-          stream.writeU8 (0);
-        }
-      }
-    } catch (const std::runtime_error & err) {
-      LOG_ERROR ("PostStorageService::streamPosts ", err.what ());
     }
   }
 

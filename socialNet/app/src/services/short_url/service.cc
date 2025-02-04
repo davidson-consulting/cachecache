@@ -149,44 +149,4 @@ namespace socialNet::short_url {
     result [SHORT_LEN - 1] = 0;
   }
 
-  /**
-   * ====================================================================================================
-   * ====================================================================================================
-   * =================================          STREAMING         =======================================
-   * ====================================================================================================
-   * ====================================================================================================
-   */
-
-  void ShortUrlService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    match_v (msg.getOr ("type", RequestCode::NONE)) {
-      of_v (RequestCode::CREATE) {
-        stream.writeU32 (ResponseCode::OK);
-        this-> streamCreate (stream);
-      }
-
-      elfo {
-        stream.writeU32 (ResponseCode::NOT_FOUND);
-      }
-    }
-  }
-
-  void ShortUrlService::streamCreate (actor::ActorStream & stream) {
-    while (stream.readOr (0) == 1) {
-      auto url = stream.readStr ();
-      ShortUrl shUrl;
-      ::memset (&shUrl, 0, sizeof (ShortUrl));
-
-      auto lnLen = std::min (url.length (), (uint64_t) LONG_LEN);
-      ::memcpy (shUrl.ln, url.c_str (), lnLen);
-
-      if (!this-> _db.findUrl (shUrl)) {
-        this-> createShort (shUrl.sh);
-        this-> _db.insertUrl (shUrl);
-      }
-
-      stream.writeStr (shUrl.sh);
-    }
-  }
-
-
 }

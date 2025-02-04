@@ -33,8 +33,6 @@ namespace socialNet::short_url {
      */
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
-    void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream) override;
-
     void onMessage (const rd_utils::utils::config::ConfigNode& msg);
 
     void onQuit () override;
@@ -52,8 +50,6 @@ namespace socialNet::short_url {
      * Create a short url
      */
     void createShort (char * sh);
-
-    void streamCreate (rd_utils::concurrency::actor::ActorStream &);
 
   };
 

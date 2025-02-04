@@ -75,36 +75,46 @@ namespace socialNet {
         .insert ("page", page)
         .insert ("nb", nb);
 
-      auto resultStream = composeService-> requestStream (msg, 100).wait ();
-      socialNet::post::Post p;
-      if (resultStream != nullptr && resultStream-> readU32 () == 200) {
-        json result;
+      auto resp = composeService-> request (msg, 100).wait ();
 
-        while (resultStream-> isOpen ()) {
-          if (resultStream-> readOr (0) == 0) break;
-          resultStream-> readRaw (p);
+      if (resp && resp-> getOr ("code", -1) == 200) {
+        match ((*resp) ["content"]) {
+          of (config::Array, arr) {
+            json result;
+            for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
+              json post;
+              post ["user_id"] = (*arr) [i]["userId"].getI ();
+              post ["post_id"] = (*arr) [i]["postId"].getI ();
+              post ["user_login"] = (*arr) [i]["userLogin"].getStr ();
+              post ["text"] = (*arr) [i]["text"].getStr ();
+              match ((*arr)[i]["tags"]) {
+                of (config::Array, tags) {
+                  for (uint32_t t = 0 ; t < tags-> getLen () ; t++) {
+                    post["tags"].push_back ((*tags)[t].getI ());
+                  }
+                } fo;
+              }
 
-          json post;
-          post ["user_id"] = p.userId;
-          post ["user_login"] = std::string (p.userLogin);
-          post ["text"] = std::string (p.text);
-          for (uint32_t i = 0 ; i < p.nbTags ; i++) {
-            post["tags"].push_back (p.tags [i]);
-          }
+              result.push_back (post);
+            }
 
-          result.push_back (post);
+            auto finalResult = result.dump ();
+            if (finalResult == "null") {
+              finalResult = "{}";
+            } else if (this-> _context-> getCache () != nullptr) {
+              this-> _context-> getCache ()-> set (rqt, reinterpret_cast <const uint8_t*> (finalResult.c_str ()), finalResult.length ());
+            }
+
+            // this-> _serviceCounter.insert (t.time_since_start ());
+            return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
+          } fo;
         }
-
-        auto finalResult = result.dump ();
-        if (finalResult == "null") {
-          finalResult = "{}";
-        } else if (this-> _context-> getCache () != nullptr) {
-          this-> _context-> getCache ()-> set (rqt, reinterpret_cast <const uint8_t*> (finalResult.c_str ()), finalResult.length ());
-        }
-
-        // this-> _serviceCounter.insert (t.time_since_start ());
-        return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
       }
+
+      if (resp != nullptr) {
+        return std::make_shared <httpserver::string_response> ("", resp-> getOr ("code", 500), "text/plain");
+      }
+
     } catch (const std::runtime_error & e) {
       LOG_ERROR ("Failed for request : ", e.what (), req);
     }

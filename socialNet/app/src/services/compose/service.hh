@@ -25,8 +25,6 @@ namespace socialNet::compose {
 
     void onStart () override;
 
-    void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream);
-
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
     void onMessage (const rd_utils::utils::config::ConfigNode & msg);
@@ -50,20 +48,11 @@ namespace socialNet::compose {
      * ====================================================================================================
      */
 
-    void streamTimeline (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream, socialNet::utils::RequestCode kind);
-    void streamSubscriptions (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream, socialNet::utils::RequestCode kind);
+      std::shared_ptr <rd_utils::utils::config::ConfigNode> readTimeline (const rd_utils::utils::config::ConfigNode & msg, utils::RequestCode kind);
+      std::shared_ptr <rd_utils::utils::config::ConfigNode> readSubscriptions (const rd_utils::utils::config::ConfigNode & msg, utils::RequestCode kind);
 
-    bool openTimelineStreams (const rd_utils::utils::config::ConfigNode & msg,
-                              socialNet::utils::RequestCode kind,
-                              rd_utils::concurrency::actor::ActorStream & stream,
-                              std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & timelineStream,
-                              std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & userStream);
-
-    bool openSubStreams (const rd_utils::utils::config::ConfigNode & msg,
-                         socialNet::utils::RequestCode kind,
-                         rd_utils::concurrency::actor::ActorStream & stream,
-                         std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & socialStream,
-                         std::shared_ptr <rd_utils::concurrency::actor::ActorStream> & userStream);
+      std::shared_ptr <rd_utils::utils::config::ConfigNode> retreiveTimeline (uint32_t uid, uint32_t page, uint32_t nb, utils::RequestCode kind);
+      std::shared_ptr <rd_utils::utils::config::ConfigNode> retreiveFollSubs (uint32_t uid, uint32_t page, uint32_t nb, utils::RequestCode kind);
 
   };
 

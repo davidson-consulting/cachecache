@@ -79,6 +79,23 @@ namespace socialNet::compose {
         }
       }
 
+      elof_v (RequestCode::HOME_TIMELINE) {
+        return this-> readTimeline (msg, RequestCode::HOME_TIMELINE);
+      }
+
+      elof_v (RequestCode::USER_TIMELINE) {
+        return this-> readTimeline (msg, RequestCode::USER_TIMELINE);
+      }
+
+      elof_v (RequestCode::SUBSCIRPTIONS) {
+        return this-> readSubscriptions (msg, RequestCode::SUBSCIRPTIONS);
+      }
+
+      elof_v (RequestCode::FOLLOWERS) {
+        return this-> readSubscriptions (msg, RequestCode::FOLLOWERS);
+      }
+
+
       elfo {
         return response (ResponseCode::NOT_FOUND);
       }
@@ -158,10 +175,9 @@ namespace socialNet::compose {
   std::shared_ptr <config::ConfigNode> ComposeService::submitNewPost (const config::ConfigNode & msg) {
     try {
       auto textService = socialNet::findService (this-> _system, this-> _registry, "text");
-      auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
       auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
 
-      if (textService == nullptr || postService == nullptr || userService == nullptr) {
+      if (textService == nullptr || userService == nullptr) {
         return response (ResponseCode::SERVER_ERROR);
       }
 
@@ -209,6 +225,12 @@ namespace socialNet::compose {
         return response (ResponseCode::MALFORMED);
       }
 
+
+      auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
+      if (postService == nullptr) {
+        return response (ResponseCode::SERVER_ERROR);
+      }
+
       auto postReq = config::Dict ()
         .insert ("type", RequestCode::STORE)
         .insert ("userLogin", (*userResult) ["content"].getStr ())
@@ -233,39 +255,6 @@ namespace socialNet::compose {
     }
   }
 
-  /**
-   * ====================================================================================================
-   * ====================================================================================================
-   * =================================          STREAMING         =======================================
-   * ====================================================================================================
-   * ====================================================================================================
-   */
-
-
-  void ComposeService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    match_v (msg.getOr ("type", RequestCode::NONE)) {
-      of_v (RequestCode::HOME_TIMELINE) {
-        this-> streamTimeline (msg, stream, RequestCode::HOME_TIMELINE);
-      }
-
-      elof_v (RequestCode::USER_TIMELINE) {
-        this-> streamTimeline (msg, stream, RequestCode::USER_TIMELINE);
-      }
-
-      elof_v (RequestCode::SUBSCIRPTIONS) {
-        this-> streamSubscriptions (msg, stream, RequestCode::SUBSCIRPTIONS);
-      }
-
-      elof_v (RequestCode::FOLLOWERS) {
-        this-> streamSubscriptions (msg, stream, RequestCode::FOLLOWERS);
-      }
-
-      elfo {
-        stream.writeU32 (ResponseCode::NOT_FOUND);
-      }
-    }
-  }
-
   /*!
    * ====================================================================================================
    * ====================================================================================================
@@ -274,50 +263,55 @@ namespace socialNet::compose {
    * ====================================================================================================
    */
 
-  void ComposeService::streamTimeline (const config::ConfigNode & msg, actor::ActorStream & stream, RequestCode kind) {
-      std::shared_ptr <actor::ActorStream> timelineStream;
-      std::shared_ptr <actor::ActorStream> postStream;
+  std::shared_ptr <config::ConfigNode> ComposeService::readTimeline (const config::ConfigNode & msg, RequestCode kind) {
+    try {
+      uint32_t uid = msg ["userId"].getI ();
+      uint32_t page = msg ["page"].getI ();
+      uint32_t nb = msg ["nb"].getI ();
 
-      if (this-> openTimelineStreams (msg, kind, stream, timelineStream, postStream)) {
-        try {
-          socialNet::post::Post p;
-
-          while (timelineStream-> readOr ((uint8_t) 0) != 0) {
-            auto pid = timelineStream-> readU32 ();
-            postStream-> writeU8 (1);
-            postStream-> writeU32 (pid);
-            if (postStream-> readOr ((uint8_t) 0) != 0) {;
-              postStream-> readRaw (p);
-              stream.writeU8 (1);
-              stream.writeRaw (p);
+      auto timeline = this-> retreiveTimeline (uid, page, nb, kind);
+      if (timeline-> getOr ("code", -1) == ResponseCode::OK) {
+        match ((*timeline)["content"]) {
+          of (config::Array, arr) {
+            auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
+            if (postService == nullptr) {
+              return response (ResponseCode::SERVER_ERROR);
             }
+
+            auto result = std::make_shared <config::Array> ();
+            for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
+              uint32_t id = (*arr) [i].getI ();
+              auto req = config::Dict ()
+                .insert ("type", RequestCode::READ_POST)
+                .insert ("postId", std::make_shared <config::Int> (id));
+
+              auto post = postService-> request (req).wait ();
+              if (post && post-> getOr ("code", -1) == ResponseCode::OK) {
+                result-> insert (post-> get ("content"));
+              }
+            }
+
+            return response (ResponseCode::OK, result);
           }
 
-          postStream-> writeU8 (0);
-          stream.writeU8 (0);
-        }  catch (const std::runtime_error & err) {
-          LOG_ERROR ("Error ComposeService::streamTimeline ", __FILE__, __LINE__, " ", err.what (), " ", timelineStream-> isOpen (), " ", postStream-> isOpen (), " ", stream.isOpen ());
-          if (postStream-> isOpen ()) {
-            postStream-> writeU8 (0);
+          elfo {
+            return response (ResponseCode::SERVER_ERROR);
           }
-          stream.writeU8 (0);
         }
-      }
+      } else return timeline;
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("Error ComposeService::streamTimeline ", __FILE__, __LINE__, " ", err.what ());
+    }
+
+    return response (ResponseCode::MALFORMED);
   }
 
-  bool ComposeService::openTimelineStreams (const config::ConfigNode & msg, RequestCode kind, actor::ActorStream & stream, std::shared_ptr <actor::ActorStream> & timelineStream, std::shared_ptr <actor::ActorStream> & postStream) {
+   std::shared_ptr <config::ConfigNode> ComposeService::retreiveTimeline (uint32_t uid, uint32_t page, uint32_t nb, RequestCode kind) {
     try {
-      auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
       auto timelineService = socialNet::findService (this-> _system, this-> _registry, "timeline");
-
-      if (postService == nullptr || timelineService == nullptr) {
-        stream.writeU32 (ResponseCode::SERVER_ERROR);
-        return false;
+      if (timelineService == nullptr) {
+        return response (ResponseCode::SERVER_ERROR);
       }
-
-      uint32_t uid = msg ["userId"].getI ();
-      uint32_t page = msg.getOr ("page", -1);
-      uint32_t nb = msg.getOr ("nb", -1);
 
       auto timelineReq = config::Dict ()
         .insert ("type", kind)
@@ -325,34 +319,13 @@ namespace socialNet::compose {
         .insert ("page", (int64_t) page)
         .insert ("nb", (int64_t) nb);
 
-      auto postReq = config::Dict ()
-        .insert ("type", RequestCode::READ_POST);
+      auto ret = timelineService-> request (timelineReq).wait ();
+      if (ret == nullptr) return response (ResponseCode::SERVER_ERROR);
 
-      auto timelineStreamReq = timelineService-> requestStream (timelineReq);
-      auto postStreamReq = postService-> requestStream (postReq);
-
-      timelineStream = timelineStreamReq.wait ();
-      postStream = postStreamReq.wait ();
-
-      if (timelineStream == nullptr || postStream == nullptr) {
-        stream.writeU32 (ResponseCode::SERVER_ERROR);
-        return false;
-      }
-
-      auto codeA = timelineStream-> readU32 ();
-      auto codeB = postStream-> readU32 ();
-
-      if (codeA != ResponseCode::OK || codeB != ResponseCode::OK) {
-        stream.writeU32 (ResponseCode::SERVER_ERROR);
-        return false;
-      }
-
-      stream.writeU32 (ResponseCode::OK);
-      return true;
+      return ret;
     } catch (std::runtime_error & err) {
       LOG_ERROR ("ComposeService::openTimelineStreams : ", __FILE__, __LINE__, " ", err.what ());
-
-      return false;
+      return response (ResponseCode::MALFORMED);
     }
   }
 
@@ -364,45 +337,59 @@ namespace socialNet::compose {
    * ====================================================================================================
    */
 
-  void ComposeService::streamSubscriptions (const config::ConfigNode & msg, actor::ActorStream & stream, RequestCode kind) {
-    std::shared_ptr <actor::ActorStream> socialStream, userStream;
-    if (this-> openSubStreams (msg, kind, stream, socialStream, userStream)) {
-      try {
+  std::shared_ptr <config::ConfigNode> ComposeService::readSubscriptions (const config::ConfigNode & msg, RequestCode kind) {
+try {
+      uint32_t uid = msg ["userId"].getI ();
+      uint32_t page = msg ["page"].getI ();
+      uint32_t nb = msg ["nb"].getI ();
 
-        while (socialStream-> readOr (0) != 0) {
-          auto rid = socialStream-> readU32 ();
-          userStream-> writeU8 (1);
-          userStream-> writeU32 (rid);
+      auto subs = this-> retreiveFollSubs (uid, page, nb, kind);
+      if (subs-> getOr ("code", -1) == ResponseCode::OK) {
+        match ((*subs)["content"]) {
+          of (config::Array, arr) {
+            auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
+            if (userService == nullptr) {
+              return response (ResponseCode::SERVER_ERROR);
+            }
 
-          if (userStream-> readOr (0) != 0) {
-            auto name = userStream-> readStr ();
-            stream.writeU8 (1);
-            stream.writeU32 (rid);
-            stream.writeStr (name);
+            auto result = std::make_shared <config::Array> ();
+            for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
+              uint32_t id = (*arr) [i].getI ();
+              auto req = config::Dict ()
+                .insert ("type", RequestCode::FIND)
+                .insert ("id", std::make_shared <config::Int> (id));
+
+              auto user = userService-> request (req).wait ();
+              if (user && user-> getOr ("code", -1) == ResponseCode::OK) {
+                auto u = std::make_shared <config::Dict> ();
+                u-> insert ("login", user-> get ("content"));
+                u-> insert ("id", std::make_shared <config::Int> (id));
+
+                result-> insert (u);
+              }
+            }
+
+            return response (ResponseCode::OK, result);
+          }
+
+          elfo {
+            return response (ResponseCode::SERVER_ERROR);
           }
         }
-
-        userStream-> writeU8 (0);
-        stream.writeU8 (0);
-      } catch (const std::runtime_error & err) {
-        LOG_ERROR ("Error ComposeService::streamSubs ", __FILE__, __LINE__, " ", err.what ());
-      }
+      } else return subs;
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("Error ComposeService::streamTimeline ", __FILE__, __LINE__, " ", err.what ());
     }
+
+    return response (ResponseCode::MALFORMED);
   }
 
-  bool ComposeService::openSubStreams (const config::ConfigNode & msg, RequestCode kind, actor::ActorStream & stream, std::shared_ptr <actor::ActorStream> & socialStream, std::shared_ptr <actor::ActorStream> & userStream) {
+  std::shared_ptr <config::ConfigNode> ComposeService::retreiveFollSubs (uint32_t uid, uint32_t page, uint32_t nb, RequestCode kind) {
     try {
       auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
-      auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-
-      if (userService == nullptr || socialService == nullptr) {
-        stream.writeU32 (ResponseCode::SERVER_ERROR);
-        return false;
+      if (socialService == nullptr) {
+        return response (ResponseCode::SERVER_ERROR);
       }
-
-      uint32_t uid = msg ["userId"].getI ();
-      uint32_t page = msg.getOr ("page", -1);
-      uint32_t nb = msg.getOr ("nb", -1);
 
       auto socialReq = config::Dict ()
         .insert ("type", kind)
@@ -410,34 +397,14 @@ namespace socialNet::compose {
         .insert ("page", (int64_t) page)
         .insert ("nb", (int64_t) nb);
 
-      auto userReq = config::Dict ()
-        .insert ("type", RequestCode::FIND_BY_ID);
+      auto ret = socialService-> request (socialReq).wait ();
+      if (ret == nullptr) return response (ResponseCode::SERVER_ERROR);
 
-      auto socialStreamReq = socialService-> requestStream (socialReq);
-      auto userStreamReq = userService-> requestStream (userReq);
-
-      userStream = userStreamReq.wait ();
-      socialStream = socialStreamReq.wait ();
-
-      if (userStream == nullptr || socialStream == nullptr) {
-        stream.writeU32 (ResponseCode::SERVER_ERROR);
-        return false;
-      }
-
-      auto codeB = socialStream-> readU32 ();
-      auto codeA = userStream-> readU32 ();
-
-      if (codeA != ResponseCode::OK || codeB != ResponseCode::OK) {
-        stream.writeU32 (ResponseCode::SERVER_ERROR);
-        return false;
-      }
-
-      stream.writeU32 (ResponseCode::OK);
-      return true;
+      return ret;
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("ComposeService::openSubStreams : ", __FILE__, ":", __LINE__, " ", err.what ());
 
-      return false;
+      return response (ResponseCode::MALFORMED);
     }
   }
 

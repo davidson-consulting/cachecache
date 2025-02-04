@@ -82,20 +82,14 @@ namespace socialNet::user {
       auto password = msg ["password"].getStr ();
 
       User u;
-      //WITH_LOCK (this-> getMutex ()) {
-        if (this-> _db.findByLogin (login, u)) {
-          return response (ResponseCode::FORBIDDEN);
-        }
-      //}
+      if (this-> _db.findByLogin (login, u)) {
+        return response (ResponseCode::FORBIDDEN);
+      }
 
       memcpy (u.login, login.c_str (), strnlen (login.c_str (), 16));
       memcpy (u.password, password.c_str (), strnlen (password.c_str (), 64));
 
-      uint32_t id = 0;
-      //WITH_LOCK (this-> getMutex ()) {
-        id = this-> _db.insertUser (u);
-      //}
-
+      uint32_t id = this-> _db.insertUser (u);
       return response (ResponseCode::OK, std::make_shared <config::Int> (id));
     } catch (std::runtime_error & err) {
       LOG_ERROR ("ERROR UserService::registerUser : ", err.what ());
@@ -119,12 +113,7 @@ namespace socialNet::user {
       LOG_DEBUG ("Trying to connect : ", login, "@", password);
 
       User u;
-      bool found = false;
-      //WITH_LOCK (this-> getMutex ()) {
-        found = this-> _db.findByLogin (login, u);
-      //}
-
-      if (found) {
+      if (this-> _db.findByLogin (login, u)) {
         if (strnlen (u.password, 64) == password.length ()) {
           if (strncmp (u.password, password.c_str (), password.length ()) == 0) {
             LOG_DEBUG ("User connected");
@@ -150,105 +139,23 @@ namespace socialNet::user {
       User u;
       if (msg.contains ("id")) {
         uint32_t id = msg ["id"].getI ();
-        bool found = false;
-        //WITH_LOCK (this-> getMutex ()) {
-          found = this-> _db.findById (id, u);
-        //}
-
-        if (found) {
+        if (this-> _db.findById (id, u)) {
           return response (ResponseCode::OK, std::make_shared <config::String> (u.login));
         } else {
           LOG_ERROR ("Not found : ", msg);
         }
       } else {
         auto login = msg ["login"].getStr ();
-        bool found = false;
-        //WITH_LOCK (this-> getMutex ()) {
-          found = this-> _db.findByLogin (login, u);
-        //}
-
-        if (found) {
+        if (this-> _db.findByLogin (login, u)) {
           return response (ResponseCode::OK, std::make_shared <config::Int> (u.id));
         }
       }
 
       return response (ResponseCode::NOT_FOUND);
-
     }  catch (std::runtime_error & err) {
       LOG_ERROR ("ERROR UserService::find : ", err.what ());
       return response (ResponseCode::MALFORMED);
     }
   }
-
-  /*!
-   * ====================================================================================================
-   * ====================================================================================================
-   * ===================================          STREAMING          ====================================
-   * ====================================================================================================
-   * ====================================================================================================
-   */
-
-  void UserService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    match_v (msg.getOr ("type", RequestCode::NONE)) {
-      of_v (RequestCode::FIND_BY_LOGIN) {
-        this-> streamFindByLogin (stream);
-      }
-      elof_v (RequestCode::FIND_BY_ID) {
-        this-> streamFindById (stream);
-      }
-
-      elfo {
-        stream.writeU32 (ResponseCode::NOT_FOUND);
-      }
-    }
-  }
-
-  void UserService::streamFindByLogin (actor::ActorStream & stream) {
-    try {
-      User u;
-      stream.writeU32 (200);
-      while (stream.readOr (0) == 1) {
-        auto login = stream.readStr ();
-        bool found = false;
-        //WITH_LOCK (this-> getMutex ()) {
-          found = this-> _db.findByLogin (login, u);
-        //}
-
-        if (found) {
-          stream.writeU8 (1);
-          stream.writeU32 (u.id);
-        } else {
-          stream.writeU8 (0);
-        }
-      }
-    } catch (const std::runtime_error & err) {
-      LOG_ERROR ("UserService::streamFindByLogin ", err.what ());
-    }
-  }
-
-  void UserService::streamFindById (actor::ActorStream & stream) {
-    try {
-      User u;
-      stream.writeU32 (200);
-      while (stream.readOr (0) == 1) {
-        auto id = stream.readU32 ();
-        bool found = false;
-        //WITH_LOCK (this-> getMutex ()) {
-          found = this-> _db.findById (id, u);
-        //}
-
-        if (found) {
-          stream.writeU8 (1);
-          stream.writeStr (std::string (u.login));
-        } else {
-          stream.writeU8 (0);
-        }
-      }
-    } catch (const std::runtime_error & err) {
-      LOG_ERROR ("UserService::streamFindById ", err.what ());
-    }
-  }
-
-
 
 }

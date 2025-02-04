@@ -86,6 +86,15 @@ namespace socialNet::social_graph {
         return this-> isFollowing (msg);
       }
 
+      elof_v (RequestCode::FOLLOWERS) {
+        return this-> readFollowers (msg);
+      }
+
+      elof_v (RequestCode::SUBSCIRPTIONS) {
+        return this-> readSubscriptions (msg);
+      }
+
+
       elfo {
         return response (ResponseCode::NOT_FOUND);
       }
@@ -159,10 +168,11 @@ namespace socialNet::social_graph {
   /*!
    * ====================================================================================================
    * ====================================================================================================
-   * ====================================          FINDING          =====================================
+   * ====================================          COUNTING          ====================================
    * ====================================================================================================
    * ====================================================================================================
    */
+
 
   std::shared_ptr <rd_utils::utils::config::ConfigNode> SocialGraphService::countSubs (const rd_utils::utils::config::ConfigNode & msg) {
     try {
@@ -193,122 +203,50 @@ namespace socialNet::social_graph {
   /*!
    * ====================================================================================================
    * ====================================================================================================
-   * ===================================          STREAMING          ====================================
+   * ====================================          READING          =====================================
    * ====================================================================================================
    * ====================================================================================================
    */
 
-  void SocialGraphService::onStream (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    match_v (msg.getOr ("type", RequestCode::NONE)) {
-      of_v (RequestCode::FOLLOWERS) {
-        this-> streamFollowers (msg, stream);
-      }
-
-      elof_v (RequestCode::FOLLOWERS_TIMELINE) {
-        this-> streamFollowerForTimeline (msg, stream);
-      }
-
-      elof_v (RequestCode::SUBSCIRPTIONS) {
-        this-> streamSubs (msg, stream);
-      }
-
-      elfo {
-        stream.writeU32 (ResponseCode::NOT_FOUND);
-      }
-    }
-  }
-
-  void SocialGraphService::streamFollowerForTimeline (const config::ConfigNode & msg, actor::ActorStream & stream) {
-    try {
-      stream.writeU32 (ResponseCode::OK);
-      while (stream.readOr (0) == 1) {
-        uint32_t uid = stream.readU32 ();
-        uint32_t nb = 2048, page = 0;
-        for (;;) {
-          auto values = this-> _db.findFollowersCacheable (uid, page, nb);
-          for (auto & it : values) {
-            stream.writeU8 (1);
-            stream.writeU32 (it);
-          }
-
-          if (values.size () != nb) break;
-          page += nb;
-        }
-
-        stream.writeU8 (0);
-      }
-    } catch (std::runtime_error & err) {
-      LOG_ERROR ("SocialGraphService::streamFollowerForTimeline : ", err.what ());
-    }
-  }
-
-  void SocialGraphService::streamFollowers (const config::ConfigNode & msg, actor::ActorStream & stream) {
+  std::shared_ptr<config::ConfigNode> SocialGraphService::readFollowers (const config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      int32_t nb = msg.getOr ("nb", -1);
-      int32_t page = msg.getOr ("page", -1);
-      if (page >= 0) page *= nb;
-      if (nb <= 1024 && nb > 0) { // Cacheable
-        auto values = this-> _db.findFollowersCacheable (uid, page, nb);
-        stream.writeU32 (ResponseCode::OK);
-        for (auto & it : values) {
-          stream.writeU8 (1);
-          stream.writeU32 (it);
-        }
-        stream.writeU8 (0);
-      } else { // streaming
-        stream.writeU32 (ResponseCode::OK);
-        uint32_t nb = 2048, page = 0;
-        for (;;) {
-          auto values = this-> _db.findFollowersCacheable (uid, page, nb);
-          for (auto & it : values) {
-            stream.writeU8 (1);
-            stream.writeU32 (it);
-          }
-          if (values.size () != nb) break;
-          page += nb;
-        }
+      int32_t nb = msg ["nb"].getI ();
+      int32_t page = msg ["page"].getI ();
 
-        stream.writeU8 (0);
+      auto result = std::make_shared <config::Array> ();
+      auto values = this-> _db.findFollowersCacheable (uid, page, nb);
+      for (auto & it : values) {
+        result-> insert (std::make_shared <config::Int> (it));
       }
+
+      return response (ResponseCode::OK, result);
+
     } catch (std::runtime_error & err) {
-      LOG_ERROR ("SocialGraphService::streamFollowers : ", err.what ());
+      LOG_ERROR ("SocialGraphService::readFollowers : ", err.what ());
     }
+
+    return response (ResponseCode::MALFORMED);
   }
 
-
-  void SocialGraphService::streamSubs (const config::ConfigNode & msg, actor::ActorStream & stream) {
+  std::shared_ptr<config::ConfigNode> SocialGraphService::readSubscriptions (const config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      int32_t nb = msg.getOr ("nb", -1);
-      int32_t page = msg.getOr ("page", -1);
-      if (page >= 0) page *= nb;
-      if (nb <= 1024 && nb > 0) { // Cacheable
-        auto values = this-> _db.findSubsCacheable (uid, page, nb);
-        stream.writeU32 (ResponseCode::OK);
-        for (auto & it : values) {
-          stream.writeU8 (1);
-          stream.writeU32 (it);
-        }
-        stream.writeU8 (0);
-      } else { // streaming
-        stream.writeU32 (ResponseCode::OK);
-        uint32_t nb = 2048, page = 0;
-        for (;;) {
-          auto values = this-> _db.findSubsCacheable (uid, page, nb);
-          for (auto & it : values) {
-            stream.writeU8 (1);
-            stream.writeU32 (it);
-          }
-          if (values.size () != nb) break;
-          page += nb;
-        }
+      int32_t nb = msg ["nb"].getI ();
+      int32_t page = msg ["page"].getI ();
 
-        stream.writeU8 (0);
+      auto result = std::make_shared <config::Array> ();
+      auto values = this-> _db.findSubsCacheable (uid, page, nb);
+      for (auto & it : values) {
+        result-> insert (std::make_shared <config::Int> (it));
       }
+
+      return response (ResponseCode::OK, result);
     } catch (std::runtime_error & err) {
-      LOG_ERROR ("SocialGraphService::streamSubs : ", err.what ());
+      LOG_ERROR ("SocialGraphService::readSubscriptions : ", err.what ());
     }
+
+    return response (ResponseCode::MALFORMED);
   }
 
 }

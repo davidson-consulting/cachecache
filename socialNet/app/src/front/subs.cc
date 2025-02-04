@@ -56,7 +56,6 @@ namespace socialNet {
       int64_t nb = std::atoi (std::string (req.get_arg ("nb")).c_str ());
 
       LOG_DEBUG ("Try get user subs : ", userId, " ", page, " ", nb);
-
       auto composeService = socialNet::findService (this-> _context-> getSystem (), this-> _context-> getRegistry (), "compose");
       auto msg = config::Dict ()
         .insert ("type", RequestCode::SUBSCIRPTIONS)
@@ -64,28 +63,32 @@ namespace socialNet {
         .insert ("page", page)
         .insert ("nb", nb);
 
-      auto resultStream = composeService-> requestStream (msg).wait ();
-      if (resultStream != nullptr && resultStream-> readU32 () == 200) {
-        json result;
+      auto resp = composeService-> request (msg).wait ();
+      if (resp && resp-> getOr ("code", -1) == ResponseCode::OK) {
+        match ((*resp)["content"]) {
+          of (config::Array, arr) {
+            json result;
+            for (uint64_t i = 0 ; i < arr-> getLen () ; i++) {
+              json sub;
+              sub ["user_id"] = (*arr)[i]["id"].getStr ();
+              sub ["login"] = (*arr)[i]["login"].getStr ();
+              result.push_back (sub);
+            }
 
-        while (resultStream-> isOpen ()) {
-          if (resultStream-> readOr (0) == 0) break;
-          auto rid = resultStream-> readU32 ();
-          auto name = resultStream-> readStr ();
-
-          json sub;
-          sub ["user_id"] = rid;
-          sub ["login"] = name;
-          result.push_back (sub);
-        }
-
-        auto finalResult = result.dump ();
-        if (finalResult == "null") {
-          return std::make_shared <httpserver::string_response> ("{}", 200, "text/json");
-        } else {
-          return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
-        }
+            auto finalResult = result.dump ();
+            if (finalResult == "null") {
+              return std::make_shared <httpserver::string_response> ("{}", 200, "text/json");
+            } else {
+              return std::make_shared <httpserver::string_response> (finalResult, 200, "text/json");
+            }
+          }
+        } fo;
       }
+
+      if (resp != nullptr) {
+        return std::make_shared <httpserver::string_response> ("", resp-> getOr ("code", 500), "text/plain");
+      }
+
     } catch (...) {}
 
     return std::make_shared <httpserver::string_response> ("", 404, "text/plain");

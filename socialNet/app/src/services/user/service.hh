@@ -30,22 +30,21 @@ namespace socialNet::user {
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
 
-    void onStream (const rd_utils::utils::config::ConfigNode & msg, rd_utils::concurrency::actor::ActorStream & stream) override;
-
     void onMessage (const rd_utils::utils::config::ConfigNode & msg);
 
     void onQuit () override;
 
   private:
 
-    void streamFindByLogin (rd_utils::concurrency::actor::ActorStream &);
-    void streamFindById (rd_utils::concurrency::actor::ActorStream &);
-
     std::shared_ptr<rd_utils::utils::config::ConfigNode> registerUser (const rd_utils::utils::config::ConfigNode & node);
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> login (const rd_utils::utils::config::ConfigNode & node);
 
     std::shared_ptr<rd_utils::utils::config::ConfigNode> find (const rd_utils::utils::config::ConfigNode & node);
+
+    std::shared_ptr<rd_utils::utils::config::ConfigNode> findByLoginMultiple (const rd_utils::utils::config::ConfigNode & node);
+
+    std::shared_ptr<rd_utils::utils::config::ConfigNode> findByIdMultiple (const rd_utils::utils::config::ConfigNode & node);
   };
 
 }

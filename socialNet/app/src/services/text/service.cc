@@ -74,18 +74,13 @@ namespace socialNet::text {
       auto urlMentions = this-> findUrlMentions (text);
 
       uint32_t tags [16];
-      bool succeed = true;
+      bool succeed = false;
       auto mentions = this-> transformUserTags (users, tags, succeed);
-      if (!succeed) {
-        LOG_INFO ("Throw 15");
-        throw std::runtime_error ("failed to find user mentions");
-      }
+      if (!succeed) { return response (ResponseCode::SERVER_ERROR); }
 
       auto shorts = this-> transformUrls (urlMentions, succeed);
-      if (!succeed) {
-        LOG_INFO ("Throw 16");
-        throw std::runtime_error ("failed to transform urls");
-      }
+      if (!succeed) { return response (ResponseCode::SERVER_ERROR); }
+
 
       auto finalText = rd_utils::utils::findAndReplaceAll (text, mentions);
       finalText = rd_utils::utils::findAndReplaceAll (finalText, shorts);
@@ -114,50 +109,41 @@ namespace socialNet::text {
    * ====================================================================================================
    */
 
-  std::map <std::string, std::string> TextService::transformUserTags (const std::vector <std::string> & users, uint32_t * tags, bool& succeed) {
+  std::map <std::string, std::string> TextService::transformUserTags (const std::vector <std::string> & users, uint32_t * tags, bool & succeed) {
     succeed = true;
-    std::map <std::string, std::string> result;
+    std::map <std::string, std::string> resTags;
     try {
       if (users.size () != 0) {
         auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
         if (userService == nullptr) {
           succeed = false;
-          return result;
+          return resTags;
         }
 
-        auto req = config::Dict ().insert ("type", RequestCode::FIND_BY_LOGIN);
-        auto stream = userService-> requestStream (req).wait ();
-        if (stream == nullptr || stream-> readU32 () != ResponseCode::OK) {
-          succeed = false;
-          return result;
-        }
+        for (uint32_t i = 0 ; i < users.size () && i < 16 ; i++) {
+          auto req = config::Dict ()
+            .insert ("type", RequestCode::FIND)
+            .insert ("id", users [i]);
 
-        for (auto & user : users) {
-          stream-> writeU8 (1);
-          stream-> writeStr (user);
-
-          auto found = stream-> readU8 ();
-          if (found) {
-            auto id = stream-> readU32 ();
-            result.emplace ("@" + user, "<a href=\"{{FRONT}}/user/" + std::to_string (id) + "\">@" + user + "</a>");
-            tags [result.size () - 1] = id;
+          auto result = userService-> request (req).wait ();
+          if (result && result-> getOr ("code", -1) == ResponseCode::OK) {
+            uint32_t id = result-> getOr ("content", 0);
+            resTags.emplace ("@" + users [i], "<a href=\"{{FRONT}}/user/" + std::to_string (id) + "\">@" + users [i] + "</a>");
+            tags [i] = id;
           }
         }
-
-        stream-> writeU8 (0);
       }
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("TextService::transformUserTags ", err.what ());
       succeed = false;
     }
 
-    return result;
+    return resTags;
   }
 
   std::map <std::string, std::string> TextService::transformUrls (const std::vector <std::string> & urls, bool & succeed) {
     succeed = true;
     std::map <std::string, std::string> result;
-
     try {
       if (urls.size () != 0) {
         auto urlService = socialNet::findService (this-> _system, this-> _registry, "short_url");
@@ -166,22 +152,19 @@ namespace socialNet::text {
           return result;
         }
 
-        auto req = config::Dict ().insert ("type", RequestCode::CREATE);
-        auto stream = urlService-> requestStream (req).wait ();
-        if (stream == nullptr || stream-> readU32 () != ResponseCode::OK) {
-          succeed = false;
-          return result;
-        }
-
         for (auto & url : urls) {
-          stream-> writeU8 (1);
-          stream-> writeStr (url);
-          auto str =  stream-> readStr ();
-          result.emplace (url, "<a href=\"{{FRONT}}/api/url/" + str + "\">" + str + "</a>");
-        }
+          auto req = config::Dict ()
+            .insert ("type", RequestCode::CREATE)
+            .insert ("url", std::make_shared <config::String> (url));
 
-        stream-> writeU8 (0);
+          auto u = urlService-> request (req).wait ();
+          if (u && u-> getOr ("code", -1) == 0) {
+            auto str = u-> getOr ("content", "");
+            result.emplace (url, "<a href=\"{{FRONT}}/api/url/" + str + "\">" + str + "</a>");
+          }
+        }
       }
+
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("TextService::transformUrls ", err.what ());
       succeed = false;
