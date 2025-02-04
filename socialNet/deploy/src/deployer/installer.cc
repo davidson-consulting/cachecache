@@ -141,9 +141,9 @@ namespace deployer {
             "make -j12\n"
 
             "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
-            "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
-            "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
-            "rm -rf " + m-> getHomeDir () + "/cachecache/"
+            "mv " + m-> getHomeDir () + "/cachecache/market/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
+            "mv " + m-> getHomeDir () + "/cachecache/market/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
+            // "rm -rf " + m-> getHomeDir () + "/cachecache/"
             ;
 
         auto r = m-> runScript (script);
