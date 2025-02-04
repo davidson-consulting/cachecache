@@ -297,7 +297,7 @@ namespace socialNet::timeline {
     for (uint32_t page = 0 ;; page++) {
       auto msg = config::Dict ()
         .insert ("type", RequestCode::FOLLOWERS)
-        .insert ("uid", std::make_shared <config::Int> (uid))
+        .insert ("userId", std::make_shared <config::Int> (uid))
         .insert ("page", std::make_shared <config::Int> (page))
         .insert ("nb", std::make_shared <config::Int> (50));
 
@@ -318,7 +318,11 @@ namespace socialNet::timeline {
           } fo;
         }
       } else {
-        LOG_ERROR ("Failed updating timelines");
+        if (resp == nullptr) {
+          LOG_ERROR ("Failed updating timelines");
+        } else {
+          LOG_ERROR ("Failed updating timelines ", *resp);
+        }
         break;
       }
     }

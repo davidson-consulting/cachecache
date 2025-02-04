@@ -75,9 +75,10 @@ namespace socialNet {
         .insert ("page", page)
         .insert ("nb", nb);
 
-      auto resp = composeService-> request (msg, 100).wait ();
 
+      auto resp = composeService-> request (msg).wait ();
       if (resp && resp-> getOr ("code", -1) == 200) {
+
         match ((*resp) ["content"]) {
           of (config::Array, arr) {
             json result;

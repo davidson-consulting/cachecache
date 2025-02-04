@@ -221,9 +221,8 @@ namespace socialNet::social_graph {
       }
 
       return response (ResponseCode::OK, result);
-
     } catch (std::runtime_error & err) {
-      LOG_ERROR ("SocialGraphService::readFollowers : ", err.what ());
+      LOG_ERROR ("SocialGraphService::readFollowers : ", err.what (), " ", msg);
     }
 
     return response (ResponseCode::MALFORMED);

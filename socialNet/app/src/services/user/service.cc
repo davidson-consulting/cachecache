@@ -153,7 +153,7 @@ namespace socialNet::user {
 
       return response (ResponseCode::NOT_FOUND);
     }  catch (std::runtime_error & err) {
-      LOG_ERROR ("ERROR UserService::find : ", err.what ());
+      LOG_ERROR ("ERROR UserService::find : ", err.what (), " => ", msg);
       return response (ResponseCode::MALFORMED);
     }
   }

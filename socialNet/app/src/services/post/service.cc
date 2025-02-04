@@ -131,6 +131,7 @@ namespace socialNet::post {
         result-> insert ("userId", std::make_shared <config::Int> (p.userId));
         result-> insert ("userLogin", std::string (p.userLogin));
         result-> insert ("text", std::string (p.text));
+        result-> insert ("postId", msg.get ("postId"));
 
         auto tags = std::make_shared <config::Array> ();
         for (uint32_t i = 0 ; i < p.nbTags && i < 16 ; i++) {

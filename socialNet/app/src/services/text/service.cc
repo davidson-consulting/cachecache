@@ -123,7 +123,7 @@ namespace socialNet::text {
         for (uint32_t i = 0 ; i < users.size () && i < 16 ; i++) {
           auto req = config::Dict ()
             .insert ("type", RequestCode::FIND)
-            .insert ("id", users [i]);
+            .insert ("login", users [i]);
 
           auto result = userService-> request (req).wait ();
           if (result && result-> getOr ("code", -1) == ResponseCode::OK) {
