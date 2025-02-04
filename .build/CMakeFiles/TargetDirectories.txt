@@ -1,3 +1,0 @@
-/home/emile/joules/cachecache/.build/CMakeFiles/kv_store.dir
-/home/emile/joules/cachecache/.build/CMakeFiles/edit_cache.dir
-/home/emile/joules/cachecache/.build/CMakeFiles/rebuild_cache.dir
