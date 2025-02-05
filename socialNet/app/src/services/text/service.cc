@@ -114,12 +114,12 @@ namespace socialNet::text {
     std::map <std::string, std::string> resTags;
     try {
       if (users.size () != 0) {
-        auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
         for (uint32_t i = 0 ; i < users.size () && i < 16 ; i++) {
           auto req = config::Dict ()
             .insert ("type", RequestCode::FIND)
             .insert ("login", users [i]);
 
+          auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
           auto result = userService-> request (req).wait ();
           if (result && result-> getOr ("code", -1) == ResponseCode::OK) {
             uint32_t id = result-> getOr ("content", 0);
@@ -141,12 +141,12 @@ namespace socialNet::text {
     std::map <std::string, std::string> result;
     try {
       if (urls.size () != 0) {
-        auto urlService = socialNet::findService (this-> _system, this-> _registry, "short_url");
         for (auto & url : urls) {
           auto req = config::Dict ()
             .insert ("type", RequestCode::CREATE)
             .insert ("url", std::make_shared <config::String> (url));
 
+          auto urlService = socialNet::findService (this-> _system, this-> _registry, "short_url");
           auto u = urlService-> request (req).wait ();
           if (u && u-> getOr ("code", -1) == 0) {
             auto str = u-> getOr ("content", "");

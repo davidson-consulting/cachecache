@@ -165,34 +165,16 @@ namespace socialNet::compose {
    * ====================================================================================================
    */
 
-
-
-
   std::shared_ptr <config::ConfigNode> ComposeService::submitNewPost (const config::ConfigNode & msg) {
     try {
-      auto textService = socialNet::findService (this-> _system, this-> _registry, "text");
-      auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-
       auto textReq = config::Dict ()
         .insert ("type", RequestCode::CTOR_MESSAGE)
         .insert ("text", msg ["content"].getStr ());
 
-      auto userReq = config::Dict ()
-        .insert ("type", RequestCode::FIND)
-        .insert ("id", msg ["userId"].getI ());
-
-      auto textResReq = textService-> request (textReq);
-      auto userResReq = userService-> request (userReq);
-
-      std::shared_ptr <config::ConfigNode> textResult;
-      try {
-        textResult = textResReq.wait ();
-        if (textResult == nullptr || textResult-> getOr ("code", -1) != ResponseCode::OK) {
-          LOG_INFO ("THROW 11");
-          throw std::runtime_error ("Text incorrect");
-        }
-      } catch (const std::runtime_error & err) {
-        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
+      auto textService = socialNet::findService (this-> _system, this-> _registry, "text");
+      auto textResult = textService-> request (textReq).wait ();
+      if (textResult == nullptr || textResult-> getOr ("code", -1) != ResponseCode::OK) {
+        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__);
         return response (ResponseCode::MALFORMED);
       }
 
@@ -205,20 +187,17 @@ namespace socialNet::compose {
         } fo;
       }
 
-      std::shared_ptr <config::ConfigNode> userResult;
-      try {
-        userResult = userResReq.wait ();
-        if (userResult == nullptr || userResult-> getOr ("code", -1) != ResponseCode::OK) {
-          LOG_INFO ("THROW 13");
-          throw std::runtime_error ("User not found");
-        }
-      } catch (const std::runtime_error & err) {
-        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
+      auto userReq = config::Dict ()
+        .insert ("type", RequestCode::FIND)
+        .insert ("id", msg ["userId"].getI ());
+
+      auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
+      auto userResult = userService-> request (userReq).wait ();
+      if (userResult == nullptr || userResult-> getOr ("code", -1) != ResponseCode::OK) {
+        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__);
         return response (ResponseCode::MALFORMED);
       }
 
-
-      auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
       auto postReq = config::Dict ()
         .insert ("type", RequestCode::STORE)
         .insert ("userLogin", (*userResult) ["content"].getStr ())
@@ -227,16 +206,14 @@ namespace socialNet::compose {
         .insert ("jwt_token", msg ["jwt_token"].getStr ())
         .insert ("tags", arr);
 
-      try {
-        auto result = postService-> request (postReq).wait ();
-        if (result == nullptr || result-> getOr ("code", -1) != ResponseCode::OK) {
-          throw std::runtime_error ("Failed to store");
-        }
-        return response (ResponseCode::OK);
-      } catch (const std::runtime_error & err) {
-        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
+      auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
+      auto result = postService-> request (postReq).wait ();
+      if (result == nullptr || result-> getOr ("code", -1) != ResponseCode::OK) {
+        LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__);
         return response (ResponseCode::MALFORMED);
       }
+
+      return response (ResponseCode::OK);
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("ComposeService::submitNewPost : ", __FILE__, " ", __LINE__, " ", err.what ());
       return response (ResponseCode::MALFORMED);
@@ -261,7 +238,6 @@ namespace socialNet::compose {
       if (timeline-> getOr ("code", -1) == ResponseCode::OK) {
         match ((*timeline)["content"]) {
           of (config::Array, arr) {
-            auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
             auto result = std::make_shared <config::Array> ();
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
               uint32_t id = (*arr) [i].getI ();
@@ -269,6 +245,7 @@ namespace socialNet::compose {
                 .insert ("type", RequestCode::READ_POST)
                 .insert ("postId", std::make_shared <config::Int> (id));
 
+              auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
               auto post = postService-> request (req).wait ();
               if (post && post-> getOr ("code", -1) == ResponseCode::OK) {
                 result-> insert (post-> get ("content"));
@@ -292,13 +269,13 @@ namespace socialNet::compose {
 
    std::shared_ptr <config::ConfigNode> ComposeService::retreiveTimeline (uint32_t uid, uint32_t page, uint32_t nb, RequestCode kind) {
     try {
-      auto timelineService = socialNet::findService (this-> _system, this-> _registry, "timeline");
       auto timelineReq = config::Dict ()
         .insert ("type", kind)
         .insert ("userId", (int64_t) uid)
         .insert ("page", (int64_t) page)
         .insert ("nb", (int64_t) nb);
 
+      auto timelineService = socialNet::findService (this-> _system, this-> _registry, "timeline");
       auto ret = timelineService-> request (timelineReq).wait ();
       if (ret == nullptr) return response (ResponseCode::SERVER_ERROR);
 
@@ -327,8 +304,6 @@ try {
       if (subs-> getOr ("code", -1) == ResponseCode::OK) {
         match ((*subs)["content"]) {
           of (config::Array, arr) {
-            auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-
             auto result = std::make_shared <config::Array> ();
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
               uint32_t id = (*arr) [i].getI ();
@@ -336,6 +311,7 @@ try {
                 .insert ("type", RequestCode::FIND)
                 .insert ("id", std::make_shared <config::Int> (id));
 
+              auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
               auto user = userService-> request (req).wait ();
               if (user && user-> getOr ("code", -1) == ResponseCode::OK) {
                 auto u = std::make_shared <config::Dict> ();
@@ -363,13 +339,13 @@ try {
 
   std::shared_ptr <config::ConfigNode> ComposeService::retreiveFollSubs (uint32_t uid, uint32_t page, uint32_t nb, RequestCode kind) {
     try {
-      auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
       auto socialReq = config::Dict ()
         .insert ("type", kind)
         .insert ("userId", (int64_t) uid)
         .insert ("page", (int64_t) page)
         .insert ("nb", (int64_t) nb);
 
+      auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
       auto ret = socialService-> request (socialReq).wait ();
       if (ret == nullptr) return response (ResponseCode::SERVER_ERROR);
 
