@@ -217,7 +217,7 @@ namespace socialNet {
           .insert ("kind", kind);
 
         auto resp = registry-> request (req, 20).wait ();
-        if (resp != nullptr || resp-> getOr ("code", 0) == ResponseCode::OK) {
+        if (resp != nullptr && resp-> getOr ("code", 0) == ResponseCode::OK) {
           auto addr = (*resp) ["content"]["addr"].getStr ();
           auto id = (*resp) ["content"]["id"].getStr ();
           uint32_t port = (*resp) ["content"]["port"].getI ();
