@@ -87,7 +87,6 @@ namespace socialNet::post {
   std::shared_ptr<config::ConfigNode> PostStorageService::store (const config::ConfigNode & msg) {
     try {
       auto timeline = socialNet::findService (this-> _system, this-> _registry, "timeline");
-      if (timeline == nullptr) return response (ResponseCode::SERVER_ERROR);
 
       auto userId = msg ["userId"].getI ();
       auto userLogin = msg ["userLogin"].getStr ();

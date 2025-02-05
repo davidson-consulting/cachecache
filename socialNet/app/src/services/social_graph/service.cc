@@ -215,7 +215,7 @@ namespace socialNet::social_graph {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findFollowersCacheable (uid, page, nb);
+      auto values = this-> _db.findFollowersCacheable (uid, page * nb, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }
@@ -235,7 +235,7 @@ namespace socialNet::social_graph {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findSubsCacheable (uid, page, nb);
+      auto values = this-> _db.findSubsCacheable (uid, page * nb, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }

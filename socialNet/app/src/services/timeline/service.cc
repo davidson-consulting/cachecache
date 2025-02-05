@@ -204,7 +204,7 @@ namespace socialNet::timeline {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findHomeCacheable (uid, page, nb);
+      auto values = this-> _db.findHomeCacheable (uid, page * nb, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }
@@ -223,7 +223,7 @@ namespace socialNet::timeline {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findPostCacheable (uid, page, nb);
+      auto values = this-> _db.findPostCacheable (uid, page * nb, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }
@@ -258,7 +258,6 @@ namespace socialNet::timeline {
         }
 
         for (auto & it : cp) {
-          LOG_INFO ("Starting update : ", it.first);
           this-> updateForFollowers (it.first, it.second);
         }
 
@@ -281,11 +280,6 @@ namespace socialNet::timeline {
   }
 
   void TimelineService::updateForFollowers (uint32_t uid, const std::vector <TimelineService::PostUpdate> & updates) {
-    auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
-    if (socialService == nullptr) {
-      throw std::runtime_error ("No social graph service found");
-    }
-
     for (auto up : updates) {
       this-> _db.insertHome (uid, up.pid);
       this-> _db.insertPost (uid, up.pid);
@@ -294,15 +288,17 @@ namespace socialNet::timeline {
       }
     }
 
+    auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
+    uint32_t nbPages = 1000;
     for (uint32_t page = 0 ;; page++) {
       auto msg = config::Dict ()
         .insert ("type", RequestCode::FOLLOWERS)
         .insert ("userId", std::make_shared <config::Int> (uid))
         .insert ("page", std::make_shared <config::Int> (page))
-        .insert ("nb", std::make_shared <config::Int> (50));
+        .insert ("nb", std::make_shared <config::Int> (nbPages));
 
       auto resp = socialService-> request (msg).wait ();
-      if (resp && resp-> getOr ("code", -1) == 200) {
+      if (resp && resp-> getOr ("code", -1) == ResponseCode::OK) {
         match ((*resp) ["content"]) {
           of (config::Array, arr) {
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
@@ -314,7 +310,7 @@ namespace socialNet::timeline {
               }
             }
 
-            if (arr-> getLen () < 50) break;
+            if (arr-> getLen () < nbPages) break;
           } fo;
         }
       } else {

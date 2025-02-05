@@ -209,34 +209,28 @@ namespace socialNet {
   }
 
   std::shared_ptr <rd_utils::concurrency::actor::ActorRef> findService (rd_utils::concurrency::actor::ActorSystem * sys, std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind) {
-    try {
-      auto req = config::Dict ()
-        .insert ("type", RequestCode::FIND)
-        .insert ("kind", kind);
+    uint32_t nbTries = 10;
+    for (uint32_t i = 0 ; i < nbTries ; i++) {
+      try {
+        auto req = config::Dict ()
+          .insert ("type", RequestCode::FIND)
+          .insert ("kind", kind);
 
-      LOG_DEBUG ("Finding in registry : ", kind);
+        auto resp = registry-> request (req, 20).wait ();
+        if (resp != nullptr || resp-> getOr ("code", 0) == ResponseCode::OK) {
+          auto addr = (*resp) ["content"]["addr"].getStr ();
+          auto id = (*resp) ["content"]["id"].getStr ();
+          uint32_t port = (*resp) ["content"]["port"].getI ();
 
-      auto resp = registry-> request (req, 20).wait ();
-      if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
-        throw std::runtime_error ("Failed to find service : " + kind + "/");
-      }
-
-      auto addr = (*resp) ["content"]["addr"].getStr ();
-      auto id = (*resp) ["content"]["id"].getStr ();
-      uint32_t port = (*resp) ["content"]["port"].getI ();
-
-      auto act = sys-> remoteActor (id, net::SockAddrV4 (addr, port));
-      if (act == nullptr) {
-        throw std::runtime_error (std::string ("Failed to find service : ") + kind);
-      }
-
-
-      LOG_DEBUG ("Done : ", kind, " ", act);
-      return act;
-    } catch (const std::runtime_error & err) {
-      LOG_ERROR ("findService ", err.what ());
-      throw std::runtime_error (std::string ("Failed to find service : ") + kind );
+          return sys-> remoteActor (id, net::SockAddrV4 (addr, port));
+        } else {
+          if (resp != nullptr) std::cout << "Failure resp : " << *resp << std::endl;
+          else std::cout << "Failure " << req << std::endl;
+        }
+      } catch (...) {}
     }
+
+    return nullptr;
   }
 
   void closeService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface) {

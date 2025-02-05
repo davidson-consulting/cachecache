@@ -114,8 +114,6 @@ namespace socialNet::compose {
   std::shared_ptr<config::ConfigNode> ComposeService::login (const config::ConfigNode & msg) {
     try {
       auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-      if (userService == nullptr) return response (ResponseCode::SERVER_ERROR);
-
       config::Dict userReq = config::Dict ()
         .insert ("type", RequestCode::LOGIN_USER)
         .insert ("login", msg ["login"].getStr ())
@@ -141,8 +139,6 @@ namespace socialNet::compose {
   std::shared_ptr<config::ConfigNode> ComposeService::registerUser (const config::ConfigNode & msg) {
     try {
       auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-      if (userService == nullptr) return response (ResponseCode::SERVER_ERROR);
-
       auto userReq = config::Dict ()
         .insert ("type", RequestCode::REGISTER_USER)
         .insert ("login", msg ["login"].getStr ())
@@ -176,10 +172,6 @@ namespace socialNet::compose {
     try {
       auto textService = socialNet::findService (this-> _system, this-> _registry, "text");
       auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-
-      if (textService == nullptr || userService == nullptr) {
-        return response (ResponseCode::SERVER_ERROR);
-      }
 
       auto textReq = config::Dict ()
         .insert ("type", RequestCode::CTOR_MESSAGE)
@@ -227,10 +219,6 @@ namespace socialNet::compose {
 
 
       auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
-      if (postService == nullptr) {
-        return response (ResponseCode::SERVER_ERROR);
-      }
-
       auto postReq = config::Dict ()
         .insert ("type", RequestCode::STORE)
         .insert ("userLogin", (*userResult) ["content"].getStr ())
@@ -274,10 +262,6 @@ namespace socialNet::compose {
         match ((*timeline)["content"]) {
           of (config::Array, arr) {
             auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
-            if (postService == nullptr) {
-              return response (ResponseCode::SERVER_ERROR);
-            }
-
             auto result = std::make_shared <config::Array> ();
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
               uint32_t id = (*arr) [i].getI ();
@@ -309,10 +293,6 @@ namespace socialNet::compose {
    std::shared_ptr <config::ConfigNode> ComposeService::retreiveTimeline (uint32_t uid, uint32_t page, uint32_t nb, RequestCode kind) {
     try {
       auto timelineService = socialNet::findService (this-> _system, this-> _registry, "timeline");
-      if (timelineService == nullptr) {
-        return response (ResponseCode::SERVER_ERROR);
-      }
-
       auto timelineReq = config::Dict ()
         .insert ("type", kind)
         .insert ("userId", (int64_t) uid)
@@ -348,9 +328,6 @@ try {
         match ((*subs)["content"]) {
           of (config::Array, arr) {
             auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-            if (userService == nullptr) {
-              return response (ResponseCode::SERVER_ERROR);
-            }
 
             auto result = std::make_shared <config::Array> ();
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
@@ -387,10 +364,6 @@ try {
   std::shared_ptr <config::ConfigNode> ComposeService::retreiveFollSubs (uint32_t uid, uint32_t page, uint32_t nb, RequestCode kind) {
     try {
       auto socialService = socialNet::findService (this-> _system, this-> _registry, "social_graph");
-      if (socialService == nullptr) {
-        return response (ResponseCode::SERVER_ERROR);
-      }
-
       auto socialReq = config::Dict ()
         .insert ("type", kind)
         .insert ("userId", (int64_t) uid)

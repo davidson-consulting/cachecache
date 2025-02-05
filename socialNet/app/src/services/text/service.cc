@@ -115,11 +115,6 @@ namespace socialNet::text {
     try {
       if (users.size () != 0) {
         auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-        if (userService == nullptr) {
-          succeed = false;
-          return resTags;
-        }
-
         for (uint32_t i = 0 ; i < users.size () && i < 16 ; i++) {
           auto req = config::Dict ()
             .insert ("type", RequestCode::FIND)
@@ -147,11 +142,6 @@ namespace socialNet::text {
     try {
       if (urls.size () != 0) {
         auto urlService = socialNet::findService (this-> _system, this-> _registry, "short_url");
-        if (urlService == nullptr) {
-          succeed = false;
-          return result;
-        }
-
         for (auto & url : urls) {
           auto req = config::Dict ()
             .insert ("type", RequestCode::CREATE)
