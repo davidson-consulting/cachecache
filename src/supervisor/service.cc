@@ -94,7 +94,7 @@ namespace kv_store::supervisor {
   SupervisorService::SupervisorService (const std::string & name, actor::ActorSystem * sys, std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) :
     actor::ActorBase (name, sys)
     , _cfg (cfg)
-    , _marketRoutine (0, nullptr)
+    , _marketRoutine (0)
     , _market (MemorySize::B (0))
     , _memoryPoolSize (MemorySize::B (0))
     , _traces (nullptr)
@@ -145,7 +145,7 @@ namespace kv_store::supervisor {
       this-> _marketSleeping.post ();
 
       concurrency::join (this-> _marketRoutine);
-      this-> _marketRoutine = concurrency::Thread (0, nullptr);
+      this-> _marketRoutine = concurrency::Thread (0);
     }
 
     // No need to lock instances mutex, routine thread is already closed

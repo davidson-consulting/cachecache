@@ -189,7 +189,7 @@ namespace kv_store::memory {
         std::vector <uint32_t> toRemove;
         for (auto it : this-> _used) {
             if (this-> _currentTime - it.second.lastTouch > this-> _slabTTL) {
-                LOG_INFO ("Eviction of old slab : ", it.first, " ", it.second.lastTouch);
+                LOG_INFO ("Eviction of old slab : ", it.first, " ", it.second.lastTouch, " < ", this-> _currentTime, " - ", this-> _slabTTL);
                 toRemove.push_back (it.first);
             }
         }

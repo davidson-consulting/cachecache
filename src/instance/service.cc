@@ -119,7 +119,7 @@ namespace kv_store::instance {
   CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t nb) :
     actor::ActorBase (name, sys)
     , _regSize (MemorySize::B (0))
-    , _traceRoutine (0, nullptr)
+    , _traceRoutine (0)
   {
     LOG_INFO ("Spawning a new cache instance -> ", name);
     this-> _cfg = cfg;
@@ -222,7 +222,7 @@ namespace kv_store::instance {
       this-> _traceSleeping.post ();
 
       concurrency::join (this-> _traceRoutine);
-      this-> _traceRoutine = concurrency::Thread (0, nullptr);
+      this-> _traceRoutine = concurrency::Thread (0);
     }
 
     LOG_INFO ("Killing cache instance -> ", this-> _name);
