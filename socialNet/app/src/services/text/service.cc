@@ -63,7 +63,6 @@ namespace socialNet::text {
   }
 
   std::shared_ptr <config::ConfigNode> TextService::constructText (const config::ConfigNode & msg) {
-    static double allTime = 0;
     try {
       auto text = msg ["text"].getStr ();
       if (text.length () > 560) {
@@ -71,12 +70,8 @@ namespace socialNet::text {
         throw std::runtime_error ("Too long");
       }
 
-      timer t;
-      t.reset ();
       auto users = this-> findUserMentions (text);
       auto urlMentions = this-> findUrlMentions (text);
-
-      std::cout << t.time_since_start () << std::endl;
 
       uint32_t tags [16];
       bool succeed = false;
