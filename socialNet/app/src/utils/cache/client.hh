@@ -13,6 +13,9 @@ namespace socialNet::utils {
 
     rd_utils::net::SockAddrV4 _addr;
 
+    // The connection to cache system
+    std::shared_ptr <rd_utils::net::TcpStream> _stream;
+
   public:
 
     /*!

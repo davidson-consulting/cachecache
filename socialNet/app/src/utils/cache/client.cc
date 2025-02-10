@@ -77,18 +77,23 @@ namespace socialNet::utils {
   }
 
   std::shared_ptr <rd_utils::net::TcpStream> CacheClient::stream () {
-    auto s = std::make_shared <rd_utils::net::TcpStream> (this-> _addr);
-    s-> setSendTimeout (5.f);
-    s-> setRecvTimeout (5.f);
+    if (this-> _stream == nullptr || !this-> _stream-> isOpen ()) {
+      auto s = std::make_shared <rd_utils::net::TcpStream> (this-> _addr);
+      s-> setSendTimeout (5.f);
+      s-> setRecvTimeout (5.f);
 
-    try {
-      s-> connect ();
-    } catch (const std::runtime_error & err) { // failed to connect
-      LOG_INFO ("THROW 9");
-      throw std::runtime_error ("Failed to connect");
+      try {
+        s-> connect ();
+      } catch (const std::runtime_error & err) { // failed to connect
+        LOG_INFO ("THROW 9");
+        throw std::runtime_error ("Failed to connect");
+      }
+
+      this-> _stream = s;
+      return s;
     }
 
-    return s;
+    return this-> _stream;
   }
 
 }
