@@ -35,7 +35,10 @@ namespace socialNet::utils {
       auto resLen = session-> receiveU32 ();
       if (resLen != size) return false;
 
-      return session-> receiveRaw (res, size);
+      auto ret = session-> receiveRaw (res, size);
+      session-> sendU32 (1, false);
+
+      return ret;
     } catch (...) {
       return false;
     }
@@ -52,7 +55,10 @@ namespace socialNet::utils {
       if (resLen == 0 || resLen > 1024 * 1024 * 4) return false;
       result.resize (resLen / sizeof (uint32_t));
 
-      return session-> receiveRaw (reinterpret_cast <uint8_t*> (result.data ()), resLen);
+      auto ret = session-> receiveRaw (reinterpret_cast <uint8_t*> (result.data ()), resLen);
+      session-> sendU32 (1, false);
+
+      return ret;
     } catch (...) {
       return false;
     }
@@ -70,6 +76,8 @@ namespace socialNet::utils {
       session-> sendRaw (value, size);
 
       auto i = session-> receiveI32 ();
+      session-> sendU32 (1, false);
+
       return i == 1;
     } catch (...) {
       return false;
@@ -77,23 +85,20 @@ namespace socialNet::utils {
   }
 
   std::shared_ptr <rd_utils::net::TcpStream> CacheClient::stream () {
-    if (this-> _stream == nullptr || !this-> _stream-> isOpen ()) {
-      auto s = std::make_shared <rd_utils::net::TcpStream> (this-> _addr);
-      s-> setSendTimeout (5.f);
-      s-> setRecvTimeout (5.f);
+    auto s = std::make_shared <rd_utils::net::TcpStream> (this-> _addr);
+    s-> setSendTimeout (5.f);
+    s-> setRecvTimeout (5.f);
 
-      try {
-        s-> connect ();
-      } catch (const std::runtime_error & err) { // failed to connect
-        LOG_INFO ("THROW 9");
-        throw std::runtime_error ("Failed to connect");
-      }
-
-      this-> _stream = s;
-      return s;
+    try {
+      s-> connect ();
+    } catch (const std::runtime_error & err) {
+      // failed to connect
+      LOG_INFO ("THROW 9");
+      throw std::runtime_error ("Failed to connect");
     }
 
-    return this-> _stream;
+
+    return s;
   }
 
 }
