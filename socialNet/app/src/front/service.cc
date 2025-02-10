@@ -65,7 +65,7 @@ namespace socialNet {
     if (cfg.contains ("cache")) {
       auto addr = cfg["cache"].getOr ("addr", "localhost");
       auto port = cfg["cache"].getOr ("port", 6650);
-
+      LOG_INFO ("Connecting cache : ", addr, ":", port);
       this-> _cache = std::make_shared <socialNet::utils::CacheClient> (addr, port);
     }
 

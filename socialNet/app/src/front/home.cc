@@ -56,6 +56,7 @@ namespace socialNet {
 
       rd_utils::concurrency::timer t;
       std::string rqt;
+
       if (this-> _context-> getCache () != nullptr) {
         rqt = std::string ("home/") + std::string (req.get_arg ("user_id")) + "/" + std::string (req.get_arg ("page")) + "/" + std::string (req.get_arg ("nb"));
         std::string result;

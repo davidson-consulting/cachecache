@@ -63,6 +63,7 @@ namespace socialNet::text {
   }
 
   std::shared_ptr <config::ConfigNode> TextService::constructText (const config::ConfigNode & msg) {
+    static double allTime = 0;
     try {
       auto text = msg ["text"].getStr ();
       if (text.length () > 560) {
@@ -70,8 +71,12 @@ namespace socialNet::text {
         throw std::runtime_error ("Too long");
       }
 
+      timer t;
+      t.reset ();
       auto users = this-> findUserMentions (text);
       auto urlMentions = this-> findUrlMentions (text);
+
+      std::cout << t.time_since_start () << std::endl;
 
       uint32_t tags [16];
       bool succeed = false;
@@ -114,18 +119,25 @@ namespace socialNet::text {
     std::map <std::string, std::string> resTags;
     try {
       if (users.size () != 0) {
+        std::vector <rd_utils::concurrency::actor::ActorRef::RequestFuture> reqs;
         for (uint32_t i = 0 ; i < users.size () && i < 16 ; i++) {
           auto req = config::Dict ()
             .insert ("type", RequestCode::FIND)
             .insert ("login", users [i]);
 
           auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
-          auto result = userService-> request (req).wait ();
+          reqs.push_back (userService-> request (req));
+        }
+
+        uint32_t i = 0;
+        for (auto & req : reqs) {
+          auto result = req.wait ();
           if (result && result-> getOr ("code", -1) == ResponseCode::OK) {
             uint32_t id = result-> getOr ("content", 0);
             resTags.emplace ("@" + users [i], "<a href=\"{{FRONT}}/user/" + std::to_string (id) + "\">@" + users [i] + "</a>");
             tags [i] = id;
           }
+          i += 1;
         }
       }
     } catch (const std::runtime_error & err) {
@@ -141,16 +153,22 @@ namespace socialNet::text {
     std::map <std::string, std::string> result;
     try {
       if (urls.size () != 0) {
+        std::vector <std::pair <rd_utils::concurrency::actor::ActorRef::RequestFuture, std::string> > reqs;
         for (auto & url : urls) {
           auto req = config::Dict ()
             .insert ("type", RequestCode::CREATE)
             .insert ("url", std::make_shared <config::String> (url));
 
           auto urlService = socialNet::findService (this-> _system, this-> _registry, "short_url");
-          auto u = urlService-> request (req).wait ();
+          auto r = urlService-> request (req);
+          reqs.push_back ({r, url});
+        }
+
+        for (auto & req : reqs) {
+          auto u = req.first.wait ();
           if (u && u-> getOr ("code", -1) == 0) {
             auto str = u-> getOr ("content", "");
-            result.emplace (url, "<a href=\"{{FRONT}}/api/url/" + str + "\">" + str + "</a>");
+            result.emplace (req.second, "<a href=\"{{FRONT}}/api/url/" + str + "\">" + str + "</a>");
           }
         }
       }

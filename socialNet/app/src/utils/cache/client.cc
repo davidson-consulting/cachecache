@@ -78,7 +78,6 @@ namespace socialNet::utils {
 
   std::shared_ptr <rd_utils::net::TcpStream> CacheClient::stream () {
     auto s = std::make_shared <rd_utils::net::TcpStream> (this-> _addr);
-
     s-> setSendTimeout (5.f);
     s-> setRecvTimeout (5.f);
 

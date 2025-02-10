@@ -45,11 +45,11 @@ nb = 4
 
 [db.mysql]
 name = "socialNet"
-addr = "192.168.1.12"
+addr = "192.168.1.21"
 user = "root"
 pass = ""
 port = 3309
 
-# [cache.fst]
-# addr="localhost"
-# port = 6552
+[cache.fst]
+addr="192.168.1.21"
+port = 56125

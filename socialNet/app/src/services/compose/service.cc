@@ -95,7 +95,6 @@ namespace socialNet::compose {
         return this-> readSubscriptions (msg, RequestCode::FOLLOWERS);
       }
 
-
       elfo {
         return response (ResponseCode::NOT_FOUND);
       }
