@@ -394,8 +394,9 @@ namespace kv_store::instance {
       }
     } catch (const std::runtime_error & e) {
       LOG_ERROR ("Client connection reset : ", e.what ());
-      session-> close ();
     }
+
+    session-> close ();
   }
 
   void CacheService::onSet (net::TcpStream& session) {

@@ -91,7 +91,7 @@ namespace kv_store::instance {
        k.set (key);
 
        this-> _entity-> remove (k);
-       session.close ();
+       // session.close ();
        return false;
     }
   }
@@ -112,7 +112,7 @@ namespace kv_store::instance {
       }
     } catch (std::exception & e) {
       LOG_ERROR ("Failed to find key : ", key, " because ", e.what ());
-      session.close ();
+      // session.close ();
       return false;
     }
   }
