@@ -17,7 +17,7 @@ namespace socialNet::timeline {
 
   TimelineService::TimelineService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf)
     : actor::ActorBase (name, sys)
-    , _routine (0, nullptr)
+    , _routine (0)
     , _running (false)
   {
     CONF_LET (dbName, conf["services"]["timeline"]["db"].getStr (), std::string ("mysql"));
@@ -49,7 +49,7 @@ namespace socialNet::timeline {
       this-> _routineSleeping.post ();
 
       concurrency::join (this-> _routine);
-      this-> _routine = concurrency::Thread (0, nullptr);
+      this-> _routine = concurrency::Thread (0);
     }
 
     if (this-> _registry != nullptr) {
