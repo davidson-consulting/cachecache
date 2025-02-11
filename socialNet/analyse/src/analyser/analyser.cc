@@ -31,6 +31,9 @@ namespace analyser {
             }
 
             this-> configureCaches ((*this-> _runConfig));
+            if (utils::file_exists (utils::join_path (this-> _traceDir, "gatling.log"))) {
+                this-> configureGatling (utils::join_path (this-> _traceDir, "gatling.log"));
+            }
         } catch (const std::runtime_error & err) {
             LOG_ERROR ("Failed to configure the analyse ", err.what ());
             ::exit (-1);
@@ -38,19 +41,24 @@ namespace analyser {
     }
 
     void Analyser::configureCaches (const config::ConfigNode & cfg) {
-        match (cfg ["caches"]) {
-            of (config::Dict, dc) {
-                for (auto & name : dc-> getKeys ()) {
-                    auto host = (*dc)[name]["host"].getStr ();
-                    auto hostname = cfg ["machines"][host]["hostname"].getStr ();
+        if (cfg.contains ("caches")) {
+            match (cfg ["caches"]) {
+                of (config::Dict, dc) {
+                    for (auto & name : dc-> getKeys ()) {
+                        auto host = (*dc)[name]["host"].getStr ();
+                        // auto hostname = cfg ["machines"][host]["hostname"].getStr ();
 
-                    this-> _caches [name].configure (this-> _traceDir, hostname, name);
-                }
-            } fo;
+                        this-> _caches [name].configure (this-> _minTimestamp, this-> _traceDir, host, name);
+                    }
+                } fo;
+            }
         }
     }
 
-
+    void Analyser::configureGatling (const std::string & logPath) {
+        this-> _gatling = std::make_shared <Gatling> ();
+        this-> _gatling-> configure (logPath);
+    }
 
     void Analyser::parseCmdOptions (int argc, char ** argv) {
         CLI::App app;
@@ -82,6 +90,10 @@ namespace analyser {
 
         for (auto & it : this-> _caches) {
             it.second.execute (doc);
+        }
+
+        if (this-> _gatling != nullptr) {
+            this-> _gatling-> execute (this-> _minTimestamp, doc);
         }
 
         doc-> write (this-> _outDir);

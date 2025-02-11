@@ -48,7 +48,7 @@ namespace analyser {
         /**
          * Configure and load the traces of the cache
          */
-        void configure (const std::string & traceDir, const std::string & hostName, const std::string & name);
+        void configure (uint32_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name);
 
         /**
          * Export the traces to a beamer doc

@@ -5,6 +5,7 @@
 
 #include "cluster.hh"
 #include "cache.hh"
+#include "gatling.hh"
 
 namespace analyser {
 
@@ -30,6 +31,9 @@ namespace analyser {
 
         // The list of cache executed during the deployement
         std::map <std::string, Cache> _caches;
+
+        // The trace of gatling
+        std::shared_ptr <Gatling> _gatling;
 
     public:
 
@@ -57,6 +61,11 @@ namespace analyser {
          * Configure the caches
          */
         void configureCaches (const rd_utils::utils::config::ConfigNode & cfg);
+
+        /**
+         * Configure the gatling loader
+         */
+        void configureGatling (const std::string & logFile);
 
     };
 

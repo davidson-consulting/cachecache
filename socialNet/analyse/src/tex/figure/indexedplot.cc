@@ -1,46 +1,36 @@
-#include "plot.hh"
-#include <iostream>
+#include "indexedplot.hh"
+#include <algorithm>
 
 namespace tex {
 
-    Plot::Plot () {}
+    IndexedPlot::IndexedPlot () {}
 
-    Plot& Plot::append (double value) {
-        this-> _values.push_back (value);
+    IndexedPlot& IndexedPlot::append (double x, double y) {
+        this-> _values.push_back ({x, y});
         return *this;
     }
 
-    Plot& Plot::name (const std::string & name) {
-        this-> _name = name;
-        return *this;
-    }
-
-    Plot& Plot::minIndex (uint32_t min) {
-        this-> _minIndex = min;
-        return *this;
-    }
-
-    Plot& Plot::lineWidth (double w) {
+    IndexedPlot& IndexedPlot::lineWidth (double w) {
         this-> _lineWidth = w;
         return *this;
     }
 
-    Plot& Plot::color (const std::string & color) {
+    IndexedPlot& IndexedPlot::color (const std::string & color) {
         this-> _color = color;
         return *this;
     }
 
-    Plot& Plot::style (const std::string & style) {
+    IndexedPlot& IndexedPlot::style (const std::string & style) {
         this-> _kind = style;
         return *this;
     }
 
-    Plot& Plot::legend (const std::string & legend) {
+    IndexedPlot& IndexedPlot::legend (const std::string & legend) {
         this-> _legend = legend;
         return *this;
     }
 
-    const std::string & Plot::getLegend () const {
+    const std::string & IndexedPlot::getLegend () const {
         return this-> _legend;
     }
 
@@ -52,11 +42,11 @@ namespace tex {
      * ====================================================================================================
      */
 
-    void Plot::toStream (std::stringstream & ss) const {
+    void IndexedPlot::toStream (std::stringstream & ss) const {
         ss << "\t\t\\addplot " << this-> plotConfig () << " coordinates {" << std::endl;
         uint32_t i = 0;
         for (auto & it : this-> _values) {
-            ss << "\t\t\t (" << this-> _minIndex + i << ", " << it << ")" << std::endl;
+            ss << "\t\t\t (" << it.first << ", " << it.second << ")" << std::endl;
             i += 1;
         }
         ss << "\t\t};" << std::endl;
@@ -66,11 +56,11 @@ namespace tex {
         }
     }
 
-    std::string Plot::plotConfig () const {
+    std::string IndexedPlot::plotConfig () const {
         std::stringstream result;
         bool fst = true;
-        result << " [";
-        if (this-> _kind != "") { result << this-> _kind << ", "; fst = false; }
+        result << "+[";
+        if (this-> _kind != "") { result << this-> _kind; fst = false; }
         if (this-> _lineWidth != -1) {
             if (!fst)  result << ", ";
             result << "line width = " << this-> _lineWidth << "mm" << std::endl;
@@ -83,15 +73,8 @@ namespace tex {
             fst = false;
         }
 
-        if (this-> _name != "") {
-            if (!fst) result << ", ";
-            result << "name path=" << this-> _name;
-            fst = false;
-        }
-
         result << "]";
         if (!fst) return result.str ();
-
         else return "";
     }
 
