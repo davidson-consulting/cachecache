@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <cstring>
 #include <rd_utils/utils/print.hh>
+#include <math.h>
+
+#include "utils.hh"
 
 namespace analyser {
 
@@ -158,11 +161,32 @@ namespace analyser {
         pl-> legend ("distribution");
         pl-> style ("ybar interval");
 
-        auto distrib = this-> computeDistribution (reqs);
+
+        Percentile percs;
+        auto distrib = this-> computeDistribution (reqs, percs);
+
         for (uint64_t i = 0 ; i < 100 ; i++) {
             double index = ((double) i * (double) (distrib.max - distrib.min)) / 100;
             pl-> append (index + distrib.min, ((double) distrib.nbIntervals [i] / (double) reqs.size ()) * 100);
         }
+
+        auto table = tex::TableFigure ("table_gatling_distrib_" + name, {"", "ms"})
+            .caption ("Response time");
+
+        table.addRow ({"min", std::to_string ((uint64_t) percs.min)});
+        table.addRow ({"max", std::to_string ((uint64_t) percs.max)});
+        table.addRow ({"mean", std::to_string ((uint64_t) distrib.mean)});
+        table.addRow ({"std", std::to_string ((uint64_t) ::sqrt (distrib.variance))});
+        table.addRow ({});
+        table.addRow ({});
+        table.addRow ({"25th", std::to_string ((uint64_t) percs.p25)});
+        table.addRow ({"50th", std::to_string ((uint64_t) percs.p50)});
+        table.addRow ({"75th", std::to_string ((uint64_t) percs.p75)});
+        table.addRow ({"80th", std::to_string ((uint64_t) percs.p80)});
+        table.addRow ({"85th", std::to_string ((uint64_t) percs.p85)});
+        table.addRow ({"90th", std::to_string ((uint64_t) percs.p90)});
+        table.addRow ({"95th", std::to_string ((uint64_t) percs.p95)});
+        table.addRow ({"99th", std::to_string ((uint64_t) percs.p99)});
 
         auto figure = tex::AxisFigure ("gatling_distrib_" + name)
             .caption ("Response time distribution - req = " + name)
@@ -171,11 +195,18 @@ namespace analyser {
             .hist (true);
 
         figure.addPlot (pl);
-        doc-> addFigure ("gatling distributions", std::make_shared <tex::AxisFigure> (figure));
+
+        auto minipage = tex::MiniPageFigure ("minipage_gatling_distrib_" + name)
+            .addFigure (std::make_shared <tex::AxisFigure> (figure), 75)
+            .addFigure (std::make_shared <tex::TableFigure> (table), 18);
+
+
+        doc-> addFigure ("gatling distributions", std::make_shared <tex::MiniPageFigure> (minipage));
     } 
 
     void Gatling::createNumberOfResponseFigure (std::shared_ptr <tex::Beamer> doc, const std::string & name, const std::vector <uint64_t> & reqs, const std::vector <uint64_t> & OK, const std::vector <uint64_t> & KO) {
         auto plReq = std::make_shared <tex::Plot> ();
+        plReq-> legend ("Requests");
         for (auto & it : reqs) {
             plReq-> append (it);
         }
@@ -188,7 +219,7 @@ namespace analyser {
         }
 
         auto plKO = std::make_shared <tex::Plot> ();
-        plKO-> legend ("KO");
+        plKO-> legend ("KO").color ("red!40");
 
         for (auto & it : KO) {
             plKO-> append (it);
@@ -222,10 +253,10 @@ namespace analyser {
         p25-> legend ("25th").name ("a").color ("green!20");
         p50-> legend ("50th").name ("b").color ("green!40");
         p75-> legend ("75th").name ("c").color ("green!50");
-        p80-> legend ("80th").name ("d").color ("purple!30");
-        p85-> legend ("85th").name ("e").color ("purple!60");
-        p90-> legend ("90th").name ("f").color ("red!20");
-        p95-> legend ("95th").name ("g").color ("red!50");
+        p80-> legend ("80th").name ("d").color ("red!20");
+        p85-> legend ("85th").name ("e").color ("red!50");
+        p90-> legend ("90th").name ("f").color ("purple!30");
+        p95-> legend ("95th").name ("g").color ("purple!60");
         p99-> legend ("99th").name ("h").color ("black!50");
         max-> legend ("max").name ("max").color ("black!90");
 
@@ -262,10 +293,10 @@ namespace analyser {
         figure.addFillPlot ("min", "a", "green!10");
         figure.addFillPlot ("a", "b", "green!30");
         figure.addFillPlot ("b", "c", "green!45");
-        figure.addFillPlot ("c", "d", "purple!30");
-        figure.addFillPlot ("d", "e", "purple!55");
-        figure.addFillPlot ("e", "f", "red!10");
-        figure.addFillPlot ("f", "g", "red!30");
+        figure.addFillPlot ("c", "d", "red!10");
+        figure.addFillPlot ("d", "e", "red!30");
+        figure.addFillPlot ("e", "f", "purple!30");
+        figure.addFillPlot ("f", "g", "purple!55");
         figure.addFillPlot ("g", "h", "black!10");
         figure.addFillPlot ("h", "max", "black!50");
 
@@ -280,7 +311,7 @@ namespace analyser {
      * ====================================================================================================
      */
 
-    ResponseDistribution Gatling::computeDistribution (const std::vector <Request> & interval) {
+    ResponseDistribution Gatling::computeDistribution (const std::vector <Request> & interval, Percentile & percs) {
         ResponseDistribution distrib;
         ::memset (distrib.nbIntervals, 0, 100 * sizeof (uint64_t));
 
@@ -292,14 +323,31 @@ namespace analyser {
             if (min > len) { min = len; }
         }
 
+        std::vector <uint64_t> points;
         for (auto & i : interval) {
             auto len = i.end - i.begin;
             uint64_t perc = ((double) len / (double) (max - min)) * 100;
             distrib.nbIntervals [perc] += 1;
+            points.push_back (len);
         }
+
+        std::sort (points.begin (), points.end ());
+
+        percs.min = min;
+        percs.max = max;
+        percs.p25 = analyser::percentile (0.25, points);
+        percs.p50 = analyser::percentile (0.50, points);
+        percs.p75 = analyser::percentile (0.75, points);
+        percs.p80 = analyser::percentile (0.80, points);
+        percs.p85 = analyser::percentile (0.85, points);
+        percs.p90 = analyser::percentile (0.90, points);
+        percs.p95 = analyser::percentile (0.95, points);
+        percs.p99 = analyser::percentile (0.99, points);
 
         distrib.min = min;
         distrib.max = max;
+        distrib.mean = analyser::mean (points);
+        distrib.variance = analyser::variance (distrib.mean, points);
         return distrib;
     }
 
@@ -344,36 +392,19 @@ namespace analyser {
             result.min = points [0];
             result.max = points [points.size () - 1];
 
-            result.p25 = this-> percentile (0.25, points);
-            result.p50 = this-> percentile (0.50, points);
-            result.p75 = this-> percentile (0.75, points);
-            result.p80 = this-> percentile (0.80, points);
-            result.p85 = this-> percentile (0.85, points);
-            result.p90 = this-> percentile (0.90, points);
-            result.p95 = this-> percentile (0.95, points);
-            result.p99 = this-> percentile (0.99, points);
+            result.p25 = analyser::percentile (0.25, points);
+            result.p50 = analyser::percentile (0.50, points);
+            result.p75 = analyser::percentile (0.75, points);
+            result.p80 = analyser::percentile (0.80, points);
+            result.p85 = analyser::percentile (0.85, points);
+            result.p90 = analyser::percentile (0.90, points);
+            result.p95 = analyser::percentile (0.95, points);
+            result.p99 = analyser::percentile (0.99, points);
         } else {
             ::memset (&result, 0, sizeof (Percentile));
         }
         
         return result;
-    }
-
-    double Gatling::percentile (double p, std::vector <uint64_t> & points) {
-        uint32_t index = p * points.size ();
-        if (index >= points.size () - 1) {
-            return points [points.size () - 1];
-        }
-
-        double y0 = points [index];
-        double y1 = points [index + 1];
-        double x0 = index;
-        double x1 = index + 1;
-        double x = p * (double) points.size ();
-
-        double y = y0 * (x1 - x) + y1 * (x - x0); // (x1 - x0 == 1)
-
-        return y;
     }
 
 }

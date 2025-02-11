@@ -132,10 +132,10 @@ namespace analyser {
         size-> legend ("size");
 
         auto hit = std::make_shared <tex::Plot> ();
-        hit-> legend ("hit");
+        hit-> legend ("hit").color ("green!50");
 
         auto miss = std::make_shared <tex::Plot> ();
-        miss-> legend ("miss");
+        miss-> legend ("miss").color ("red!50");
 
         auto set = std::make_shared <tex::Plot> ();
         set-> legend ("set");

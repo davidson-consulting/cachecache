@@ -1,6 +1,7 @@
 #include "machine.hh"
 #include <fstream>
 #include <cmath>
+#include "utils.hh"
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
@@ -130,10 +131,18 @@ namespace analyser {
         cpuPlot-> legend ("CPU");
         ramPlot-> legend ("RAM");
 
+        std::vector <double> pdu;
+        std::vector <double> cpu;
+        std::vector <double> ram;
+
         for (auto & it : this-> _energy) {
             pduPlot-> append (it.pdu);
             cpuPlot-> append (it.cpu);
             ramPlot-> append (it.ram);
+
+            pdu.push_back (it.pdu);
+            cpu.push_back (it.cpu);
+            ram.push_back (it.ram);
         }
 
         auto energyFigure = tex::AxisFigure ("energy_" + this-> _name)
@@ -145,7 +154,43 @@ namespace analyser {
             .addPlot (ramPlot)
             ;
 
-        doc-> addFigure ("cluster", std::make_shared <tex::AxisFigure> (energyFigure));
+        auto table = tex::TableFigure ("energy_table_" + this-> _name, {"", "PDU", "CPU", "RAM"});
+        table.addRow ({"min",
+                std::to_string ((uint64_t) analyser::min (pdu)),
+                std::to_string ((uint64_t) analyser::min (cpu)),
+                std::to_string ((uint64_t) analyser::min (ram))});
+
+        table.addRow ({"max",
+                std::to_string ((uint64_t) analyser::max (pdu)),
+                std::to_string ((uint64_t) analyser::max (cpu)),
+                std::to_string ((uint64_t) analyser::max (ram))});
+
+        double meanPDU = analyser::mean (pdu);
+        double meanCPU = analyser::mean (cpu);
+        double meanRAM = analyser::mean (ram);
+
+        table.addRow ({"mean",
+                std::to_string ((uint64_t) meanPDU),
+                std::to_string ((uint64_t) meanCPU),
+                std::to_string ((uint64_t) meanRAM)});
+
+        table.addRow ({"std",
+                std::to_string ((uint64_t) ::sqrt (analyser::variance (meanPDU, pdu))),
+                std::to_string ((uint64_t) ::sqrt (analyser::variance (meanCPU, cpu))),
+                std::to_string ((uint64_t) ::sqrt (analyser::variance (meanRAM, ram)))});
+
+        table.addRow ({"sum (J)",
+                std::to_string ((uint64_t) analyser::sum (pdu)),
+                std::to_string ((uint64_t) analyser::sum (cpu)),
+                std::to_string ((uint64_t) analyser::sum (ram))});
+
+        table.resize (0.75);
+
+        auto minipage = tex::MiniPageFigure ("minipage_energy_" + this-> _name)
+            .addFigure (std::make_shared<tex::AxisFigure> (energyFigure), 75)
+            .addFigure (std::make_shared <tex::TableFigure> (table), 19);
+
+        doc-> addFigure ("cluster", std::make_shared <tex::MiniPageFigure> (minipage));
     }
 
     /*!
@@ -165,9 +210,16 @@ namespace analyser {
 
         ram.emplace ("__GLOBAL__", std::make_shared <tex::Plot> ());
         ram ["__GLOBAL__"]-> legend ("Sum");
+        std::vector <uint64_t> rams;
+        std::vector <double> cpus;
+
         for (auto & sum : this-> _globalUsage) {
             cpu ["__GLOBAL__"]-> append (sum.cpu);
             ram ["__GLOBAL__"]-> append ((sum.mem_anon + sum.mem_file).megabytes ());
+            cpus.push_back (sum.cpu);
+
+            auto kb = (sum.mem_anon + sum.mem_file).megabytes ();
+            rams.push_back (kb);
         }
 
         for (auto & name : this-> _groups) {
@@ -191,11 +243,22 @@ namespace analyser {
             }
         }
 
-        this-> createCPUFigures (doc, cpu);
-        this-> createRAMFigures (doc, ram);
+        this-> createCPUFigures (doc, cpu, cpus);
+        this-> createRAMFigures (doc, ram, rams);
     }
 
-    void Machine::createCPUFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & cpu) {
+    void Machine::createCPUFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & cpu, std::vector <double> & cpuUsage) {
+        std::sort (cpuUsage.begin (), cpuUsage.end ());
+
+        auto table = tex::TableFigure ("cpu_table_" + this-> _name, {"", "\\%"});
+        table.addRow ({"min", std::to_string ((uint64_t) analyser::min (cpuUsage))});
+        table.addRow ({"max", std::to_string ((uint64_t) analyser::max (cpuUsage))});
+
+        double mean = analyser::mean (cpuUsage);
+        table.addRow ({"mean", std::to_string ((uint64_t) mean)});
+        table.addRow ({"std", std::to_string ((uint64_t) ::sqrt (analyser::variance (mean, cpuUsage)))});
+        table.addRow ({"sum", std::to_string ((uint64_t) analyser::sum (cpuUsage))});
+
         auto cpuFigure = tex::AxisFigure ("cpu_" + this-> _name)
             .caption ("CPU Usage of " + this-> _name)
             .ylabel ("\\% CPU")
@@ -206,10 +269,23 @@ namespace analyser {
             cpuFigure.addPlot (c.second);
         }
 
-        doc-> addFigure ("cluster", std::make_shared<tex::AxisFigure> (cpuFigure));
+        auto minipage = tex::MiniPageFigure ("minipage_cpu_" + this-> _name)
+            .addFigure (std::make_shared<tex::AxisFigure> (cpuFigure), 75)
+            .addFigure (std::make_shared <tex::TableFigure> (table), 19);
+
+        doc-> addFigure ("cluster", std::make_shared <tex::MiniPageFigure> (minipage));
     }
 
-    void Machine::createRAMFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & ram) {
+    void Machine::createRAMFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & ram, std::vector <uint64_t> & ramUsage) {
+        std::sort (ramUsage.begin (), ramUsage.end ());
+        auto mi = analyser::min (ramUsage), mx = analyser::max (ramUsage);
+
+        auto table = tex::TableFigure ("ram_table_" + this-> _name, {"", "MB"});
+        table.addRow ({"min", std::to_string (mi)});
+        table.addRow ({"max", std::to_string (mx)});
+        table.addRow ({"dist", std::to_string (mx - mi)});
+        table.addRow ({"sum", std::to_string ((uint64_t) analyser::sum (ramUsage))});
+
         auto ramFigure = tex::AxisFigure ("ram_" + this-> _name)
             .caption ("RAM Usage of " + this-> _name)
             .ylabel ("Memory size in MB")
@@ -220,7 +296,11 @@ namespace analyser {
             ramFigure.addPlot (r.second);
         }
 
-        doc-> addFigure ("cluster", std::make_shared<tex::AxisFigure> (ramFigure));
+        auto minipage = tex::MiniPageFigure ("minipage_ram_" + this-> _name)
+            .addFigure (std::make_shared<tex::AxisFigure> (ramFigure), 75)
+            .addFigure (std::make_shared <tex::TableFigure> (table), 19);
+
+        doc-> addFigure ("cluster", std::make_shared <tex::MiniPageFigure> (minipage));
     }
 
     std::string Machine::createLabelName (const std::string & name) const {

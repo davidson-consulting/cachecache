@@ -116,8 +116,8 @@ namespace analyser {
          */
         std::string createLabelName (const std::string & name) const;
 
-        void createCPUFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & cpu);
-        void createRAMFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & cpu);
+        void createCPUFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & cpu, std::vector <double> & cpuUsage);
+        void createRAMFigures (std::shared_ptr <tex::Beamer> doc, std::map <std::string, std::shared_ptr<tex::Plot> > & cpu, std::vector <uint64_t> & ramUsage);
 
         /*!
          * ====================================================================================================

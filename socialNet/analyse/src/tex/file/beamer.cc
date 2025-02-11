@@ -76,6 +76,7 @@ namespace tex {
         input << "\\metroset{block=fill}" << std::endl;
 
         input << "\\usepackage{tikz}" << std::endl;
+        input << "\\usepackage{makecell}" << std::endl;
         input << "\\usetikzlibrary{patterns,patterns.meta}" << std::endl;
         input << "\\usepackage{pgfplots}" << std::endl;
         input << "\\pgfplotsset{compat=1.8}" << std::endl;

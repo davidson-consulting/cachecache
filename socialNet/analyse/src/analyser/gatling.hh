@@ -29,6 +29,8 @@ namespace analyser {
         uint64_t nbIntervals [100];
         uint64_t max;
         uint64_t min;
+        uint64_t mean;
+        uint64_t variance;
     };
 
     struct Percentile {
@@ -97,14 +99,12 @@ namespace analyser {
         /**
          * Compute the distribution of intervals
          */
-        ResponseDistribution computeDistribution (const std::vector <Request> & intervals);
+        ResponseDistribution computeDistribution (const std::vector <Request> & intervals, Percentile& percs);
 
         /**
          * Compute the percentiles of a list of points
          */
         Percentile computePercentiles (std::vector <uint64_t> & points);
-
-        double percentile (double x, std::vector <uint64_t> & points);
 
         /*!
          * ====================================================================================================
