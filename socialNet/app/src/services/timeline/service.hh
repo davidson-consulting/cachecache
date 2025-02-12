@@ -19,6 +19,7 @@ namespace socialNet::timeline {
                 };
 
                 std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
+                bool _needClose = true;
                 // std::shared_ptr <utils::MysqlClient::Statement> _req100;
                 // std::shared_ptr <utils::MysqlClient::Statement> _req10;
 

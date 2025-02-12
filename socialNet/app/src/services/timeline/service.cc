@@ -52,7 +52,7 @@ namespace socialNet::timeline {
       this-> _routine = concurrency::Thread (0);
     }
 
-    if (this-> _registry != nullptr) {
+    if (this-> _registry != nullptr && this-> _needClose) {
       socialNet::closeService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
       this-> _registry = nullptr;
     }
@@ -77,7 +77,7 @@ namespace socialNet::timeline {
     match_v (msg.getOr ("type", RequestCode::NONE)) {
       of_v (RequestCode::POISON_PILL) {
         LOG_INFO ("Registry exit");
-        this-> _registry = nullptr;
+        this-> _needClose = false;
         this-> exit ();
       }
 
@@ -249,7 +249,7 @@ namespace socialNet::timeline {
     std::map <uint32_t, std::vector <PostUpdate> > cp;
     while (this-> _running) {
       t.reset ();
-      LOG_DEBUG ("Timeline iteration");
+      LOG_INFO ("Timeline iteration");
       LOG_DEBUG ("Timeline wait lock");
 
       try {

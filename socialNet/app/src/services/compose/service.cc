@@ -32,7 +32,7 @@ namespace socialNet::compose {
     match_v (msg.getOr ("type", RequestCode::NONE)) {
       of_v (RequestCode::POISON_PILL) {
         LOG_INFO ("Registry exit");
-        this-> _registry = nullptr;
+        this-> _needClose = false;
         this-> exit ();
       }
 
@@ -41,7 +41,7 @@ namespace socialNet::compose {
   }
 
   void ComposeService::onQuit () {
-    if (this-> _registry != nullptr) {
+    if (this-> _registry != nullptr && this-> _needClose) {
       socialNet::closeService (this-> _registry, "compose", this-> _name, this-> _system-> port (), this-> _iface);
     }
   }
@@ -126,7 +126,11 @@ namespace socialNet::compose {
 
         return response (ResponseCode::OK, resp);
       } else {
-        LOG_ERROR ("No response, or wrong code ? ", __FILE__, __LINE__);
+        if (result == nullptr) {
+          LOG_ERROR ("No response ", __FILE__, __LINE__);
+        } else {
+          LOG_ERROR ("User req wrong", __FILE__, __LINE__, *result);
+        }
         return response (ResponseCode::FORBIDDEN);
       }
     } catch (std::runtime_error & err) {

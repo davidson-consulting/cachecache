@@ -11,6 +11,8 @@ namespace socialNet::social_graph {
     private:
 
         std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
+        bool _needClose = true;
+
 
         std::string _iface;
 

@@ -42,7 +42,7 @@ namespace socialNet::short_url {
     match_v (msg.getOr ("type", RequestCode::NONE)) {
       of_v (RequestCode::POISON_PILL) {
         LOG_INFO ("Registry exit");
-        this-> _registry = nullptr;
+        this-> _needClose = false;
         this-> exit ();
       }
 
@@ -51,7 +51,7 @@ namespace socialNet::short_url {
   }
 
   void ShortUrlService::onQuit () {
-    if (this-> _registry != nullptr) {
+    if (this-> _registry != nullptr && this-> _needClose) {
       socialNet::closeService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
       this-> _registry = nullptr;
     }
