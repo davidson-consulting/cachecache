@@ -37,7 +37,7 @@ namespace socialNet {
       rd_utils::concurrency::timer t;
       auto result = composeService-> request (msg).wait ();
       if (t.time_since_start () > 1) {
-        std::cout << req << std::endl;
+        std::cout << msg << std::endl;
       }
 
       if (result != nullptr && result-> getOr ("code", -1) == 200) {
