@@ -3,15 +3,18 @@
 #include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
 #include <utils/codes/requests.hh>
+#include <regex>
 
 namespace socialNet::text {
 
   class TextService : public rd_utils::concurrency::actor::ActorBase {
   private:
 
+    std::regex _userPattern;
+    std::regex _urlPattern;
+
     std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
     bool _needClose = true;
-
 
     std::string _iface;
 

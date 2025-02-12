@@ -2,7 +2,7 @@
 
 #include "service.hh"
 #include "../../registry/service.hh"
-#include <regex>
+
 
 using namespace rd_utils::concurrency;
 using namespace rd_utils::memory::cache;
@@ -14,6 +14,8 @@ namespace socialNet::text {
 
   TextService::TextService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
     actor::ActorBase (name, sys)
+    , _userPattern ("(@)([a-zA-Z0-9-_]+)")
+    , _urlPattern ("(http://|https://)([a-zA-Z0-9_!~*'().&=+$%-/]+)")
   {
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
@@ -186,8 +188,7 @@ namespace socialNet::text {
 
   std::vector <std::string> TextService::findUserMentions (const std::string & msg) {
     std::vector <std::string> names;
-    std::regex pattern ("(@)([a-zA-Z0-9-_]+)");
-    auto begin = std::sregex_iterator (msg.begin (), msg.end (), pattern);
+    auto begin = std::sregex_iterator (msg.begin (), msg.end (), this-> _userPattern);
     while (begin != std::sregex_iterator ()) {
       auto match = (*begin)[2];
       names.push_back (match);
@@ -200,8 +201,7 @@ namespace socialNet::text {
 
   std::vector <std::string> TextService::findUrlMentions (const std::string & msg) {
     std::vector <std::string> names;
-    std::regex pattern ("(http://|https://)([a-zA-Z0-9_!~*'().&=+$%-/]+)");
-    auto begin = std::sregex_iterator (msg.begin (), msg.end (), pattern);
+    auto begin = std::sregex_iterator (msg.begin (), msg.end (), this-> _urlPattern);
     while (begin != std::sregex_iterator ()) {
       auto match = (*begin)[2];
       names.push_back (match);
