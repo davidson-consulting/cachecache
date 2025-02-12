@@ -34,7 +34,12 @@ namespace socialNet {
         .insert ("userId", (int64_t) uid)
         .insert ("content", content);
 
+      rd_utils::concurrency::timer t;
       auto result = composeService-> request (msg).wait ();
+      if (t.time_since_start () > 1) {
+        std::cout << req << std::endl;
+      }
+
       if (result != nullptr && result-> getOr ("code", -1) == 200) {
         return std::make_shared <httpserver::string_response> ("OK", 200, "text/plain");
       }
