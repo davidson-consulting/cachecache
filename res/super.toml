@@ -11,5 +11,5 @@ export-traces = "./super-traces" # the file in which market traces are exported 
 # Configuration of the memory pool
 # @optional
 [cache]
-size = 256 # amount of memory usable by the pool in MB
+size = 0 # amount of memory usable by the pool in MB
 unit = "MB"

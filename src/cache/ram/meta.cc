@@ -13,7 +13,7 @@ using namespace kv_store::common;
 namespace kv_store::memory {
 
     MetaRamCollection::MetaRamCollection (uint32_t maxNbSlabs, uint32_t slabTTL)
-        : _maxNbSlabs (maxNbSlabs - 1)
+        : _maxNbSlabs (maxNbSlabs)
         , _slabTTL (slabTTL)
     {}
 

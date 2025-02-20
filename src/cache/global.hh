@@ -7,6 +7,9 @@ namespace kv_store {
 
         class HybridKVStore {
 
+                // The buffer to keep only used keys in the ram
+                memory::MetaRamCollection _bufferColl;
+
                 // The collection
                 memory::MetaRamCollection _ramColl;
 
@@ -15,6 +18,12 @@ namespace kv_store {
 
                 // The routine time incrementation
                 uint64_t _currentTime;
+
+                // Ram collection contains slabs
+                bool _hasRam = false;
+
+                // Buffer contains slabs
+                bool _hasBuffer = false;
 
         public :
 
@@ -126,8 +135,21 @@ namespace kv_store {
                 /**
                  * Promote a kv from disk to RAM
                  */
-                void promote (const common::Key & k, const common::Value & v);
+                void promoteDisk (const common::Key & k, const common::Value & v);
 
+                /**
+                 * Promote a kv from buffer to RAM
+                 */
+                void promoteBuffer (const common::Key & k, const common::Value & v);
+
+        private:
+
+                /**
+                 * @returns: the number of
+                 */
+                static uint32_t computeBufferSize (uint32_t maxRamSlabs);
+
+                static uint32_t computeRamSize (uint32_t maxRamSlabs);
 
         };
 

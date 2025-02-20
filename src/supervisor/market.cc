@@ -149,7 +149,7 @@ namespace kv_store::supervisor {
 
     // Can't allocate less than four Slabs (4MB)-> with only one slab the cache tends to fail when allocating
     // And cannot allocate more than the size of the all cache
-    MemorySize min = MemorySize::MB (32);
+    MemorySize min = MemorySize::min (market, MemorySize::MB (32));
     MemorySize max = market;
 
     for (auto & [id, cache]: this->_entities) {
@@ -162,7 +162,7 @@ namespace kv_store::supervisor {
       // If we used the full size in that phase, then the cache will have to pay to keep the memory given for free in the previous iteration, leading to a wallet of 0
       //
 
-      if (usage > size) LOG_DEBUG ("OVERUSAGE FOR CACHE ", id, " : ", usage.megabytes() , " > ", size.megabytes());
+      if (usage > size) LOG_ERROR ("OVERUSAGE FOR CACHE ", id, " : ", usage.megabytes() , " > ", size.megabytes());
 
       float percUsage = size.bytes() == 0 ? 0 : (float) usage.bytes() / (float) size.bytes(); // usage over size
       HistoryTrend trend = cache.usages.trend (10.0f); // compute the trend of the cache /> \> -->
@@ -178,7 +178,7 @@ namespace kv_store::supervisor {
        */
       if (overTrig) {
         MemorySize increase = MemorySize::B ((float) size.bytes () * (float) (1.0 + this->_decreasingSpeed));  // increase by 1.x
-        MemorySize current = MemorySize::max (min, MemorySize::min (requested, increase)); // memory to set in base selling that does not go over requested
+        MemorySize current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase))); // memory to set in base selling that does not go over requested
         LOG_INFO ("Cache increase : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;
@@ -196,7 +196,7 @@ namespace kv_store::supervisor {
        */
       else if (underTrig) {
         MemorySize increase = MemorySize::B ((float) size.bytes () * (float) (1.0 - this->_decreasingSpeed));
-        MemorySize current = MemorySize::max (min, MemorySize::min (requested, increase));
+        MemorySize current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache decrease : ", id, " ", increase.kilobytes (), " ", requested.kilobytes (), " ", current.kilobytes (), " ", size.kilobytes ());
 
         market -= current;
@@ -214,7 +214,7 @@ namespace kv_store::supervisor {
        */
       else {
         auto increase = MemorySize::min (max, usage + (max * 0.01));
-        auto current = MemorySize::max (min, MemorySize::min (requested, increase));
+        auto current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache steady : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;

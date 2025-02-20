@@ -158,6 +158,7 @@ namespace kv_store::memory {
                  * Remove a slab from the list of loaded slabs
                  */
                 std::set <uint64_t> removeSlab (uint32_t slabId);
+
         };
 
 }

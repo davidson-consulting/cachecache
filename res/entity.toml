@@ -23,5 +23,5 @@ port = 0 # port of the tcp server
 # Configure cache entity default values
 # @optional
 [cache]
-size = 32
+size = 0
 unit = "MB"
