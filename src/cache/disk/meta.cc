@@ -21,8 +21,9 @@ namespace kv_store::disk {
     void MetaDiskCollection::insert (const Key & k, const Value & v) {
         for (auto it : directory_iterator (common::getSlabDirPath ())) {
             std::string filename = get_filename (it);
-            if (filename.rfind(".slab", 0) == 0) {
+            if (filename.rfind("meta", 0) == std::string::npos) {
                 uint32_t id = std::stoi (filename);
+                std::cout << "Old slab ?" << id << std::endl;
                 KVMapDiskSlab slab (id);
                 if (slab.insert (k, v)) {
                     this-> _metaColl.insert (k.hash () % KVMAP_META_LIST_SIZE, id);
