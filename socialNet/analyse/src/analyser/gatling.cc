@@ -326,7 +326,7 @@ namespace analyser {
         std::vector <uint64_t> points;
         for (auto & i : interval) {
             auto len = i.end - i.begin;
-            uint64_t perc = ((double) len / (double) (max - min)) * 100;
+            uint64_t perc = ((double) (len - min) / (double) (max - min)) * 100;
             distrib.nbIntervals [perc] += 1;
             points.push_back (len);
         }
