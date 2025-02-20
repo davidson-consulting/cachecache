@@ -23,7 +23,6 @@ namespace kv_store::disk {
             std::string filename = get_filename (it);
             if (filename.rfind("meta", 0) == std::string::npos) {
                 uint32_t id = std::stoi (filename);
-                std::cout << "Old slab ?" << id << std::endl;
                 KVMapDiskSlab slab (id);
                 if (slab.insert (k, v)) {
                     this-> _metaColl.insert (k.hash () % KVMAP_META_LIST_SIZE, id);
@@ -124,9 +123,12 @@ namespace kv_store::disk {
 
     std::ostream & operator<< (std::ostream & s, const MetaDiskCollection & coll) {
         for (auto it : directory_iterator (common::getSlabDirPath ())) {
-            uint32_t id = std::stoi (get_filename (it));
-            KVMapDiskSlab slab (id);
-            s << slab << std::endl;
+            std::string filename = get_filename (it);
+            if (filename.rfind("meta", 0) == std::string::npos) {
+                uint32_t id = std::stoi (filename);
+                KVMapDiskSlab slab (id);
+                s << slab << std::endl;
+            }
         }
 
         return s;
