@@ -19,8 +19,8 @@ namespace kv_store::disk {
         , _context (id)
     {
         if (__SLAB_PATH__ == "") {
-            __SLAB_PATH__ = common::KVMAP_SLAB_DISK_PATH + std::to_string (getpid ()) + "_";
-            rd_utils::utils::create_directory (common::KVMAP_SLAB_DISK_PATH, true);
+            __SLAB_PATH__ = common::getSlabDirPath ();
+            rd_utils::utils::create_directory (__SLAB_PATH__, true);
         }
 
         this-> load ();
@@ -31,8 +31,8 @@ namespace kv_store::disk {
         , _context (__ID__ + 1)
     {
         if (__SLAB_PATH__ == "") {
-            __SLAB_PATH__ = common::KVMAP_SLAB_DISK_PATH + std::to_string (getpid ()) + "_";
-            rd_utils::utils::create_directory (common::KVMAP_SLAB_DISK_PATH, true);
+            __SLAB_PATH__ = common::getSlabDirPath ();
+            rd_utils::utils::create_directory (__SLAB_PATH__, true);
         }
 
         __ID__ += 1;
@@ -44,8 +44,8 @@ namespace kv_store::disk {
         , _context (__ID__ + 1)
     {
         if (__SLAB_PATH__ == "") {
-            __SLAB_PATH__ = common::KVMAP_SLAB_DISK_PATH + std::to_string (getpid ()) + "_";
-            rd_utils::utils::create_directory (common::KVMAP_SLAB_DISK_PATH, true);
+            __SLAB_PATH__ = common::getSlabDirPath ();
+            rd_utils::utils::create_directory (__SLAB_PATH__, true);
         }
 
         __ID__ += 1;

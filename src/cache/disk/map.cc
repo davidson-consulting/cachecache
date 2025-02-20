@@ -2,6 +2,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <rd_utils/utils/files.hh>
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
@@ -37,14 +38,16 @@ namespace kv_store::disk {
      */
 
     void DiskMap::init () {
-        std::string path = std::string (kv_store::common::KVMAP_META_DISK_PATH) + std::to_string (getpid ()) + "_";
+        std::string path = std::string (kv_store::common::getMetaPath ());
+        rd_utils::utils::create_directory (kv_store::common::getSlabDirPath (), true);
+
         this-> _context.init (kv_store::common::KVMAP_META_INIT_SIZE.bytes (), path);
         uint32_t offset = this-> _context.alloc (kv_store::common::NB_KVMAP_SLAB_ENTRIES * sizeof (uint32_t));
         this-> _context.set (offset, 0, kv_store::common::NB_KVMAP_SLAB_ENTRIES * sizeof (uint32_t));
     }
 
     void DiskMap::load () {
-        this-> _context.load (kv_store::common::KVMAP_META_DISK_PATH);
+        this-> _context.load (kv_store::common::getMetaPath ());
     }
 
     /*!
@@ -60,7 +63,7 @@ namespace kv_store::disk {
     }
 
     void DiskMap::erase () {
-        this-> _context.erase (common::KVMAP_META_DISK_PATH);
+        this-> _context.erase (common::getMetaPath ());
     }
 
     DiskMap::~DiskMap () {

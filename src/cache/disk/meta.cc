@@ -19,12 +19,15 @@ namespace kv_store::disk {
      */
 
     void MetaDiskCollection::insert (const Key & k, const Value & v) {
-        for (auto it : directory_iterator (common::KVMAP_SLAB_DISK_PATH)) {
-            uint32_t id = std::stoi (get_filename (it));
-            KVMapDiskSlab slab (id);
-            if (slab.insert (k, v)) {
-                this-> _metaColl.insert (k.hash () % KVMAP_META_LIST_SIZE, id);
-                return;
+        for (auto it : directory_iterator (common::getSlabDirPath ())) {
+            std::string filename = get_filename (it);
+            if (filename.rfind(".slab", 0) == 0) {
+                uint32_t id = std::stoi (filename);
+                KVMapDiskSlab slab (id);
+                if (slab.insert (k, v)) {
+                    this-> _metaColl.insert (k.hash () % KVMAP_META_LIST_SIZE, id);
+                    return;
+                }
             }
         }
 
@@ -92,6 +95,26 @@ namespace kv_store::disk {
     /*!
      * ====================================================================================================
      * ====================================================================================================
+     * ===================================          DISPOSING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    void MetaDiskCollection::dispose () {
+        for (auto it : directory_iterator (common::getSlabDirPath ())) {
+            rd_utils::utils::remove (it);
+        }
+
+        rd_utils::utils::remove (common::getSlabDirPath ());
+    }
+
+    MetaDiskCollection::~MetaDiskCollection () {
+        this-> dispose ();
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
      * ======================================          MISC          ======================================
      * ====================================================================================================
      * ====================================================================================================
@@ -99,7 +122,7 @@ namespace kv_store::disk {
 
 
     std::ostream & operator<< (std::ostream & s, const MetaDiskCollection & coll) {
-        for (auto it : directory_iterator (common::KVMAP_SLAB_DISK_PATH)) {
+        for (auto it : directory_iterator (common::getSlabDirPath ())) {
             uint32_t id = std::stoi (get_filename (it));
             KVMapDiskSlab slab (id);
             s << slab << std::endl;

@@ -12,5 +12,7 @@ namespace kv_store::common {
     extern const rd_utils::utils::MemorySize MAX_KEY_SIZE;// = rd_utils::utils::MemorySize::B (512);
     constexpr int KVMAP_META_LIST_SIZE = 1024; // maximum number of elements in the meta head size
     extern const char * KVMAP_SLAB_DISK_PATH;
-    extern const char * KVMAP_META_DISK_PATH;
+
+    std::string getSlabDirPath ();
+    std::string getMetaPath ();
 }
