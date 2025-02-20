@@ -110,14 +110,14 @@ namespace socialNet::timeline {
 
 
       WITH_LOCK (this-> _m) {
-        // auto it = this-> _toUpdates.find (uid);
-        // if (it != this-> _toUpdates.end ()) {
-        //   it-> second.push_back (PostUpdate {.pid = pid, .tagged = tagged});
-        // } else {
-        //   std::vector <PostUpdate> up;
-        //   up.push_back (PostUpdate {.pid = pid, .tagged = tagged});
-        //   this-> _toUpdates.emplace (uid, up);
-        // }
+        auto it = this-> _toUpdates.find (uid);
+        if (it != this-> _toUpdates.end ()) {
+          it-> second.push_back (PostUpdate {.pid = pid, .tagged = tagged});
+        } else {
+          std::vector <PostUpdate> up;
+          up.push_back (PostUpdate {.pid = pid, .tagged = tagged});
+          this-> _toUpdates.emplace (uid, up);
+        }
       }
     } catch (std::runtime_error & err) {
       LOG_ERROR ("TimelineService::updatePosts : ", err.what ());
