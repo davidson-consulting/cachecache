@@ -9,6 +9,7 @@ namespace deployer {
         class Cluster;
         class Application;
         class Cache;
+        class Gatling;
 
         class Deployment {
         private:
@@ -21,6 +22,9 @@ namespace deployer {
 
                 // The list of cache to deploy
                 std::map <std::string, std::shared_ptr <Cache> > _caches;
+
+                // The gatling instance to launch to stress applications
+                std::map <std::string, std::shared_ptr <Gatling> > _gatling;
 
         private:
 

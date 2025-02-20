@@ -175,7 +175,7 @@ namespace deployer {
      */
 
     void Machine::discoverIP () {
-        auto p = this-> run ("ip a show dev eth0 |  awk -F ' *|:' '/inet /{print $3}'");
+        auto p = this-> run ("ip a show dev " + this-> _iface + " |  awk -F ' *|:' '/inet /{print $3}'");
         p-> wait ();
         this-> _ip = p-> stdout ();
         auto index = this-> _ip.find ("/");

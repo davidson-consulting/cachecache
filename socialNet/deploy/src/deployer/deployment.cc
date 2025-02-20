@@ -6,6 +6,7 @@
 #include "app.hh"
 #include "cache.hh"
 #include "installer.hh"
+#include "gatling.hh"
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
@@ -112,6 +113,18 @@ namespace deployer {
                     auto a = std::make_shared <deployer::Application> (this, name);
                     a-> configure ((*dc)[name]);
                     this-> _apps.emplace (name, a);
+
+                    if ((*dc)[name].contains ("gatling")) {
+                        auto gname = (*dc)[name]["gatling"].getStr ();
+                        if (!cfg.contains ("gatlings") || !cfg ["gatlings"].contains (gname)) {
+                            throw std::runtime_error ("Malformed gatling configuration for app : " + name);
+                        }
+
+                        // auto gatlingConfig = cfg ["gatlings"].get (gname);
+                        // auto g = std::make_shared <deployer::Gatling> (this, a, name);
+                        // g-> configure (*gatlingConfig);
+                        // this-> _gatling.emplace (name, g);
+                    }
                 }
             } elfo {
                 throw std::runtime_error ("Apps configuration malformed requires a dictionnary");
@@ -178,6 +191,19 @@ namespace deployer {
                 it.second-> downloadResults (this-> _resultDir);
             } catch (...) {}
         }
+
+        auto latest = utils::join_path (utils::parent_directory (this-> _resultDir), "latest");
+        try {
+            utils::remove (latest);
+        } catch (...) {}
+
+        utils::create_symlink (latest, utils::get_filename (this-> _resultDir));
+
+        // for (auto & it : this-> _gatling) {
+        //     try {
+        //         it.second-> downloadResults (this-> _resultDir);
+        //     } catch (...) {}
+        // }
     }
 
     void Deployment::kill () {

@@ -78,7 +78,8 @@ namespace deployer {
             "make\n"
             "make install\n"
             "mv /usr/local/lib/libhttp* /usr/lib/\n"
-            "rm -rf " + m-> getHomeDir () + "/libhttpserver\n";
+            "rm -rf " + m-> getHomeDir () + "/libhttpserver\n"
+            ;
 
         auto r = m-> runScript (script);
         r-> wait ();
@@ -144,9 +145,9 @@ namespace deployer {
                 "cmake ..\n"
                 "make -j12\n"
                 "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
-                "mv " + m-> getHomeDir () + "/cachecache/market/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
-                "mv " + m-> getHomeDir () + "/cachecache/market/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
-                // "rm -rf " + m-> getHomeDir () + "/cachecache/"
+                "mv " + m-> getHomeDir () + "/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
+                "mv " + m-> getHomeDir () + "/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
+                "rm -rf " + m-> getHomeDir () + "/cachecache/"
                 ;
         } else if (version == "cachelib") {
             script += "mkdir .build\n"
@@ -198,10 +199,11 @@ namespace deployer {
             "sudo apt-get install -y sbt openjdk-18-jdk\n"
             "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
             "cd cachecache/\n"
-            "git checkout net\n"
+            "git checkout webapp\n"
             "mkdir " + m-> getHomeDir () + "/gatling\n"
             "mv web-apps/socialNet/workload/ " + m-> getHomeDir () + "/gatling\n"
-            "rm -rf cachecache/\n";
+            "rm -rf cachecache/\n"
+            ;
 
         auto r = m-> runScript (script);
         r-> wait ();

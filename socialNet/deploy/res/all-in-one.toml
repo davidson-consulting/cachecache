@@ -8,20 +8,20 @@ has-pdu = true
 [apps.app1]
 registry = {host = "nuc-intel"}
 db = {host = "nuc-intel", name = "socialNet", port = 3309, base = "./basic_dbs/zip_subs_20k.sql"}
-front = {host = "nuc-intel", port = 8081, cache = "cache1.front", thread = 12}
+front = {host = "nuc-intel", port = 8081, cache = "cache1.front", thread = 24}
 
 compose = [{host = "nuc-intel", nb = 12}]
-text = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 24}]
 post = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
 social = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
-short = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
-user = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
-timeline = [{host = "nuc-intel", nb = 12<, cache = "cache1.service"}]
+short = [{host = "nuc-intel", nb = 24, cache = "cache1.service"}]
+user = [{host = "nuc-intel", nb = 32, cache = "cache1.service"}]
+timeline = [{host = "nuc-intel", nb = 24, cache = "cache1.service"}]
 
 [caches.cache1]
 host = "nuc-intel"
 version = "disk"
-size = 256
+size = 0
 unit = "MB"
 entities = {
      service = { size = 64, ttl = 100 },
