@@ -361,9 +361,9 @@ namespace kv_store::instance {
         this-> _freq = conf["sys"].getOr ("freq", 1.0f);
         auto filename = conf ["sys"].getOr ("export-traces", "/tmp/entity") + "." + std::to_string (sPort) + ".json";
         this-> _traces = std::make_shared <rd_utils::utils::trace::JsonExporter> (filename);
-        this-> _traceRoutine = concurrency::spawn (this, &CacheService::traceRoutine);
+	filename = conf ["sys"].getOr ("export-operations", "/tmp/cache_operations") + "." + std::to_string (sPort) + ".csv";
+	this-> _traceRoutine = concurrency::spawn (this, &CacheService::traceRoutine);
       }
-
       this-> _clients = std::make_shared <net::TcpServer> (net::SockAddrV4 (sAddr, sPort), nbThreads);
       this-> _clients-> start (this, &CacheService::onClient);
 

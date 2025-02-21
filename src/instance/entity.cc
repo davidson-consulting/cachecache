@@ -22,6 +22,10 @@ namespace kv_store::instance {
   void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t slabTTL) {
     uint32_t nbSlabs = maxSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
     this-> _entity = std::make_unique <HybridKVStore> (nbSlabs, slabTTL);
+
+    this-> _traces_operations = std::make_shared <rd_utils::utils::trace::CsvExporter> ("/tmp/operations_cache_" + name + ".csv");
+    this->_start = std::chrono::system_clock::now();
+
   }
 
   /**
@@ -76,6 +80,20 @@ namespace kv_store::instance {
   bool  CacheEntity::insert (const std::string & key, rd_utils::net::TcpStream& session) {
     try {
       auto valLen = session.receiveU32 ();
+
+      WITH_LOCK (this->_m) {
+	config::Dict d;
+	d.insert("key", key);
+	d.insert("key_size", (int64_t) key.size());
+	d.insert("value_size", (int64_t) valLen);
+	d.insert("client_id", (int64_t) 0);
+	d.insert("operation", "set");
+	d.insert("ttl", (int64_t) 0);
+
+	const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - this->_start);
+	this->_traces_operations->append((uint32_t) duration.count(), d);
+      }
+
       common::Key k;
       k.set (key);
 
@@ -100,6 +118,19 @@ namespace kv_store::instance {
     try {
       common::Key k;
       k.set (key);
+
+      WITH_LOCK (this->_m) {
+	config::Dict d;
+	d.insert("key", key);
+	d.insert("key_size", (int64_t) key.size());
+	d.insert("value_size", (int64_t) 0);
+	d.insert("client_id", (int64_t) 0);
+	d.insert("operation", "get");
+	d.insert("ttl", (int64_t) 0);
+
+	const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - this->_start);
+	this->_traces_operations->append((uint32_t) duration.count(), d);
+      }
 
       auto value = this-> _entity-> find (k);
       if (value != nullptr) {

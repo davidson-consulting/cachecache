@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <rd_utils/_.hh>
+#include <chrono>
 
 #include "../cache/global.hh"
 
@@ -30,6 +31,16 @@ namespace kv_store::instance {
 
                 // The cache managed by the entity
                 std::unique_ptr <kv_store::HybridKVStore> _entity;
+
+		rd_utils::concurrency::mutex _m;
+
+		// The handle to the cache operation exporter
+		std::shared_ptr <rd_utils::utils::trace::TraceExporter> _traces_operations;
+
+		// Clock that register the start of the service, used to provide 
+		// timestamp to export operations
+		std::chrono::time_point<std::chrono::system_clock> _start;
+
 
         public:
 
