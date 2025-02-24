@@ -24,6 +24,7 @@ namespace kv_store::instance {
     this-> _entity = std::make_unique <HybridKVStore> (nbSlabs, slabTTL);
 
     this-> _traces_operations = std::make_shared <rd_utils::utils::trace::CsvExporter> ("/tmp/operations_cache_" + name + ".csv");
+    this-> _traces_operations->setHeader({"key", "key_size", "value_size", "client_id", "operation", "ttl"});
     this->_start = std::chrono::system_clock::now();
 
   }
