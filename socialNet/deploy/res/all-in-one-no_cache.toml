@@ -7,7 +7,7 @@ has-pdu = true
 
 [apps.app1]
 registry = {host = "nuc-intel"}
-db = {host = "nuc-intel", name = "socialNet", port = 3309, base = "./basic_dbs/zip_subs_20k.sql" }
+db = {host = "nuc-intel", name = "socialNet", port = 3309, base = "./basic_dbs/empty.sql" }
 front = {host = "nuc-intel", port = 8081, threads = 24}#, cache = "cache1.front"}
 
 compose = [{host = "nuc-intel", nb = 12}]

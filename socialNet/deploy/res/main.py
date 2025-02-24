@@ -12,26 +12,20 @@ def registerUsers (url, nbUsers) :
         print (i, " ", x)
 
 
-def logUsers (url, nbUsers):
-    uids = {}
-    urlLog = url + "/login"
-
-    for i in range (1, nbUsers + 1):
-        login = { "login" : f"user_{i}", "password" : "pass" }
-        lg = requests.post (urlLog, json = login)
-        if (lg.status_code == 200) :
-            js = json.loads (lg.text)
-            token = js ["token"]
-            uid = js ["user_id"]
-            uids [i] = js
-        print (lg)
-    return uids
-
+def logUser (url, user) :
+    login = { "login" : f"user_{user}", "password" : "pass" }
+    lg = requests.post (url + "/login", json = login)
+    if (lg.status_code == 200) :
+        js = json.loads (lg.text)
+        print ("Log ", user, " ", js)
+        return js
+    else :
+        print ("Log fails : ", lg)
+        return None
 
 def makeZipFollow (url, nbUsers) :
     subs = {i : [] for i in range (1, nbUsers + 1)}
     folls = {i : [] for i in range (1, nbUsers + 1)}
-    uids = logUsers (url, nbUsers)
 
     for i in range (1, nbUsers + 1) :
         print (i)
@@ -46,37 +40,66 @@ def makeZipFollow (url, nbUsers) :
         print (folls [i])
 
     print (folls, subs)
-    performFollows (url, uids, subs)
+    performFollows (url, subs)
+
+
+# First 'nbAll' users are followed by everyone, then a makeFollow2 (url, nbUsers, nbFollows) is performed
+def makeFollowAllNb_then2 (url, nbUsers, nbAll, nbFollows):
+    subs = {i : [] for i in range (1, nbUsers + 1)}
+    for i in range (1, nbAll) :
+        for j in range (1, nbUsers + 1):
+            if j != i and (i not in subs [j]):
+                subs [j].append (i)
+
+    for i in range (nbAll + 1, nbUsers + 1) :
+        nbFollowed = 0
+        while nbFollowed != nbFollows :
+            j = random.randint (nbAll + 1, nbUsers)
+            if (j != i):
+                nbFollowed += 1
+                subs [i].append (j)
+
+    print (subs)
+    performFollows (url, subs)
 
 
 def makeFollow2 (url, nbUsers, nbFollows):
-    uids = logUsers (url, nbUsers)
     subs = {i + 1 : [] for i in range (nbUsers)}
 
-    for i in range (1, nbUsers) :
+    for i in range (11, nbUsers) :
         nbFollowed = 0
         while nbFollowed != nbFollows :
             j = random.randint (1, nbUsers)
-            if (j != uid):
+            if (j != i):
                 nbFollowed += 1
-                subs [i].append (i)
-    performFollows (url, uids, subs)
+                subs [i].append (j)
 
-def performFollows (url, uids, subs) :
+    print (subs)
+    performFollows (url, subs)
+
+def performFollows (url, subs) :
+    uids = {}
     urlFol = url + "/follow"
     for i in subs :
+        if i not in uids :
+            uids [i] = logUser (url, i)
+
         for j in subs [i]:
+            if j not in uids :
+                uids [j] = logUser (url, j)
+
             fl = { "user_id" : uids [i]["user_id"], "to_whom" : uids [j]["user_id"], "token" : uids [i]["token"] }
             x = requests.post (urlFol, json = fl)
             if (x.status_code != 200) :
                 print ("Failed : ", x)
                 break
-            print (x)
+            print ("Follow ", i, " => ", j, " ", x, "/", len (subs))
 
 def main () :
-    #registerUsers ("http://127.0.0.1:8080", 20000)
-    makeZipFollow ("http://127.0.0.1:8080", 20000)
-    #makeFollow2 ("http://127.0.0.1:8080", 20000, 3)
+    url = "http://192.168.1.14:8081"
+    nbUsers = 20000
+    registerUsers (url, nbUsers)
+    makeFollowAllNb_then2 (url, nbUsers, 11, 3)
 
 if __name__ == "__main__" :
     main ()
