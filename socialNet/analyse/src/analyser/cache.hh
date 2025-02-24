@@ -31,7 +31,7 @@ namespace analyser {
 
     private:
 
-        uint32_t _minTimestamp;
+        uint64_t _minTimestamp;
 
         // The trace of the market
         std::vector <MarketTrace> _trace;
@@ -48,7 +48,7 @@ namespace analyser {
         /**
          * Configure and load the traces of the cache
          */
-        void configure (uint32_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name);
+        void configure (uint64_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name);
 
         /**
          * Export the traces to a beamer doc

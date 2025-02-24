@@ -22,7 +22,7 @@ namespace analyser {
         match (cfg) {
             of (config::Dict, dc) {
                 for (auto mch : dc-> getKeys ()) {
-                    this-> _machines [mch].configure (traceDir, (*dc) [mch]);
+                    this-> _machines [mch].configure (mch, traceDir, (*dc) [mch]);
                     if (this-> _machines [mch].getMinTimestamp () < this-> _minTimestamp) {
                         this-> _minTimestamp = this-> _machines [mch].getMinTimestamp ();
                     }
@@ -31,6 +31,10 @@ namespace analyser {
                 throw std::runtime_error ("Malformed run configuration file");
             }
         }
+    }
+
+    uint64_t Cluster::getNbMachines () const {
+        return this-> _machines.size ();
     }
 
     uint64_t Cluster::getMinTimestamp () const {

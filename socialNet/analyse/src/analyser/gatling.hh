@@ -75,7 +75,7 @@ namespace analyser {
         /**
          * Export the traces to a beamer doc
          */
-        void execute (uint32_t minTimestamp, std::shared_ptr <tex::Beamer> doc);
+        void execute (uint64_t minTimestamp, std::shared_ptr <tex::Beamer> doc);
 
     private:
 
@@ -94,7 +94,7 @@ namespace analyser {
          * @params:
          *    - intervals: the list of intervals
          */
-        void computeMatrices (uint32_t minTimestamp, const std::vector <Request> & intervals, std::vector <uint64_t> & reqs, std::vector <uint64_t> & OK, std::vector <uint64_t> & KO, std::vector <Percentile> & percs);
+        void computeMatrices (uint64_t minTimestamp, const std::vector <Request> & intervals, std::vector <uint64_t> & reqs, std::vector <uint64_t> & OK, std::vector <uint64_t> & KO, std::vector <Percentile> & percs);
 
         /**
          * Compute the distribution of intervals
@@ -117,7 +117,7 @@ namespace analyser {
         /**
          * Create the active user figure
          */
-        void createUserFigure (uint32_t minTimestamp, std::shared_ptr <tex::Beamer> doc);
+        void createUserFigure (uint64_t minTimestamp, std::shared_ptr <tex::Beamer> doc);
 
         /**
          * Create the distribution figure for a list of intervals

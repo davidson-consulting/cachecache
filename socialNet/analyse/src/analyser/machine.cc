@@ -10,10 +10,11 @@ namespace analyser {
 
     Machine::Machine () {}
 
-    void Machine::configure (const std::string & traceDir, const config::ConfigNode & cfg) {
+    void Machine::configure (const std::string & name, const std::string & traceDir, const config::ConfigNode & cfg) {
         this-> _minTimestamp = -1;
         try {
-            this-> _name = cfg ["hostname"].getStr ();
+            this-> _name = name;
+            // this-> _name = cfg ["hostname"].getStr ();
             this-> loadUsage (utils::join_path (traceDir, this-> _name + "/cgroups.csv"));
             this-> loadEnergy (utils::join_path (traceDir, this-> _name + "/energy.csv"));
         } catch (const std::runtime_error & err) {

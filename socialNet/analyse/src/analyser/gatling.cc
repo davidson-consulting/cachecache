@@ -112,7 +112,7 @@ namespace analyser {
      * ====================================================================================================
      */
 
-    void Gatling::execute (uint32_t minTimestamp, std::shared_ptr <tex::Beamer> doc) {
+    void Gatling::execute (uint64_t minTimestamp, std::shared_ptr <tex::Beamer> doc) {
         this-> createUserFigure (minTimestamp, doc);
 
         if (this-> _allRequests.size () != 0) {
@@ -136,7 +136,7 @@ namespace analyser {
         }
     }
 
-    void Gatling::createUserFigure (uint32_t minTimestamp, std::shared_ptr <tex::Beamer> doc) {
+    void Gatling::createUserFigure (uint64_t minTimestamp, std::shared_ptr <tex::Beamer> doc) {
         auto pl = std::make_shared <tex::IndexedPlot> ();
         pl-> legend ("active users");
 
@@ -351,7 +351,7 @@ namespace analyser {
         return distrib;
     }
 
-    void Gatling::computeMatrices (uint32_t minTimestamp, const std::vector <Request> & interval, std::vector <uint64_t> & reqs, std::vector <uint64_t> & OK, std::vector <uint64_t> & KO, std::vector <Percentile> & percs) {
+    void Gatling::computeMatrices (uint64_t minTimestamp, const std::vector <Request> & interval, std::vector <uint64_t> & reqs, std::vector <uint64_t> & OK, std::vector <uint64_t> & KO, std::vector <Percentile> & percs) {
         uint64_t max = 0;
         for (auto & i : interval) {
             auto len = i.end;

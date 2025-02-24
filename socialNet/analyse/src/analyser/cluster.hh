@@ -53,6 +53,11 @@ namespace analyser {
          */
         uint64_t getMinTimestamp () const;
 
+        /**
+         * @returns: the number of machines in the cluster
+         */
+        uint64_t getNbMachines () const;
+
     };
 
 

@@ -26,6 +26,11 @@ namespace analyser {
             this-> _runConfig = toml::parseFile (utils::join_path (this-> _traceDir, "config.toml"));
 
             this-> _cluster.configure (this-> _traceDir, (*this-> _runConfig) ["machines"]);
+            if (this-> _cluster.getNbMachines () == 0) {
+                LOG_ERROR ("No machine traces found");
+                ::exit (-1);
+            }
+
             if (this-> _minTimestamp > this-> _cluster.getMinTimestamp ()) {
                 this-> _minTimestamp = this-> _cluster.getMinTimestamp ();
             }

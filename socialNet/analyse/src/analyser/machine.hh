@@ -53,7 +53,7 @@ namespace analyser {
         /**
          * Configure the machine
          */
-        void configure (const std::string & traceDir, const rd_utils::utils::config::ConfigNode & cfg);
+        void configure (const std::string & name, const std::string & traceDir, const rd_utils::utils::config::ConfigNode & cfg);
 
         /**
          * Execute the analyze on the machine

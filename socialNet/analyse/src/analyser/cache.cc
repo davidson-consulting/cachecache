@@ -11,7 +11,7 @@ namespace analyser {
 
     Cache::Cache () {}
 
-    void Cache::configure (uint32_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name) {
+    void Cache::configure (uint64_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name) {
         this-> _hostName = hostName;
         this-> _name = name;
         this-> _minTimestamp = minTimestamp;
