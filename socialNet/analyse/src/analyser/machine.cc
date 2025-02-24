@@ -43,7 +43,7 @@ namespace analyser {
 
             auto cpu = (double) (std::stoul (splits [2], nullptr, 0)) / 1e7; // 10_000_000; to have a percentage
             auto mem_anon = std::stoul (splits [3], nullptr, 0);
-            auto mem_file = std::stoul (splits [4], nullptr, 0);
+            auto mem_file = 0; //std::stoul (splits [4], nullptr, 0);
 
             this-> _groups.emplace (name);
             this-> _usage.back () [name] = UsageTrace {.cpu = cpu, .mem_anon = MemorySize::B (mem_anon), .mem_file = MemorySize::B (mem_file)};
