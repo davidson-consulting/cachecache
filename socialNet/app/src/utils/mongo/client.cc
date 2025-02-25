@@ -66,15 +66,15 @@ namespace socialNet::utils {
         return this-> _conn;
     }
 
-    void MongoClient::createIndex (const std::string & collection, const std::string & name, bool uniq) {
+    void MongoClient::createIndex (const std::string & name, bool uniq) {
         bson_t keys;
-        mongoc_database_t * db = mongoc_client_get_database (this-> _conn, collection.c_str ());
+        mongoc_database_t * db = mongoc_client_get_database (this-> _conn, this-> _context-> _appName.c_str ());
         bson_init (&keys);
 
         BSON_APPEND_INT32 (&keys, name.c_str (), 1);
         char * index_name = mongoc_collection_keys_to_index_string (&keys);
         bson_t* create_indexes = BCON_NEW (
-                                           "createIndexes", BCON_UTF8 (collection.c_str ()),
+                                           "createIndexes", BCON_UTF8 (this-> _context-> _appName.c_str ()),
                                            "indexes", "[", "{",
                                            "key", BCON_DOCUMENT (&keys),
                                            "name", BCON_UTF8 (index_name),
@@ -91,8 +91,12 @@ namespace socialNet::utils {
         mongoc_database_destroy (db);
 
         if (!r) {
-            throw std::runtime_error ("Failed to create index : " + collection + " (" + name + ") => " + error.message);
+            throw std::runtime_error ("Failed to create index : " + this-> _context-> _appName + " (" + name + ") => " + error.message);
         }
+    }
+
+    mongoc_collection_t * MongoClient::getCollection (const std::string & collName) {
+        return mongoc_client_get_collection (this-> _conn, this-> _context-> _appName.c_str (), collName.c_str ());
     }
 
     void MongoClient::dispose () {

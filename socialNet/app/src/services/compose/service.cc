@@ -15,7 +15,7 @@ using namespace socialNet::utils;
 
 namespace socialNet::compose {
 
-  ComposeService::ComposeService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & conf) :
+  ComposeService::ComposeService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
     actor::ActorBase (name, sys)
   {
     this-> _registry = socialNet::connectRegistry (sys, conf);
@@ -25,7 +25,7 @@ namespace socialNet::compose {
   }
 
   void ComposeService::onStart () {
-    socialNet::registerService (this-> _registry, "compose", this-> _name, this-> _system-> port (), this-> _iface);
+    this-> _uid = socialNet::registerService (this-> _registry, "compose", this-> _name, this-> _system-> port (), this-> _iface);
   }
 
   void ComposeService::onMessage (const config::ConfigNode & msg) {

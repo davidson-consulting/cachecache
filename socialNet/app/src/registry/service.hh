@@ -14,6 +14,7 @@ namespace socialNet {
 
   class RegistryService :  public rd_utils::concurrency::actor::ActorBase {
 
+    uint64_t _uid = 1; // the uniq ids of the services
     std::map <std::string, std::pair <uint32_t, std::vector <Service> > > __services__;
 
   public:
@@ -32,7 +33,7 @@ namespace socialNet {
   };
 
   std::shared_ptr <rd_utils::concurrency::actor::ActorRef> connectRegistry (rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & conf);
-  void registerService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface);
+  uint32_t registerService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface);
   std::shared_ptr <rd_utils::concurrency::actor::ActorRef> findService (rd_utils::concurrency::actor::ActorSystem * sys, std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind);
   void closeService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface);
 }

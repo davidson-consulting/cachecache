@@ -13,7 +13,8 @@ namespace socialNet::user {
     std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
     bool _needClose = true;
 
-
+    rd_utils::utils::config::Dict _conf;
+    uint32_t _uid = 0;
     std::string _iface;
 
     UserDatabase _db;

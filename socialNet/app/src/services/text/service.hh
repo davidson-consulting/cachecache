@@ -13,6 +13,7 @@ namespace socialNet::text {
     std::regex _userPattern;
     std::regex _urlPattern;
 
+    uint32_t _uid;
     std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
     bool _needClose = true;
 

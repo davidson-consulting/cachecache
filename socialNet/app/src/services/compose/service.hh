@@ -14,7 +14,8 @@ namespace socialNet::compose {
     std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
     bool _needClose = true;
 
-
+    rd_utils::utils::config::Dict _config;
+    uint32_t _uid;
     std::string _iface;
 
     std::string _secret;
@@ -23,7 +24,7 @@ namespace socialNet::compose {
 
   public:
 
-    ComposeService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::ConfigNode & conf);
+    ComposeService (const std::string & name, rd_utils::concurrency::actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf);
 
     void onStart () override;
 

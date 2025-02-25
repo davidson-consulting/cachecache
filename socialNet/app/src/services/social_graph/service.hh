@@ -13,7 +13,8 @@ namespace socialNet::social_graph {
         std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
         bool _needClose = true;
 
-
+        rd_utils::utils::config::Dict _conf;
+        uint32_t _uid;
         std::string _iface;
 
         SocialGraphDatabase _db;

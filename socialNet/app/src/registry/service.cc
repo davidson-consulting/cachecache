@@ -68,6 +68,7 @@ namespace socialNet {
       auto id = msg ["id"].getStr ();
       auto addr = msg ["addr"].getStr ();
       uint32_t port = msg ["port"].getI ();
+      uint32_t uid = 0;
 
       LOG_INFO ("Registering service : ", kind, " ", id, " ", addr, " ", port);
       WITH_LOCK (this-> getMutex ()) {
@@ -77,9 +78,15 @@ namespace socialNet {
         } else {
           it-> second.second.push_back ({.id = id, .addr = addr, .port = port});
         }
+
+        uid = this-> _uid;
+        this-> _uid += 1;
       }
 
-      return response (ResponseCode::OK);
+      return response (ResponseCode::OK,
+                       config::Dict ()
+                       .insert ("uid", std::make_shared <config::Int> (uid)));
+
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("RegistryService::registerService ", err.what ());
       return response (ResponseCode::MALFORMED);
@@ -186,7 +193,7 @@ namespace socialNet {
     }
   }
 
-  void registerService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface) {
+  uint32_t registerService (std::shared_ptr <rd_utils::concurrency::actor::ActorRef> registry, const std::string & kind, const std::string & name, uint32_t port, const std::string & iface) {
     try {
       std::string addr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
       auto req = config::Dict ()
@@ -202,6 +209,9 @@ namespace socialNet {
       if (resp == nullptr || resp-> getOr ("code", 0) != ResponseCode::OK) {
         throw std::runtime_error ("Failed to register service : " + kind + "/" + name);
       }
+
+      CONF_LET (retId, (*resp)["content"]["uid"].getI (), 0);
+      return retId;
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("registerService ", err.what ());
       throw std::runtime_error ("Failed to register service : " + kind + "/" + name);

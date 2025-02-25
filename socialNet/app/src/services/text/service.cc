@@ -22,7 +22,7 @@ namespace socialNet::text {
   }
 
   void TextService::onStart () {
-    socialNet::registerService (this-> _registry, "text", this-> _name, this-> _system-> port (), this-> _iface);
+    this-> _uid = socialNet::registerService (this-> _registry, "text", this-> _name, this-> _system-> port (), this-> _iface);
   }
 
   void TextService::onMessage (const config::ConfigNode & msg) {

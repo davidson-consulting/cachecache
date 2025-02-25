@@ -21,8 +21,10 @@ namespace socialNet::utils {
         void operator=(const MongoClient &) = delete;
 
 
-        void createIndex (const std::string & collection, const std::string & name, bool uniq);
+        void createIndex (const std::string & name, bool uniq);
         mongoc_client_t * get ();
+        mongoc_collection_t * getCollection (const std::string & name);
+
         void dispose ();
 
         ~MongoClient ();

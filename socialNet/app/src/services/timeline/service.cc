@@ -17,30 +17,37 @@ namespace socialNet::timeline {
 
   TimelineService::TimelineService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf)
     : actor::ActorBase (name, sys)
+    , _conf (conf)
     , _routine (0)
     , _running (false)
   {
-    CONF_LET (dbName, conf["services"]["timeline"]["db"].getStr (), std::string ("mysql"));
-    CONF_LET (chName, conf["services"]["timeline"]["cache"].getStr (), std::string (""));
-    // this-> _insertDb.configure (dbName, chName, conf);
-    // this-> _req100 = this-> _insertDb.prepareBuffered (MAX_NB_INSERT);
-    // this-> _req10 = this-> _insertDb.prepareBuffered (10);
-    // this-> _readDb.configure (dbName, chName, conf);
-
-    this-> _db.configure (chName, conf);
-
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
     this-> _secret = conf ["auth"]["secret"].getStr ();
     this-> _issuer = conf ["auth"].getOr ("issuer", "auth0");
     this-> _freq = conf ["services"]["timeline"].getOr ("freq", 1.0f);
+    this-> _conf = conf;
   }
 
   void TimelineService::onStart () {
     this-> _running  = true;
     this-> _routine = concurrency::spawn (this, &TimelineService::treatRoutine);
 
-    socialNet::registerService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
+    this-> _uid = socialNet::registerService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
+
+    CONF_LET (dbName, this-> _conf ["services"]["timeline"]["db"].getStr (), std::string ("mysql"));
+    CONF_LET (chName, this-> _conf["services"]["timeline"]["cache"].getStr (), std::string (""));
+  
+    try {
+      this-> _db.configure (chName, this-> _conf);
+    }  catch (const std::runtime_error & err) {
+      LOG_ERROR ("Failed to connect to DB", err.what ());
+      socialNet::closeService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
+      throw err;
+    }
+
+    this-> _conf = config::Dict ();
   }
 
   void TimelineService::onQuit () {

@@ -18,10 +18,10 @@ namespace socialNet::timeline {
                         std::set <uint32_t> tagged;
                 };
 
+                rd_utils::utils::config::Dict _conf;
+                uint32_t _uid = 0;
                 std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
                 bool _needClose = true;
-                // std::shared_ptr <utils::MysqlClient::Statement> _req100;
-                // std::shared_ptr <utils::MysqlClient::Statement> _req10;
 
                 rd_utils::concurrency::mutex _m;
                 rd_utils::concurrency::Thread _routine;
@@ -32,9 +32,6 @@ namespace socialNet::timeline {
 
                 std::map <uint32_t, std::vector <PostUpdate> > _toUpdates;
                 std::string _iface;
-
-                // TimelineDatabase _insertDb;
-                // TimelineDatabase _readDb;
 
                 TimelineFileBase _db;
 

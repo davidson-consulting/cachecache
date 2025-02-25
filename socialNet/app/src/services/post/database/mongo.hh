@@ -16,13 +16,16 @@ namespace socialNet::post {
         // The client connection to the DB
         std::shared_ptr <socialNet::utils::MongoPool> _client;
 
+        // The machine id used to generate uniq ids
+        uint32_t _machineId;
+        uint32_t _counter;
+
     public:
 
         /**
          * @params:
-         *    - configPath: path to the configuration file
          */
-        MongoPostDatabase ();
+        MongoPostDatabase (uint32_t uniqId);
 
         /**
          * Configure the database

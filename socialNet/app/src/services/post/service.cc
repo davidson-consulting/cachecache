@@ -14,32 +14,38 @@ namespace socialNet::post {
 
   PostStorageService::PostStorageService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
     actor::ActorBase (name, sys)
+    , _conf (conf)
   {
-    CONF_LET (dbName, conf["services"]["post"]["db"].getStr (), std::string ("mongo"));
-    CONF_LET (chName, conf["services"]["post"]["cache"].getStr (), std::string (""));
-    CONF_LET (dbKind, conf ["db"][dbName]["kind"].getStr (), std::string ("mongo"));
-
-    try {
-      if (dbKind == "mongo") {
-        this-> _db = std::make_shared <MongoPostDatabase> ();
-      } else {
-        this-> _db = std::make_shared <MysqlPostDatabase> ();
-      }
-
-      this-> _db-> configure (dbName, chName, conf);
-    } catch (const std::runtime_error & err) {
-      LOG_ERROR ("Failed to connect to DB", err.what ());
-      throw err;
-    }
-
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
     this-> _secret = conf ["auth"]["secret"].getStr ();
     this-> _issuer = conf ["auth"].getOr ("issuer", "auth0");
+    this-> _conf = conf;
   }
 
   void PostStorageService::onStart () {
-    socialNet::registerService (this-> _registry, "post", this-> _name, this-> _system-> port (), this-> _iface);
+    this-> _uid = socialNet::registerService (this-> _registry, "post", this-> _name, this-> _system-> port (), this-> _iface);
+
+    CONF_LET (dbName, this-> _conf ["services"]["post"]["db"].getStr (), std::string ("mongo"));
+    CONF_LET (chName, this-> _conf ["services"]["post"]["cache"].getStr (), std::string (""));
+    CONF_LET (dbKind, this-> _conf ["db"][dbName]["kind"].getStr (), std::string ("mongo"));
+
+    try {
+      if (dbKind == "mongo") {
+        this-> _db = std::make_shared <MongoPostDatabase> (this-> _uid);
+      } else {
+        this-> _db = std::make_shared <MysqlPostDatabase> ();
+      }
+
+      this-> _db-> configure (dbName, chName, this-> _conf);
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("Failed to connect to DB", err.what ());
+      socialNet::closeService (this-> _registry, "post", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
+      throw err;
+    }
+
+    this-> _conf = config::Dict ();
   }
 
   void PostStorageService::onMessage (const config::ConfigNode & msg) {
@@ -149,6 +155,7 @@ namespace socialNet::post {
         return response (ResponseCode::NOT_FOUND);
       }
     } catch (...) {
+      std::cout << "Failed ?" << std::endl;
       return response (ResponseCode::MALFORMED);
     }
   }

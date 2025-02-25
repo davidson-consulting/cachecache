@@ -10,11 +10,12 @@ namespace socialNet::post {
   class PostStorageService : public rd_utils::concurrency::actor::ActorBase {
   private:
 
+    uint32_t _uid;
+    rd_utils::utils::config::Dict _conf;
     std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _registry;
     bool _needClose = true;
 
     std::string _iface;
-
     std::shared_ptr <PostDatabase> _db;
 
     std::string _issuer;

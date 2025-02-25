@@ -22,20 +22,30 @@ namespace socialNet::short_url {
 
   ShortUrlService::ShortUrlService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
     actor::ActorBase (name, sys)
+    , _conf (conf)
   {
     srand (time (NULL));
-
-    CONF_LET (dbName, conf ["services"]["short"]["db"].getStr (), std::string ("mysql"));
-    CONF_LET (chName, conf ["services"]["short"]["cache"].getStr (), std::string (""));
-
-    this-> _db.configure (dbName, chName, conf);
 
     this-> _registry = socialNet::connectRegistry (sys, conf);
     this-> _iface = conf ["sys"].getOr ("iface", "lo");
   }
 
   void ShortUrlService::onStart () {
-    socialNet::registerService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
+    this-> _uid = socialNet::registerService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
+
+    CONF_LET (dbName, this-> _conf ["services"]["short"]["db"].getStr (), std::string ("mysql"));
+    CONF_LET (chName, this-> _conf ["services"]["short"]["cache"].getStr (), std::string (""));
+
+    try {
+      this-> _db.configure (dbName, chName, this-> _conf);
+    } catch (const std::runtime_error & err) {
+      LOG_ERROR ("Failed to connect to DB", err.what ());
+      socialNet::closeService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
+      this-> _registry = nullptr;
+      throw err;
+    }
+
+    this-> _conf = config::Dict ();
   }
 
   void ShortUrlService::onMessage (const config::ConfigNode & msg) {
