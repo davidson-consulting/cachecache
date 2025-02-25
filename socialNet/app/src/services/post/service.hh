@@ -15,7 +15,7 @@ namespace socialNet::post {
 
     std::string _iface;
 
-    PostDatabase _db;
+    std::shared_ptr <PostDatabase> _db;
 
     std::string _issuer;
     std::string _secret;

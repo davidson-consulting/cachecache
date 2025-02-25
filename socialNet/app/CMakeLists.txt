@@ -45,6 +45,9 @@ add_executable (reg ${SRC_REG} ${SRC_REG_LIB})
 add_executable (front ${SRC_FRONT} ${SRC_REG_LIB})
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src/)
-target_link_libraries (services rd_utils vjoule_cpp mysqlpp mysqlclient jwt-cpp::jwt-cpp httpserver)
-target_link_libraries (reg rd_utils vjoule_cpp mysqlpp mysqlclient jwt-cpp::jwt-cpp httpserver)
-target_link_libraries (front rd_utils vjoule_cpp mysqlpp mysqlclient jwt-cpp::jwt-cpp httpserver)
+include_directories (/usr/include/libmongoc-1.0/)
+include_directories (/usr/include/libbson-1.0/)
+
+target_link_libraries (services rd_utils vjoule_cpp mysqlpp mysqlclient jwt-cpp::jwt-cpp httpserver mongoc-1.0 bson-1.0)
+target_link_libraries (reg rd_utils vjoule_cpp mysqlpp mysqlclient jwt-cpp::jwt-cpp httpserver mongoc-1.0 bson-1.0)
+target_link_libraries (front rd_utils vjoule_cpp mysqlpp mysqlclient jwt-cpp::jwt-cpp httpserver mongoc-1.0 bson-1.0)

@@ -15,11 +15,18 @@ namespace socialNet::post {
   PostStorageService::PostStorageService (const std::string & name, actor::ActorSystem * sys, const rd_utils::utils::config::Dict & conf) :
     actor::ActorBase (name, sys)
   {
-    CONF_LET (dbName, conf["services"]["post"]["db"].getStr (), std::string ("mysql"));
+    CONF_LET (dbName, conf["services"]["post"]["db"].getStr (), std::string ("mongo"));
     CONF_LET (chName, conf["services"]["post"]["cache"].getStr (), std::string (""));
+    CONF_LET (dbKind, conf ["db"][dbName]["kind"].getStr (), std::string ("mongo"));
 
     try {
-      this-> _db.configure (dbName, chName, conf);
+      if (dbKind == "mongo") {
+        this-> _db = std::make_shared <MongoPostDatabase> ();
+      } else {
+        this-> _db = std::make_shared <MysqlPostDatabase> ();
+      }
+
+      this-> _db-> configure (dbName, chName, conf);
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("Failed to connect to DB", err.what ());
       throw err;
@@ -53,7 +60,7 @@ namespace socialNet::post {
       this-> _registry = nullptr;
     }
 
-    this-> _db.dispose ();
+    this-> _db-> dispose ();
   }
 
   /**
@@ -101,7 +108,7 @@ namespace socialNet::post {
         } fo;
       }
 
-      auto pid = this-> _db.insertPost (userId, userLogin, text, tags, nbTags);
+      auto pid = this-> _db-> insertPost (userId, userLogin, text, tags, nbTags);
       auto req = config::Dict ()
         .insert ("type", RequestCode::UPDATE_TIMELINE)
         .insert ("userId", (int64_t) userId)
@@ -124,7 +131,7 @@ namespace socialNet::post {
   std::shared_ptr <config::ConfigNode> PostStorageService::readOne (const config::ConfigNode & msg) {
     try {
       Post p;
-      if (this-> _db.findPost (msg ["postId"].getI (), p)) {
+      if (this-> _db-> findPost (msg ["postId"].getI (), p)) {
         auto result = std::make_shared<config::Dict> ();
         result-> insert ("userId", std::make_shared <config::Int> (p.userId));
         result-> insert ("userLogin", std::string (p.userLogin));

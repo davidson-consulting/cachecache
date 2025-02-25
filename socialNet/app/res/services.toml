@@ -13,42 +13,51 @@ name = "registry"
 addr = "localhost"
 port = 0
 
-[services.user]
-nb = 1
-db = "mysql"
-cache = "fst"
+# [services.user]
+# nb = 1
+# db = "mysql"
+# cache = "fst"
 
-[services.timeline]
-nb = 1
-db = "mysql"
-cache = "fst"
+# [services.timeline]
+# nb = 1
+# db = "mysql"
+# cache = "fst"
 
-[services.short]
-nb = 1
-db = "mysql"
+# [services.short]
+# nb = 1
+# db = "mysql"
 
-[services.social]
-nb = 1
-db = "mysql"
-cache = "fst"
+# [services.social]
+# nb = 1
+# db = "mysql"
+# cache = "fst"
 
 [services.post]
 nb = 1
-db = "mysql"
+db = "mongo"
 cache = "fst"
 
-[services.compose]
-nb = 1
+# [services.compose]
+# nb = 1
 
-[services.text]
-nb = 1
+# [services.text]
+# nb = 1
 
 [db.mysql]
 name = "socialNet"
-addr = "192.168.1.12"
+addr = "192.168.1.21"
 user = "root"
 pass = ""
 port = 3309
+kind = "mysql"
+
+[db.mongo]
+name = "socialNet"
+addr = "192.168.1.21"
+user = "root"
+pass = "example"
+port = 6661
+kind = "mongo"
 
 [cache.fst]
 addr="192.168.1.12"
