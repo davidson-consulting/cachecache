@@ -11,9 +11,7 @@ namespace socialNet::post {
         : _client (nullptr)
         , _machineId (id * 10000000)
         , _counter (0)
-    {
-        std::cout << _machineId << std::endl;
-    }
+    {}
 
     /*!
      * ====================================================================================================
@@ -99,15 +97,14 @@ namespace socialNet::post {
 
         bson_t * query = bson_new ();
         BSON_APPEND_INT64 (query, "post_id", id);
-        std::cout << "Get " << id << std::endl;
+
         mongoc_cursor_t * cursor = mongoc_collection_find_with_opts (coll, query, nullptr, nullptr);
 
         const bson_t * doc ;
         bool found = mongoc_cursor_next (cursor, &doc);
-        std::cout << "found : " << found << std::endl;
+
         if (found) {
             auto post_json_char = bson_as_json (doc, nullptr);
-            std::cout << post_json_char << std::endl;
             auto post_json = nlohmann::json::parse (post_json_char);
 
             p.userId = post_json ["user_id"];
