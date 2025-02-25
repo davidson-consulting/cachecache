@@ -147,7 +147,7 @@ namespace deployer {
                 "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
                 "mv " + m-> getHomeDir () + "/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
                 "mv " + m-> getHomeDir () + "/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
-                "rm -rf " + m-> getHomeDir () + "/cachecache/"
+                // "rm -rf " + m-> getHomeDir () + "/cachecache/"
                 ;
         } else if (version == "cachelib") {
             script += "mkdir .build\n"

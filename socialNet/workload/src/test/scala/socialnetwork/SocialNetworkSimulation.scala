@@ -22,7 +22,7 @@ class SocialNetworkSimulation extends Simulation {
   val NB_USERS = 20000;
   val NB_NEW_POSTS = 10
   val NB_READS = 20
-  val NB_AT_ONCE = 100
+  val NB_AT_ONCE = 1
   val PAGE_SIZE = 50
   val SIM_SIZE = 100
 
@@ -216,7 +216,7 @@ class SocialNetworkSimulation extends Simulation {
   val newPost = postNewPostTask ();
 
   val httpProtocol =
-    http.baseUrl("http://192.168.1.16:8081")
+    http.baseUrl("http://192.168.1.14:8081")
       .acceptHeader("text/html,application/xhtml+xml,application/xml, application/json;q=0.9,*/*;q=0.8")
       .acceptLanguageHeader("en-US,en;q=0.5")
       .acceptEncodingHeader("gzip, deflate")

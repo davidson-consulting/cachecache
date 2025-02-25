@@ -7,16 +7,16 @@ has-pdu = true
 
 [apps.app1]
 registry = {host = "nuc-intel"}
-db = {host = "nuc-intel", name = "socialNet", port = 3309, base = "./basic_dbs/empty.sql" }
-front = {host = "nuc-intel", port = 8081, threads = 24}#, cache = "cache1.front"}
+db = {host = "nuc-intel", name = "socialNet", port = 3309, base = "./basic_dbs/zip_subs_20k.sql" }
+front = {host = "nuc-intel", port = 8081, threads = 1}#, cache = "cache1.front"}
 
-compose = [{host = "nuc-intel", nb = 12}]
-text = [{host = "nuc-intel", nb = 24}]
-post = [{host = "nuc-intel", nb = 12}]#, cache = "cache1.service"}]
-social = [{host = "nuc-intel", nb = 12}]#, cache = "cache1.service"}]
-short = [{host = "nuc-intel", nb = 24}]#, cache = "cache1.service"}]
-user = [{host = "nuc-intel", nb = 32}]#, cache = "cache1.service"}]
-timeline = [{host = "nuc-intel", nb = 24}]#, cache = "cache1.service"}]
+compose = [{host = "nuc-intel", nb = 1}]
+text = [{host = "nuc-intel", nb = 1}]
+post = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
+social = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
+short = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
+user = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
+timeline = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
 
 # [caches.cache1]
 # host = "nuc-intel"
@@ -24,5 +24,5 @@ timeline = [{host = "nuc-intel", nb = 24}]#, cache = "cache1.service"}]
 # unit = "MB"
 # entities = {
 #      service = { size = 64, ttl = 100 },
-#      front = { size = 128 }
+#      front = { size = 18 }
 # }

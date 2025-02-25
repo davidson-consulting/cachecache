@@ -255,6 +255,7 @@ namespace deployer {
         auto service = std::make_shared <config::Dict> ();
         service-> insert ("addr", "0.0.0.0");
         service-> insert ("port", (int64_t) 0);
+        service-> insert ("nb-threads", (int64_t) 1);
 
         auto cache = std::make_shared <config::Dict> ();
         cache-> insert ("size", (int64_t) this-> _entities [entityName].size.kilobytes ());
