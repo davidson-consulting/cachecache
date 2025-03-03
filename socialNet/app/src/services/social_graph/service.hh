@@ -17,7 +17,7 @@ namespace socialNet::social_graph {
         uint32_t _uid;
         std::string _iface;
 
-        SocialGraphDatabase _db;
+        std::shared_ptr <SocialGraphDatabase> _db;
 
         std::string _issuer;
         std::string _secret;

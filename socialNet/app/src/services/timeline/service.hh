@@ -3,8 +3,7 @@
 #include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
 #include <utils/codes/requests.hh>
-// #include "database.hh"
-#include "file_base.hh"
+#include "database.hh"
 
 #include <set>
 
@@ -33,7 +32,7 @@ namespace socialNet::timeline {
                 std::map <uint32_t, std::vector <PostUpdate> > _toUpdates;
                 std::string _iface;
 
-                TimelineFileBase _db;
+                std::shared_ptr <TimelineDatabase> _db;
 
                 std::string _issuer;
                 std::string _secret;

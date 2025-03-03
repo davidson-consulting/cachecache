@@ -22,11 +22,18 @@ namespace socialNet::user {
   void UserService::onStart () {
     CONF_LET (dbName, this-> _conf ["services"]["user"]["db"].getStr (), std::string ("mysql"));
     CONF_LET (chName, this-> _conf ["services"]["user"]["cache"].getStr (), std::string (""));
+    CONF_LET (dbKind, this-> _conf ["db"][dbName]["kind"].getStr (), std::string ("mongo"));
 
     this-> _uid = socialNet::registerService (this-> _registry, "user", this-> _name, this-> _system-> port (), this-> _iface);
 
     try {
-      this-> _db.configure (dbName, chName, this-> _conf);
+      if (dbKind == "mongo") {
+        this-> _db = std::make_shared <MongoUserDatabase> (this-> _uid);
+      } else {
+        this-> _db = std::make_shared <MysqlUserDatabase> ();
+      }
+
+      this-> _db-> configure (dbName, chName, this-> _conf);
     }  catch (const std::runtime_error & err) {
       LOG_ERROR ("Failed to connect to DB", err.what ());
       socialNet::closeService (this-> _registry, "user", this-> _name, this-> _system-> port (), this-> _iface);
@@ -55,7 +62,7 @@ namespace socialNet::user {
       this-> _registry = nullptr;
     }
 
-    this-> _db.dispose ();
+    this-> _db-> dispose ();
   }
 
   /*!
@@ -92,14 +99,14 @@ namespace socialNet::user {
       auto password = msg ["password"].getStr ();
 
       User u;
-      if (this-> _db.findByLogin (login, u)) {
+      if (this-> _db-> findByLogin (login, u)) {
         return response (ResponseCode::FORBIDDEN);
       }
 
       memcpy (u.login, login.c_str (), strnlen (login.c_str (), 16));
       memcpy (u.password, password.c_str (), strnlen (password.c_str (), 64));
 
-      uint32_t id = this-> _db.insertUser (u);
+      uint32_t id = this-> _db-> insertUser (u);
       return response (ResponseCode::OK, std::make_shared <config::Int> (id));
     } catch (std::runtime_error & err) {
       LOG_ERROR ("ERROR UserService::registerUser : ", err.what ());
@@ -123,7 +130,7 @@ namespace socialNet::user {
       LOG_DEBUG ("Trying to connect : ", login, "@", password);
 
       User u;
-      if (this-> _db.findByLogin (login, u)) {
+      if (this-> _db-> findByLogin (login, u)) {
         if (strnlen (u.password, 64) == password.length ()) {
           if (strncmp (u.password, password.c_str (), password.length ()) == 0) {
             LOG_DEBUG ("User connected");
@@ -149,14 +156,14 @@ namespace socialNet::user {
       User u;
       if (msg.contains ("id")) {
         uint32_t id = msg ["id"].getI ();
-        if (this-> _db.findById (id, u)) {
+        if (this-> _db-> findById (id, u)) {
           return response (ResponseCode::OK, std::make_shared <config::String> (u.login));
         } else {
           LOG_ERROR ("Not found : ", msg);
         }
       } else {
         auto login = msg ["login"].getStr ();
-        if (this-> _db.findByLogin (login, u)) {
+        if (this-> _db-> findByLogin (login, u)) {
           return response (ResponseCode::OK, std::make_shared <config::Int> (u.id));
         }
       }

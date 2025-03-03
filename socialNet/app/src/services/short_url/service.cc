@@ -35,9 +35,16 @@ namespace socialNet::short_url {
 
     CONF_LET (dbName, this-> _conf ["services"]["short"]["db"].getStr (), std::string ("mysql"));
     CONF_LET (chName, this-> _conf ["services"]["short"]["cache"].getStr (), std::string (""));
+    CONF_LET (dbKind, this-> _conf ["db"][dbName]["kind"].getStr (), std::string ("mongo"));
 
     try {
-      this-> _db.configure (dbName, chName, this-> _conf);
+      if (dbKind == "mongo") {
+        this-> _db = std::make_shared <MongoShortUrlDatabase> ();
+      } else {
+        this-> _db = std::make_shared <MysqlShortUrlDatabase> ();
+      }
+
+      this-> _db-> configure (dbName, chName, this-> _conf);
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("Failed to connect to DB", err.what ());
       socialNet::closeService (this-> _registry, "short_url", this-> _name, this-> _system-> port (), this-> _iface);
@@ -66,7 +73,7 @@ namespace socialNet::short_url {
       this-> _registry = nullptr;
     }
 
-    this-> _db.dispose ();
+    this-> _db-> dispose ();
   }
 
 
@@ -105,7 +112,7 @@ namespace socialNet::short_url {
       auto shLen = std::min (url.length (), (uint64_t) SHORT_LEN);
       ::memcpy (shUrl.sh, url.c_str (), shLen);
 
-      if (this-> _db.findUrlFromShort (shUrl)) {
+      if (this-> _db-> findUrlFromShort (shUrl)) {
         auto res = std::make_shared <config::String> (shUrl.ln);
         return response (ResponseCode::OK, res);
       } else {
@@ -137,9 +144,9 @@ namespace socialNet::short_url {
       auto lnLen = std::min (url.length (), (uint64_t) LONG_LEN);
       ::memcpy (shUrl.ln, url.c_str (), lnLen);
 
-      if (!this-> _db.findUrl (shUrl)) {
+      if (!this-> _db-> findUrl (shUrl)) {
         this-> createShort (shUrl.sh);
-        this-> _db.insertUrl (shUrl);
+        this-> _db-> insertUrl (shUrl);
       }
 
       auto res = std::make_shared <config::String> (shUrl.sh);

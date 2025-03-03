@@ -1,15 +1,12 @@
 #include "mongo.hh"
 
-#include <chrono>
-#include <iomanip>
-#include <iostream>
 #include <nlohmann/json.hpp>
 
 namespace socialNet::post {
 
     MongoPostDatabase::MongoPostDatabase (uint32_t id)
         : _client (nullptr)
-        , _machineId (id * 10000000)
+        , _machineId (id * 1000000)
         , _counter (0)
     {}
 
@@ -35,8 +32,6 @@ namespace socialNet::post {
     } 
 
     void MongoPostDatabase::createTables () {
-        auto cl = this-> _client-> get ();
-        cl.createIndex ("post_id", true);
     }
 
     /*!
@@ -54,10 +49,10 @@ namespace socialNet::post {
         this-> _counter += 1;
         uint64_t uniqId = this-> _machineId + this-> _counter;
         bson_t * new_doc = bson_new ();
-        BSON_APPEND_INT64 (new_doc, "post_id", uniqId);
+        BSON_APPEND_INT32 (new_doc, "post_id", uniqId);
         BSON_APPEND_UTF8 (new_doc, "text", text.c_str ());
         BSON_APPEND_UTF8 (new_doc, "user_login", userLogin.c_str ());
-        BSON_APPEND_INT64 (new_doc, "user_id", id);
+        BSON_APPEND_INT32 (new_doc, "user_id", id);
 
         bson_t user_mention_list;
         char buf [16];
@@ -67,7 +62,7 @@ namespace socialNet::post {
             bson_uint32_to_string (i, &key, buf, sizeof (buf));
             bson_t doc;
             BSON_APPEND_DOCUMENT_BEGIN (&user_mention_list, key, &doc);
-            BSON_APPEND_INT64 (&doc, "user_id", tags [i]);
+            BSON_APPEND_INT32 (&doc, "user_id", tags [i]);
             bson_append_document_end (&user_mention_list, &doc);
         }
         bson_append_array_end (new_doc, &user_mention_list);
@@ -96,7 +91,7 @@ namespace socialNet::post {
         auto coll = cl.getCollection ("post");
 
         bson_t * query = bson_new ();
-        BSON_APPEND_INT64 (query, "post_id", id);
+        BSON_APPEND_INT32 (query, "post_id", id);
 
         mongoc_cursor_t * cursor = mongoc_collection_find_with_opts (coll, query, nullptr, nullptr);
 

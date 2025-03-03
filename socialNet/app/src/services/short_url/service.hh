@@ -17,7 +17,7 @@ namespace socialNet::short_url {
     uint32_t _uid;
     std::string _iface;
 
-    ShortUrlDatabase _db;
+    std::shared_ptr <ShortUrlDatabase> _db;
 
   public:
 

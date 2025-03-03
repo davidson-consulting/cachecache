@@ -20,7 +20,7 @@ cache = "fst"
 
 [services.timeline]
 nb = 1
-db = "mysql"
+db = "file"
 cache = "fst"
 
 [services.short]
@@ -29,12 +29,12 @@ db = "mysql"
 
 [services.social]
 nb = 1
-db = "mysql"
+db = "file"
 cache = "fst"
 
 [services.post]
 nb = 1
-db = "mongo"
+db = "mysql"
 cache = "fst"
 
 [services.compose]
@@ -58,6 +58,10 @@ user = "root"
 pass = "example"
 port = 6661
 kind = "mongo"
+
+[db.file]
+kind = "file"
+directory = "/tmp/"
 
 # [cache.fst]
 # addr="192.168.1.12"

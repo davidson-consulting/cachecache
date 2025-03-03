@@ -27,9 +27,18 @@ namespace socialNet::social_graph {
 
     CONF_LET (dbName, this-> _conf ["services"]["social"]["db"].getStr (), std::string ("mysql"));
     CONF_LET (chName, this-> _conf ["services"]["social"]["cache"].getStr (), std::string (""));
+    CONF_LET (dbKind, this-> _conf ["db"][dbName]["kind"].getStr (), std::string ("mongo"));
 
     try {
-      this-> _db.configure (dbName, chName, this-> _conf);
+      if (dbKind == "mongo") {
+        this-> _db = std::make_shared <MongoSocialGraphDatabase> ();
+      } else if (dbKind == "file") {
+        this-> _db = std::make_shared <FileSocialGraphDatabase> ();
+      } else {
+        this-> _db = std::make_shared <MysqlSocialGraphDatabase> ();
+      }
+
+      this-> _db-> configure (dbName, chName, this-> _conf);
     } catch (const std::runtime_error & err) {
       LOG_ERROR ("Failed to connect to DB", err.what ());
       socialNet::closeService (this-> _registry, "social_graph", this-> _name, this-> _system-> port (), this-> _iface);
@@ -58,7 +67,7 @@ namespace socialNet::social_graph {
       this-> _registry = nullptr;
     }
 
-    this-> _db.dispose ();
+    this-> _db-> dispose ();
   }
 
   /*!
@@ -129,8 +138,8 @@ namespace socialNet::social_graph {
 
       auto sub = Sub {.userId = userId, .toWhom = toWhom};
 
-      if (!this-> _db.findSub (sub)) {
-        this-> _db.insertSub (sub);
+      if (!this-> _db-> findSub (sub)) {
+        this-> _db-> insertSub (sub);
       }
 
       return response (ResponseCode::OK);
@@ -147,7 +156,7 @@ namespace socialNet::social_graph {
       if (userId == toWhom) return response (ResponseCode::OK);
 
       auto sub = Sub {.userId = userId, .toWhom = toWhom};
-      this-> _db.removeSub (sub);
+      this-> _db-> removeSub (sub);
 
       return response (ResponseCode::OK);
     } catch (std::runtime_error & err) {
@@ -163,7 +172,7 @@ namespace socialNet::social_graph {
       if (userId == toWhom) return response (ResponseCode::OK, 0);
 
       auto sub = Sub {.userId = userId, .toWhom = toWhom};
-      if (this-> _db.findSub (sub)) {
+      if (this-> _db-> findSub (sub)) {
         return response (ResponseCode::OK, 1);
       } else {
         return response (ResponseCode::OK, 0);
@@ -186,7 +195,7 @@ namespace socialNet::social_graph {
   std::shared_ptr <rd_utils::utils::config::ConfigNode> SocialGraphService::countSubs (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       auto userId = msg ["userId"].getI ();
-      auto cnt = this-> _db.countNbSubs (userId);
+      auto cnt = this-> _db-> countNbSubs (userId);
 
       return response (ResponseCode::OK,
                            std::make_shared <config::Int> (cnt));
@@ -199,7 +208,7 @@ namespace socialNet::social_graph {
   std::shared_ptr <rd_utils::utils::config::ConfigNode> SocialGraphService::countFollows (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       auto userId = msg ["userId"].getI ();
-      auto cnt = this-> _db.countNbFollowers (userId);
+      auto cnt = this-> _db-> countNbFollowers (userId);
 
       return response (ResponseCode::OK,
                            std::make_shared <config::Int> (cnt));
@@ -224,7 +233,7 @@ namespace socialNet::social_graph {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findFollowersCacheable (uid, page * nb, nb);
+      auto values = this-> _db-> findFollowers (uid, page, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }
@@ -244,7 +253,7 @@ namespace socialNet::social_graph {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findSubsCacheable (uid, page * nb, nb);
+      auto values = this-> _db-> findSubs (uid, page, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }

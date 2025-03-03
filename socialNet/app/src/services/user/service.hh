@@ -17,7 +17,7 @@ namespace socialNet::user {
     uint32_t _uid = 0;
     std::string _iface;
 
-    UserDatabase _db;
+    std::shared_ptr <UserDatabase> _db;
 
   public:
 

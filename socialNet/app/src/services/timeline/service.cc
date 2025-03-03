@@ -31,15 +31,22 @@ namespace socialNet::timeline {
 
   void TimelineService::onStart () {
     this-> _running  = true;
-    this-> _routine = concurrency::spawn (this, &TimelineService::treatRoutine);
-
     this-> _uid = socialNet::registerService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
 
-    CONF_LET (dbName, this-> _conf ["services"]["timeline"]["db"].getStr (), std::string ("mysql"));
+    CONF_LET (dbName, this-> _conf ["services"]["timeline"]["db"].getStr (), std::string ("file"));
     CONF_LET (chName, this-> _conf["services"]["timeline"]["cache"].getStr (), std::string (""));
-  
+    CONF_LET (dbKind, this-> _conf ["db"][dbName]["kind"].getStr (), std::string ("file"));
+
     try {
-      this-> _db.configure (chName, this-> _conf);
+      if (dbKind == "file") {
+        this-> _db = std::make_shared <FileTimelineDatabase> ();
+      } else if (dbKind == "mongo") {
+        this-> _db = std::make_shared <MongoTimelineDatabase> ();
+      } else {
+        this-> _db = std::make_shared <MysqlTimelineDatabase> ();
+      }
+
+      this-> _db-> configure (dbName, chName, this-> _conf);
     }  catch (const std::runtime_error & err) {
       LOG_ERROR ("Failed to connect to DB", err.what ());
       socialNet::closeService (this-> _registry, "timeline", this-> _name, this-> _system-> port (), this-> _iface);
@@ -47,6 +54,8 @@ namespace socialNet::timeline {
       throw err;
     }
 
+    // Launch the routine only after the database is configured
+    this-> _routine = concurrency::spawn (this, &TimelineService::treatRoutine);
     this-> _conf = config::Dict ();
   }
 
@@ -64,12 +73,7 @@ namespace socialNet::timeline {
       this-> _registry = nullptr;
     }
 
-    // this-> _req10.reset ();
-    // this-> _req100.reset ();
-    // this-> _insertDb.dispose ();
-    // this-> _readDb.dispose ();
-
-    this-> _db.dispose ();
+    this-> _db-> dispose ();
   }
 
   /*!
@@ -97,7 +101,6 @@ namespace socialNet::timeline {
       fo;
     }
   }
-
 
   void TimelineService::updatePosts (const rd_utils::utils::config::ConfigNode & msg) {
     try {
@@ -175,7 +178,7 @@ namespace socialNet::timeline {
   std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::countPosts (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      auto nb = this-> _db.countPosts (uid);
+      auto nb = this-> _db-> countPosts (uid);
 
       return response (ResponseCode::OK, std::make_shared <config::Int> (nb));
     } catch (std::runtime_error & err) {
@@ -187,7 +190,7 @@ namespace socialNet::timeline {
   std::shared_ptr<rd_utils::utils::config::ConfigNode> TimelineService::countHome (const rd_utils::utils::config::ConfigNode & msg) {
     try {
       uint32_t uid = msg ["userId"].getI ();
-      auto nb = this-> _db.countHome (uid);
+      auto nb = this-> _db-> countHome (uid);
 
       return response (ResponseCode::OK, std::make_shared <config::Int> (nb));
     } catch (std::runtime_error & err) {
@@ -211,7 +214,7 @@ namespace socialNet::timeline {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findHomeCacheable (uid, page * nb, nb);
+      auto values = this-> _db-> findHome (uid, page, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }
@@ -230,7 +233,7 @@ namespace socialNet::timeline {
       int32_t page = msg ["page"].getI ();
 
       auto result = std::make_shared <config::Array> ();
-      auto values = this-> _db.findPostCacheable (uid, page * nb, nb);
+      auto values = this-> _db-> findPost (uid, page, nb);
       for (auto & it : values) {
         result-> insert (std::make_shared <config::Int> (it));
       }
@@ -256,7 +259,7 @@ namespace socialNet::timeline {
     std::map <uint32_t, std::vector <PostUpdate> > cp;
     while (this-> _running) {
       t.reset ();
-      LOG_INFO ("Timeline iteration");
+      LOG_DEBUG ("Timeline iteration");
       LOG_DEBUG ("Timeline wait lock");
 
       try {
@@ -268,8 +271,8 @@ namespace socialNet::timeline {
           this-> updateForFollowers (it.first, it.second);
         }
 
-        this-> _db.commit ();
-        LOG_INFO ("Iteration took : ", t.time_since_start ());
+        this-> _db-> commit ();
+        LOG_DEBUG ("Iteration took : ", t.time_since_start ());
       } catch (const std::runtime_error & err) {
         LOG_ERROR ("Error in timeline update : ", err.what ());
       }
@@ -288,10 +291,10 @@ namespace socialNet::timeline {
 
   void TimelineService::updateForFollowers (uint32_t uid, const std::vector <TimelineService::PostUpdate> & updates) {
     for (auto up : updates) {
-      this-> _db.insertHome (uid, up.pid);
-      this-> _db.insertPost (uid, up.pid);
+      this-> _db-> insertHome (uid, up.pid);
+      this-> _db-> insertPost (uid, up.pid);
       for (auto taggedId : up.tagged) {
-        this-> _db.insertHome (taggedId, up.pid);
+        this-> _db-> insertHome (taggedId, up.pid);
       }
     }
 
@@ -304,15 +307,17 @@ namespace socialNet::timeline {
         .insert ("page", std::make_shared <config::Int> (page))
         .insert ("nb", std::make_shared <config::Int> (nbPages));
 
+      concurrency::timer t;
       auto resp = socialService-> request (msg).wait ();
       if (resp && resp-> getOr ("code", -1) == ResponseCode::OK) {
+        std::cout << t.time_since_start () << " " << *resp << std::endl;
         match ((*resp) ["content"]) {
           of (config::Array, arr) {
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
               CONF_LET (follower, (*arr) [i].getI (), 0);
               for (auto & up : updates) {
                 if (up.tagged.find (follower) == up.tagged.end ()) {
-                  this-> _db.insertHome (follower, up.pid);
+                  this-> _db-> insertHome (follower, up.pid);
                 }
               }
             }

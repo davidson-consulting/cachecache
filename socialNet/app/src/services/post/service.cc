@@ -155,7 +155,6 @@ namespace socialNet::post {
         return response (ResponseCode::NOT_FOUND);
       }
     } catch (...) {
-      std::cout << "Failed ?" << std::endl;
       return response (ResponseCode::MALFORMED);
     }
   }
