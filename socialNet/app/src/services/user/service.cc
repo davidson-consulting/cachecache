@@ -2,6 +2,7 @@
 
 #include "service.hh"
 #include "../../registry/service.hh"
+#include "database.hh"
 
 using namespace rd_utils::concurrency;
 using namespace rd_utils::memory::cache;

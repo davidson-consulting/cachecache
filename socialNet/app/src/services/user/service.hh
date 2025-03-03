@@ -3,10 +3,10 @@
 #include <rd_utils/_.hh>
 #include <utils/codes/response.hh>
 #include <utils/codes/requests.hh>
-#include "database.hh"
 
 namespace socialNet::user {
 
+  class UserDatabase;
   class UserService : public rd_utils::concurrency::actor::ActorBase {
   private:
 
