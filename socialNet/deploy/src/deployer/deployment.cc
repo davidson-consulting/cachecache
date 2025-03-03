@@ -5,6 +5,7 @@
 #include "cluster.hh"
 #include "app.hh"
 #include "cache.hh"
+#include "db.hh"
 #include "installer.hh"
 #include "gatling.hh"
 
@@ -43,6 +44,7 @@ namespace deployer {
             this-> _cfg = toml::parseFile (this-> _hostFile);
 
             this-> configureCluster (*this-> _cfg);
+            this-> configureDBs (*this-> _cfg);
             this-> configureCaches (*this-> _cfg);
             this-> configureApplications (*this-> _cfg);
 
@@ -103,6 +105,22 @@ namespace deployer {
         }
     }
 
+    void Deployment::configureDBs (const config::ConfigNode & cfg) {
+        if (!cfg.contains ("dbs")) return;
+
+        match (cfg ["dbs"]) {
+            of (config::Dict, dc) {
+                for (auto & name : dc-> getKeys ()) {
+                    auto d = std::make_shared <deployer::DB> (this, name);
+                    d-> configure ((*dc)[name]);
+                    this-> _dbs.emplace (name, d);
+                }
+            } elfo {
+                throw std::runtime_error ("Databases configuration malformed requires a dictionnary");
+            }
+        }
+    }
+
     void Deployment::configureApplications (const config::ConfigNode & cfg) {
         // No application to deploy ?
         if (!cfg.contains ("apps")) return;
@@ -159,6 +177,13 @@ namespace deployer {
 
             this-> _cluster-> prepareVJoule ();
             for (auto & it : this-> _caches) {
+                it.second-> start ();
+            }
+
+            for (auto & it : this-> _dbs) {
+                if (this-> _installDB) {
+                    it.second-> restoreBase ();
+                }
                 it.second-> start ();
             }
 
@@ -223,6 +248,10 @@ namespace deployer {
             it.second-> clean ();
         }
 
+        for (auto & it : this-> _dbs) {
+            it.second-> clean ();
+        }
+
         for (auto & it : this-> _caches) {
             it.second-> clean ();
         }
@@ -248,6 +277,15 @@ namespace deployer {
         auto it = this-> _caches.find (name);
         if (it == this-> _caches.end ()) {
             throw std::runtime_error ("No cache named : " + name);
+        }
+
+        return it-> second;
+    }
+
+    std::shared_ptr <DB> Deployment::getDB (const std::string & name) {
+        auto it = this-> _dbs.find (name);
+        if (it == this-> _dbs.end ()) {
+            throw std::runtime_error ("No db named : " + name);
         }
 
         return it-> second;

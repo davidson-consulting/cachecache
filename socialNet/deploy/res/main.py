@@ -96,8 +96,8 @@ def performFollows (url, subs) :
             print ("Follow ", i, " => ", j, " ", x, "/", len (subs))
 
 def main () :
-    url = "http://192.168.1.14:8081"
-    nbUsers = 20000
+    url = "http://192.168.1.21:8080"
+    nbUsers = 2000
     registerUsers (url, nbUsers)
     makeFollowAllNb_then2 (url, nbUsers, 11, 3)
 

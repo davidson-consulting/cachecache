@@ -7,6 +7,7 @@ namespace deployer {
         class Deployment;
         class Cache;
         class Machine;
+        class DB;
 
         class Application {
         private:
@@ -16,16 +17,15 @@ namespace deployer {
                         std::shared_ptr <Cache> supervisor;
                 };
 
+                struct DBRef {
+                        std::string name;
+                        std::shared_ptr <DB> supervisor;
+                };
+
                 struct ServiceReplications {
                         uint32_t nb;
                         CacheRef cache;
-                };
-
-                struct DBConfig {
-                        uint32_t port = 3306;
-                        std::string name;
-                        std::string host;
-                        std::string base = "";
+                        DBRef db;
                 };
 
                 struct FrontConfig {
@@ -54,9 +54,6 @@ namespace deployer {
 
                 // The host deploying the registry
                 std::string _registryHost;
-
-                // The configuration of the db
-                DBConfig _db;
 
                 // The configuration of the front
                 FrontConfig _front;
@@ -128,11 +125,6 @@ namespace deployer {
         private:
 
                 /**
-                 * Deploy the mysql instance
-                 */
-                void deployDB () ;
-
-                /**
                  * Deploy the registry of the app
                  */
                 void deployRegistry ();
@@ -179,7 +171,7 @@ namespace deployer {
         private:
 
                 /**
-                 * Read the configuration of front/reg and DB
+                 * Read the configuration of front/reg
                  */
                 void readMainConfiguration (const rd_utils::utils::config::Dict & cfg);
 
@@ -201,6 +193,12 @@ namespace deployer {
                  * @info: if ch == "", returns an empty reference
                  */
                 CacheRef findCacheFromName (const std::string & ch);
+
+                /**
+                 * @returns: the db reference from db
+                 * @info: if db == "", returns an empty reference
+                 */
+                DBRef findDBFromName (const std::string & db);
 
                 /**
                  * @returns: the path to the bin files on the machine host, and create them if they don't exist

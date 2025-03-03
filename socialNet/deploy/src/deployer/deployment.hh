@@ -10,6 +10,7 @@ namespace deployer {
         class Application;
         class Cache;
         class Gatling;
+        class DB;
 
         class Deployment {
         private:
@@ -22,6 +23,9 @@ namespace deployer {
 
                 // The list of cache to deploy
                 std::map <std::string, std::shared_ptr <Cache> > _caches;
+
+                // The list of DBs to deploy
+                std::map <std::string, std::shared_ptr <DB> > _dbs;
 
                 // The gatling instance to launch to stress applications
                 std::map <std::string, std::shared_ptr <Gatling> > _gatling;
@@ -103,6 +107,11 @@ namespace deployer {
                 std::shared_ptr <Cache> getCache (const std::string & name);
 
                 /**
+                 * @returns: the db deployment
+                 */
+                std::shared_ptr <DB> getDB (const std::string & name);
+
+                /**
                  * @returns: true if the flag install db was set
                  */
                 bool installDB () const;
@@ -129,6 +138,11 @@ namespace deployer {
                  * Configure the cached to deploy
                  */
                 void configureCaches (const rd_utils::utils::config::ConfigNode & cfg);
+
+                /**
+                 * Configure the dbs to deploy
+                 */
+                void configureDBs (const rd_utils::utils::config::ConfigNode & cfg);
 
                 /**
                  * Configure the applications to deploy

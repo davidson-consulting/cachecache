@@ -2,6 +2,7 @@
 #include "deployment.hh"
 #include "cluster.hh"
 #include "cache.hh"
+#include "db.hh"
 
 using namespace rd_utils;
 using namespace rd_utils::utils;
@@ -22,7 +23,6 @@ namespace deployer {
      */
 
     void Application::start () {
-        this-> deployDB ();
         this-> deployRegistry ();
         for (auto & it : this-> _services) {
             this-> deployServices (it.first);
@@ -50,13 +50,6 @@ namespace deployer {
     }
 
     void Application::clean () {
-        try {
-            auto host = this-> _context-> getCluster ()-> get (this-> _db.host);
-            auto path = utils::join_path (host-> getHomeDir (), "run/apps/" + this-> _name);
-            LOG_INFO ("Closing mysql docker image on : ", this-> _db.host);
-            host-> run ("cd " + path + "; docker-compose down")-> wait ();
-        } catch (...) {}
-
         for (auto & it : this-> _services) {
             try {
                 auto host = this-> _context-> getCluster ()-> get (it.first);
@@ -106,19 +99,6 @@ namespace deployer {
             this-> _registryHost = cfg ["registry"]["host"].getStr ();
             this-> _context-> getCluster ()-> get (this-> _registryHost)-> addFlag ("socialNet");
 
-            // Read db configuration
-            this-> _db.host = cfg ["db"]["host"].getStr ();
-            this-> _db.name = cfg ["db"]["name"].getStr ();
-            this-> _db.port = cfg ["db"].getOr ("port", (int64_t) this-> _db.port);
-            this-> _db.base = cfg ["db"].getOr ("base", this-> _db.base);
-            if (this-> _db.base != "") {
-                this-> _db.base = utils::join_path (this-> _context-> getConfigDirPath (), this-> _db.base);
-                if (!utils::file_exists (this-> _db.base)) {
-                    throw std::runtime_error ("Base sql file '" + this-> _db.base + "' not found");
-                }
-            }
-            this-> _context-> getCluster ()-> get (this-> _db.host)-> addFlag ("db");
-
             // Read front configuration
             this-> _front.host = cfg ["front"]["host"].getStr ();
             this-> _front.cache = this-> findCacheFromName (cfg ["front"].getOr ("cache", ""));
@@ -132,8 +112,6 @@ namespace deployer {
             } else {
                 LOG_INFO ("Register app front for ", this-> _name, " on host ", this-> _front.host, " with cache ", this-> _front.cache.supervisor-> getName (), ".", this-> _front.cache.name);
             }
-            
-            LOG_INFO ("Register app database for ", this-> _name, " on host ", this-> _db.host);
 
         } catch (const std::runtime_error & err) {
             LOG_ERROR ("Failed to read app configuration : ", err.what ());
@@ -161,8 +139,11 @@ namespace deployer {
                                 auto host = (*dc)["host"].getStr ();
                                 uint32_t nb = (*dc)["nb"].getI ();
                                 auto cache = (*dc).getOr ("cache", "");
+                                auto dbN = (*dc).getOr ("db", "");
+
                                 this-> _context-> getCluster ()-> get (host)-> addFlag ("social");
                                 auto ch = this-> findCacheFromName (cache);
+                                auto db = this-> findDBFromName (dbN);
 
                                 if (ch.name == "") {
                                     LOG_INFO ("Register ", nb, " service replicates '", name, "' on host ", host, " for '", this-> _name, "' with no cache");
@@ -170,7 +151,7 @@ namespace deployer {
                                     LOG_INFO ("Register ", nb, " service replicates '", name, "' on host '", host, "' for ", this-> _name, " with cache ", ch.supervisor-> getName (), ".", ch.name);
                                 }
 
-                                this-> _services [host].emplace (name, ServiceReplications {.nb = nb, .cache = ch});
+                                this-> _services [host].emplace (name, ServiceReplications {.nb = nb, .cache = ch, .db = db});
                             } elfo {
                                 throw std::runtime_error ("Malformed service configuration for " + this-> _name);
                             }
@@ -206,6 +187,15 @@ namespace deployer {
         return CacheRef {.name = entityName, .supervisor = cacheInst};
     }
 
+
+    Application::DBRef Application::findDBFromName (const std::string & name) {
+        // No cache
+        if (name == "") return DBRef {.name = "", .supervisor = nullptr};
+
+        auto inst = this-> _context-> getDB (name);
+        return DBRef {.name = name, .supervisor = inst};
+    }
+
     /*!
      * ====================================================================================================
      * ====================================================================================================
@@ -213,49 +203,6 @@ namespace deployer {
      * ====================================================================================================
      * ====================================================================================================
      */
-
-
-    void Application::deployDB () {
-        auto cmp =
-            "version: '3.8'\n"
-            "services:\n"
-            "  mysql:\n"
-            "    image: mysql:8.0.30\n"
-            "    volumes:\n"
-            "      - ./config/mysql:/etc/mysql/conf.d\n"
-            "    environment:\n"
-            "      - MYSQL_ALLOW_EMPTY_PASSWORD=yes\n"
-            "    ports:\n"
-            "      - " + std::to_string (this-> _db.port) + ":3306\n"
-            "    command: mysqld --lower_case_table_names=1 --skip-ssl --character_set_server=utf8mb4 --explicit_defaults_for_timestamp\n";
-
-        auto host = this-> _context-> getCluster ()-> get (this-> _db.host);
-        auto path = this-> appPath (host);
-
-        auto script =
-            "cd " + path + "\n"
-            "docker-compose up -d";
-
-        host-> putFromStr (cmp, utils::join_path (path, "compose.yaml"));
-        host-> runScript (script)-> wait ();
-        concurrency::timer t;
-
-        LOG_INFO ("Deploying DB on '", this-> _db.host);
-        t.sleep (1);
-
-        if (this-> _context-> installDB ()) {
-            host-> runAndWait ("mysql -e \"drop database if exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
-            host-> runAndWait ("mysql -e \"create database if not exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
-            LOG_INFO ("Upload sql file ", this-> _db.base, " to '", this-> _db.host, "':", utils::join_path (path, "dump.sql"));
-            host-> put (this-> _db.base, utils::join_path (path, "dump.sql"));
-
-            host-> runAndWait ("cd " + path + "; mysql -e \"use socialNet; source dump.sql;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
-            LOG_INFO ("Recreated db on ", this-> _db.host, " (took : ", t.time_since_start (), "s)");
-        } else {
-            host-> runAndWait ("mysql -e \"create database if not exists socialNet;\" -u root -h 127.0.0.1 --port " + std::to_string (this-> _db.port), 50, 0.2);
-            LOG_INFO ("Created db on ", this-> _db.host, " (took : ", t.time_since_start (), "s)");
-        }
-    }
 
     void Application::deployRegistry () {
         auto host = this-> _context-> getCluster ()-> get (this-> _registryHost);
@@ -299,12 +246,6 @@ namespace deployer {
 
         host-> putFromStr (cfg, utils::join_path (path, "res/services.toml"));
         LOG_INFO ("Launching app '", this-> _name , "' services on ", hostName);
-
-        if (this-> _context-> installDB ()) { // clean timelines
-            host-> run ("cd " + path + "; rm -rf .home")-> wait ();
-            host-> run ("cd " + path + "; rm -rf .post")-> wait ();
-            LOG_INFO ("Cleaned user timelines");
-        }
 
         this-> _running.push_back (host-> runScript (script));
         LOG_INFO ("Waiting for the services to be avaible");
@@ -418,7 +359,7 @@ namespace deployer {
         auto result = std::make_shared <config::Dict> ();
 
         std::map <std::string, std::shared_ptr <Cache> > caches;
-        bool needDb = false;
+        std::vector <std::string> needDbs;
         uint32_t nbAll = 0;
 
         auto services = std::make_shared <config::Dict> ();
@@ -430,8 +371,8 @@ namespace deployer {
             }
 
             if (it.first != "compose" && it.first != "text") {
-                serConf-> insert ("db", "mysql");
-                needDb = true;
+                serConf-> insert ("db", it.second.db.name);
+                needDbs.push_back (it.second.db.name);
             }
 
             serConf-> insert ("nb", (int64_t) it.second.nb);
@@ -441,16 +382,14 @@ namespace deployer {
         }
         result-> insert ("services", services);
 
-        if (needDb) {
+        if (needDbs.size () != 0) {
             auto dbs = std::make_shared <config::Dict> ();
-            auto db = std::make_shared <config::Dict> ();
-            db-> insert ("addr", this-> _context-> getCluster ()-> get (this-> _db.host)-> getIp ());
-            db-> insert ("name", this-> _db.name);
-            db-> insert ("port", (int64_t) this-> _db.port);
-            db-> insert ("user", "root");
-            db-> insert ("pass", "");
+            for (auto & it : needDbs) {
+                auto deployDB = this-> _context-> getDB (it);
+                auto db = deployDB-> createConfig ();
+                dbs-> insert (it, db);
+            }
 
-            dbs-> insert ("mysql", db);
             result-> insert ("db", dbs);
         }
 

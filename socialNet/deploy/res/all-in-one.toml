@@ -7,16 +7,26 @@ has-pdu = true
 
 [apps.app1]
 registry = {host = "nuc-intel"}
-db = {host = "nuc-intel", name = "socialNet", port = 3309, base = "./basic_dbs/zip_subs_20k.sql"}
 front = {host = "nuc-intel", port = 8081, cache = "cache1.front", thread = 24}
 
-compose = [{host = "nuc-intel", nb = 12}]
-text = [{host = "nuc-intel", nb = 24}]
-post = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
-social = [{host = "nuc-intel", nb = 12, cache = "cache1.service"}]
-short = [{host = "nuc-intel", nb = 24, cache = "cache1.service"}]
-user = [{host = "nuc-intel", nb = 32, cache = "cache1.service"}]
-timeline = [{host = "nuc-intel", nb = 24, cache = "cache1.service"}]
+compose = [{host = "nuc-intel", nb = 1}]
+text = [{host = "nuc-intel", nb = 1}]
+post = [{host = "nuc-intel", nb = 1, cache = "cache1.service", db = "mysql"}]
+social = [{host = "nuc-intel", nb = 1, cache = "cache1.service", db = "file"}]
+short = [{host = "nuc-intel", nb = 1, cache = "cache1.service", db = "mysql"}]
+user = [{host = "nuc-intel", nb = 1, cache = "cache1.service", db = "mysql"}]
+timeline = [{host = "nuc-intel", nb = 1, cache = "cache1.service", db = "file"}]
+
+[dbs.mysql]
+host = "nuc-intel"
+port = 3309
+base = "./basic_dbs/zip_subs_20k.sql"
+kind = "mysql"
+
+[dbs.file]
+host = "nuc-intel"
+base = "./basic_dbs/zip_subs_20k.zip"
+kind = "file"
 
 [caches.cache1]
 host = "nuc-intel"
