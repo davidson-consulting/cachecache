@@ -117,6 +117,11 @@ namespace kv_store::supervisor {
 
         allocated [b.first] += add;
         buyers [b.first] -= add;
+        if (add.bytes () >= market.bytes ()) {
+          market = MemorySize::B (0);
+          break;
+        }
+
         market -= add;
       }
     }
@@ -149,7 +154,7 @@ namespace kv_store::supervisor {
 
     // Can't allocate less than four Slabs (4MB)-> with only one slab the cache tends to fail when allocating
     // And cannot allocate more than the size of the all cache
-    MemorySize min = MemorySize::min (market, MemorySize::MB (32));
+    MemorySize min = MemorySize::min (market, MemorySize::MB (4));
     MemorySize max = market;
 
     for (auto & [id, cache]: this->_entities) {

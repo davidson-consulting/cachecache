@@ -1,10 +1,17 @@
 #include "value.hh"
 #include "csts.hh"
 
+#include <string.h>
+
 using namespace rd_utils;
 using namespace rd_utils::utils;
 
 namespace kv_store::common {
+
+    Value::Value ()
+        : _data (nullptr),
+          _length (0)
+    {}
 
     Value::Value (uint32_t len)
         : _data (nullptr)
@@ -26,10 +33,45 @@ namespace kv_store::common {
     /*!
      * ====================================================================================================
      * ====================================================================================================
+     * ====================================          SETTERS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+
+    void Value::set (const std::string & content) {
+        if (MAX_VALUE_SIZE < MemorySize::B (content.length ())) {
+            throw std::runtime_error ("Key is too big");
+        }
+
+        if (this-> _length != content.length ()) {
+            if (this-> _data != nullptr) {
+                ::free (this-> _data);
+            }
+
+            this-> _data = reinterpret_cast <uint8_t*> (malloc (content.length ()));
+            if (this-> _data == nullptr) {
+                throw std::runtime_error ("Out of memory");
+            }
+
+            this-> _length = content.length ();
+        }
+
+        ::memcpy (this-> _data, content.data (), content.length ());
+    }
+
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
      * ====================================          GETTERS          =====================================
      * ====================================================================================================
      * ====================================================================================================
      */
+
+    std::string Value::asString () const {
+        return std::string (this-> _data, this-> _data + this-> _length);
+    }
 
     const uint8_t* Value::data () const {
         return this-> _data;

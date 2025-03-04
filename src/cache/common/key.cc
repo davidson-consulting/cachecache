@@ -82,6 +82,10 @@ namespace kv_store::common {
         return res;
     }
 
+    std::string Key::asString () const {
+        return std::string (this-> _data, this-> _data + this-> _length);
+    }
+
     uint8_t* Key::data () {
         return this-> _data;
     }

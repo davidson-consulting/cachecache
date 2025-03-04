@@ -53,7 +53,7 @@ namespace kv_store {
         if (v != nullptr) {
             if (this-> _hasRam) {
                 WITH_LOCK (this-> _promoteMutex) {
-                    this-> _promotions.emplace (k, *v);
+                    this-> _promotions.emplace (k.asString (), v-> asString ());
                 }
             }
 
@@ -113,7 +113,7 @@ namespace kv_store {
             this-> _ramColl.markOldSlabs (this-> _currentTime); // , *this);
         }
 
-        std::map <common::Key, common::Value> toPromote;
+        std::map <std::string, std::string> toPromote;
         WITH_LOCK (this-> _promoteMutex) {
             toPromote = std::move (this-> _promotions);
         }
@@ -121,10 +121,16 @@ namespace kv_store {
         if (toPromote.size () != 0) {
             LOG_INFO ("Promoting : ", toPromote.size (), " keys");
             for (auto &it : toPromote) {
-                this-> insert (it.first, it.second);
+                common::Key k;
+                k.set (it.first);
+
+                common::Value v;
+                v.set (it.second);
+
+                this-> insert (k, v);
 
                 WITH_LOCK (this-> _diskMutex) {
-                    this-> _diskColl.remove (it.first);
+                    this-> _diskColl.remove (k);
                 }
             }
         }

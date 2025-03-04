@@ -30,7 +30,7 @@ namespace kv_store {
                 bool _hasRam = false;
 
                 // The list of k/v to promote from disk to slab
-                std::map <common::Key, common::Value> _promotions;
+                std::map <std::string, std::string> _promotions;
 
                 // Mutex to lock promotion set
                 rd_utils::concurrency::mutex _promoteMutex;

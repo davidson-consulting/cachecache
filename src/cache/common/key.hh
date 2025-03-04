@@ -60,6 +60,12 @@ namespace kv_store::common {
                 const uint8_t * data () const;
 
                 /**
+                 * @returns: the key as a string value
+                 */
+                std::string asString () const;
+
+
+                /**
                  * @returns: the pointer to the data of the key
                  * @warning: nullptr if key.len () == 0
                  */
