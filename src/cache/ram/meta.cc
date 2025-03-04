@@ -175,7 +175,7 @@ namespace kv_store::memory {
     void MetaRamCollection::markOldSlabs (uint64_t currentTime) {
         this-> _currentTime = currentTime;
         std::vector <uint32_t> toRemove;
-        for (auto it : this-> _used) {
+        for (auto & it : this-> _used) {
             if (this-> _currentTime - it.second.lastTouch > this-> _slabTTL) {
                 LOG_INFO ("Old slab : ", it.first, " ", it.second.lastTouch, " < ", this-> _currentTime, " - ", this-> _slabTTL, " marked as touched");
                 it.second.markedVirtualEvict = true;
