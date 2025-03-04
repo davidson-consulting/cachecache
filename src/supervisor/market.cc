@@ -147,7 +147,7 @@ namespace kv_store::supervisor {
       }
 
       cache.last = cache.size; // Store the last cache size, to see check for size change
-      cache.size = allocated [id] + adding; // set the cache size to what was given to the cache in base, auction, and final distribution
+      cache.size = MemorySize::roundUp (allocated [id] + adding, __SLAB_SIZE__); // set the cache size to what was given to the cache in base, auction, and final distribution
       cache.buyingSize = allocated [id]; // without the free memory size
       allocated [id] += adding;
       market -= adding;
@@ -199,7 +199,7 @@ namespace kv_store::supervisor {
         market -= current;
         allocated [id] = current;
         if (increase > requested) {
-          buyers [id] = MemorySize::roundUp (MemorySize::min (max - requested, increase - requested), __SLAB_SIZE__); // add to the buying queue
+          buyers [id] = MemorySize::min (max - requested, increase - requested); // add to the buying queue
         } else {
           // using less the requested, means more money
           this-> increaseWallet (id, requested - increase);
@@ -217,7 +217,7 @@ namespace kv_store::supervisor {
         market -= current;
         allocated [id] = current;
         if (increase > requested) {
-          buyers [id] = MemorySize::roundUp (MemorySize::min (max - requested, increase - requested), __SLAB_SIZE__); // add to the buying queue
+          buyers [id] = MemorySize::min (max - requested, increase - requested); // add to the buying queue
         } else {
           // using less the requested, means more money
           this-> increaseWallet (id, requested - increase);

@@ -19,7 +19,6 @@ namespace kv_store::disk {
      */
 
     void MetaDiskCollection::insert (const Key & k, const Value & v) {
-        std::cout << this-> _notFullSlabs << std::endl;
         for (auto it = this-> _notFullSlabs.cbegin () ; it != this-> _notFullSlabs.cend () ; ) {
             KVMapDiskSlab slab (*it);
             if (slab.insert (k, v)) {

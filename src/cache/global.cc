@@ -26,10 +26,10 @@ namespace kv_store {
         if (this-> _hasRam) {
             WITH_LOCK (this-> _ramMutex) {
                 if (!this-> _ramColl.insert (k, v)) {
-		  this-> _diskColl.insert (k, v);
-		  WITH_LOCK (this-> _promoteMutex) {
-		    this-> _promotions.emplace (k.asString (), v.asString ());
-		  }
+                    this-> _diskColl.insert (k, v);
+                    WITH_LOCK (this-> _promoteMutex) {
+                        this-> _promotions.emplace (k.asString (), v.asString ());
+                    }
                 }
             }
         } else { // cannot have ram if there is no buffer
@@ -129,12 +129,12 @@ namespace kv_store {
                 common::Value v;
                 v.set (it.second);
 
-		WITH_LOCK (this-> _ramMutex) {
-		  if (!this-> _ramColl.insert (k, v)) {
-		    this-> _ramColl.evictSlab (*this);
-		    this-> _ramColl.insert (k, v);
-		  }
-		}
+                WITH_LOCK (this-> _ramMutex) {
+                    if (!this-> _ramColl.insert (k, v)) {
+                        this-> _ramColl.evictSlab (*this);
+                        this-> _ramColl.insert (k, v);
+                    }
+                }
 
                 WITH_LOCK (this-> _diskMutex) {
                     this-> _diskColl.remove (k);
