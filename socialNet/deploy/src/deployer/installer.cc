@@ -52,8 +52,8 @@ namespace deployer {
         auto script =
             "apt update\n"
             "apt install -y mysql-client libmysqlclient-dev libgc-dev emacs patchelf net-tools cgroup-tools\n"
-            "apt install -y docker-compose git cmake g++ binutils automake libtool libmicrohttpd-dev\n"
-            "apt install -y nlohmann-json3-dev libgc-dev libssh-dev libssl-dev libmysqlcppconn-dev libmysql++-dev\n"
+            "apt install -y docker-compose git cmake g++ binutils automake libtool libmicrohttpd-dev libbson-dev libmongoc-dev\n"
+            "apt install -y nlohmann-json3-dev libgc-dev libssh-dev libssl-dev libmysqlcppconn-dev libmysql++-dev zip\n"
             "wget https://github.com/davidson-consulting/vjoule/releases/download/v1.3.0/vjoule-tools_1.3.0.deb\n"
             "dpkg -i vjoule-tools_1.3.0.deb\n"
             "rm vjoule-tools_1.3.0.deb\n"
@@ -202,7 +202,7 @@ namespace deployer {
             "git checkout webapp\n"
             "mkdir " + m-> getHomeDir () + "/gatling\n"
             "mv web-apps/socialNet/workload/ " + m-> getHomeDir () + "/gatling\n"
-            "rm -rf cachecache/\n"
+            // "rm -rf cachecache/\n"
             ;
 
         auto r = m-> runScript (script);

@@ -32,10 +32,14 @@ namespace deployer {
      * ====================================================================================================
      */
 
-    void DB::configure (const config::ConfigNode & cfg) {
+    void DB::configure (const std::string & cwd, const config::ConfigNode & cfg) {
         this-> _host = cfg ["host"].getStr ();
         this-> _kind = cfg.getOr ("kind", "mysql");
         this-> _base = cfg.getOr ("base", "");
+        if (this-> _base != "") {
+            this-> _base = rd_utils::utils::join_path (cwd, this-> _base);
+        }
+
 
         if (this-> _kind == "mysql" || this-> _kind == "mongo") {
             this-> _port = cfg.getOr ("port", 3306);
@@ -79,7 +83,7 @@ namespace deployer {
 
         else {
             auto path = this-> dbPath ();
-            cfg-> insert ("directory", utils::join_path (path, "file"));
+            cfg-> insert ("directory", path);
         }
 
         return cfg;
@@ -252,14 +256,19 @@ namespace deployer {
         auto host = this-> _context-> getCluster ()-> get (this-> _host);
         auto path = this-> dbPath ();
 
-        host-> put (this-> _base, utils::join_path (path, "dirs.zip"));
+        try {
+            host-> run ("rm -rf " + path)-> wait ();
+            host-> run ("mkdir -p " + path)-> wait ();
+            std::cout << this-> _base << " " << utils::join_path (path, "dirs.zip") << std::endl;
+            host-> put (this-> _base, utils::join_path (path, "dirs.zip"));
+            this-> _timer.sleep (5);
 
-        auto script =
-            "cd "+ path + "\n"
-            "unzip dirs.zip\n"
-            ;
-
-        host-> runScript (script)-> wait ();
+            auto p = host-> run ("cd " + path + " ; unzip -o dirs.zip");
+            p-> stdout (); // needs to flush channel
+            p-> wait ();
+        } catch (...) {
+            std::cout << "Error?" << std::endl;
+        }
     }
 
     /*!

@@ -44,7 +44,7 @@ namespace deployer {
             this-> _cfg = toml::parseFile (this-> _hostFile);
 
             this-> configureCluster (*this-> _cfg);
-            this-> configureDBs (*this-> _cfg);
+            this-> configureDBs (rd_utils::utils::parent_directory (this-> _hostFile), *this-> _cfg);
             this-> configureCaches (*this-> _cfg);
             this-> configureApplications (*this-> _cfg);
 
@@ -105,14 +105,14 @@ namespace deployer {
         }
     }
 
-    void Deployment::configureDBs (const config::ConfigNode & cfg) {
+    void Deployment::configureDBs (const std::string & cwd, const config::ConfigNode & cfg) {
         if (!cfg.contains ("dbs")) return;
 
         match (cfg ["dbs"]) {
             of (config::Dict, dc) {
                 for (auto & name : dc-> getKeys ()) {
                     auto d = std::make_shared <deployer::DB> (this, name);
-                    d-> configure ((*dc)[name]);
+                    d-> configure (cwd, (*dc)[name]);
                     this-> _dbs.emplace (name, d);
                 }
             } elfo {
@@ -176,14 +176,15 @@ namespace deployer {
             }
 
             this-> _cluster-> prepareVJoule ();
-            for (auto & it : this-> _caches) {
-                it.second-> start ();
-            }
-
             for (auto & it : this-> _dbs) {
                 if (this-> _installDB) {
                     it.second-> restoreBase ();
                 }
+                it.second-> start ();
+            }
+
+
+            for (auto & it : this-> _caches) {
                 it.second-> start ();
             }
 

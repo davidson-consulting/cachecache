@@ -142,7 +142,7 @@ namespace deployer {
                 /**
                  * Configure the dbs to deploy
                  */
-                void configureDBs (const rd_utils::utils::config::ConfigNode & cfg);
+                void configureDBs (const std::string & cwd, const rd_utils::utils::config::ConfigNode & cfg);
 
                 /**
                  * Configure the applications to deploy

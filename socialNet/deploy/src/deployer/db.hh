@@ -26,7 +26,7 @@ namespace deployer {
 
         DB (Deployment * context, const std::string & name);
 
-        void configure (const rd_utils::utils::config::ConfigNode & cfg);
+        void configure (const std::string & cwd, const rd_utils::utils::config::ConfigNode & cfg);
 
         std::shared_ptr <rd_utils::utils::config::ConfigNode> createConfig ();
 
