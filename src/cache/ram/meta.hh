@@ -42,8 +42,6 @@ namespace kv_store::memory {
                 // The usage of slabs
                 std::unordered_map <uint32_t, SlabUsageInfo>  _used;
 
-                rd_utils::concurrency::mutex _m;
-
         public:
 
                 /**
@@ -93,7 +91,7 @@ namespace kv_store::memory {
                  * Set the maximum number of slabs available in memory
                  * Remove marked slabs in priority (during markOldSlab)
                  */
-                void setNbSlabs (uint32_t nbSlabs, HybridKVStore & store);
+                void setNbSlabs (uint32_t nbSlabs);
 
                 /**
                  * Mark old slabs for 'virtual' eviction
@@ -122,6 +120,11 @@ namespace kv_store::memory {
                  * @returns: the maximum number of slabs available in RAM
                  */
                 uint32_t getNbSlabs () const;
+
+                /**
+                 * @returns: the number of slabs allocated in RAM
+                 */
+                uint32_t getNbLoadedSlabs () const;
 
                 /*!
                  * ====================================================================================================

@@ -33,11 +33,12 @@ namespace kv_store::memory {
         return this-> _maxNbSlabs;
     }
 
-    void MetaRamCollection::setNbSlabs (uint32_t nbSlabs, HybridKVStore & store) {
+    uint32_t MetaRamCollection::getNbLoadedSlabs () const {
+        return this-> _loadedSlabs.size ();
+    }
+
+    void MetaRamCollection::setNbSlabs (uint32_t nbSlabs) {
         this-> _maxNbSlabs = nbSlabs;
-        while (this-> _loadedSlabs.size () > this-> _maxNbSlabs) {
-            this-> evictSlab (store);
-        }
     }
 
     /*!
@@ -53,12 +54,10 @@ namespace kv_store::memory {
         for (auto & it : this-> _loadedSlabs) {
             auto & slab = it.second;
             if (slab-> maxAllocSize ().bytes () >= neededSize.bytes ()) {
-                WITH_LOCK (this-> _m) {
-                    slab-> insert (k, v);
+                if (slab-> insert (k, v)) {
+                    this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
+                    return true;
                 }
-
-                this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
-                return true;
             }
         }
 
@@ -92,11 +91,9 @@ namespace kv_store::memory {
 
         for (auto & scd : fnd-> second) {
             auto & slab = this-> _loadedSlabs [scd.first];
-            WITH_LOCK (this-> _m) {
-                if (slab-> remove (k)) {
-                    this-> removeMetaData (h, slab-> getUniqId ());
-                    return;
-                }
+            if (slab-> remove (k)) {
+                this-> removeMetaData (h, slab-> getUniqId ());
+                return;
             }
         }
     }
@@ -197,22 +194,20 @@ namespace kv_store::memory {
      */
 
     void MetaRamCollection::insertMetaData (uint64_t hash, uint32_t slabId) {
-        WITH_LOCK (this-> _m) {
-            auto fnd = this-> _slabHeads.find (hash);
-            if (fnd != this-> _slabHeads.end ()) {
-                auto scd = fnd-> second.find (slabId);
-                if (scd == fnd-> second.end ()) {
-                    fnd-> second.emplace (slabId, 1);
-                } else {
-                    fnd-> second [slabId] += 1;
-                }
-
-                return;
+        auto fnd = this-> _slabHeads.find (hash);
+        if (fnd != this-> _slabHeads.end ()) {
+            auto scd = fnd-> second.find (slabId);
+            if (scd == fnd-> second.end ()) {
+                fnd-> second.emplace (slabId, 1);
+            } else {
+                fnd-> second [slabId] += 1;
             }
 
-            std::unordered_map <uint32_t, uint32_t> lst = {{slabId, 1}};
-            this-> _slabHeads.emplace (hash, lst);
+            return;
         }
+
+        std::unordered_map <uint32_t, uint32_t> lst = {{slabId, 1}};
+        this-> _slabHeads.emplace (hash, lst);
     }
 
     void MetaRamCollection::removeMetaData (uint64_t hash, uint32_t slabId) {
@@ -259,6 +254,7 @@ namespace kv_store::memory {
     std::set <uint64_t> MetaRamCollection::removeSlab (uint32_t id) {
         this-> _loadedSlabs.erase (id);
         this-> _used.erase (id);
+
         std::set <uint64_t> hashs;
 
         for (auto it = this-> _slabHeads.cbegin(); it != this-> _slabHeads.cend() /* not hoisted */; /* no increment */) {

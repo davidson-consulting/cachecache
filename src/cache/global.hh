@@ -33,7 +33,9 @@ namespace kv_store {
                 std::map <common::Key, common::Value> _promotions;
 
                 // Mutex to lock promotion set
-                rd_utils::concurrency::mutex _m;
+                rd_utils::concurrency::mutex _promoteMutex;
+                rd_utils::concurrency::mutex _ramMutex;
+                rd_utils::concurrency::mutex _diskMutex;
 
         public :
 

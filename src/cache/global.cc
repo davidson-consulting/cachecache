@@ -24,26 +24,35 @@ namespace kv_store {
 
     void HybridKVStore::insert (const common::Key & k, const common::Value & v) {
         if (this-> _hasRam) {
-            if (!this-> _ramColl.insert (k, v)) {
-                this-> _ramColl.evictSlab (*this);
-                this-> _ramColl.insert (k, v);
+            WITH_LOCK (this-> _ramMutex) {
+                if (!this-> _ramColl.insert (k, v)) {
+                    this-> _ramColl.evictSlab (*this);
+                    this-> _ramColl.insert (k, v);
+                }
             }
         } else { // cannot have ram if there is no buffer
-            this-> _diskColl.insert (k, v);
+            WITH_LOCK (this-> _diskMutex) {
+                this-> _diskColl.insert (k, v);
+            }
         }
     }
 
     std::shared_ptr <common::Value> HybridKVStore::find (const common::Key & k) {
         std::shared_ptr <common::Value> v = nullptr;
         if (this-> _hasRam) {
-            v = this-> _ramColl.find (k);
+            WITH_LOCK (this-> _ramMutex) {
+                v = this-> _ramColl.find (k);
+            }
             if (v != nullptr) return v;
         }
 
-        v = this-> _diskColl.find (k);
+        WITH_LOCK (this-> _diskMutex) {
+            v = this-> _diskColl.find (k);
+        }
+
         if (v != nullptr) {
             if (this-> _hasRam) {
-                WITH_LOCK (this-> _m) {
+                WITH_LOCK (this-> _promoteMutex) {
                     this-> _promotions.emplace (k, *v);
                 }
             }
@@ -55,8 +64,13 @@ namespace kv_store {
     }
 
     void HybridKVStore::remove (const common::Key & k) {
-        this-> _ramColl.remove (k);
-        this-> _diskColl.remove (k);
+        WITH_LOCK (this-> _ramMutex) {
+            this-> _ramColl.remove (k);
+        }
+
+        WITH_LOCK (this-> _diskMutex) {
+            this-> _diskColl.remove (k);
+        }
     }
 
     /*!
@@ -68,8 +82,21 @@ namespace kv_store {
      */
 
     void HybridKVStore::resizeRamColl (uint32_t maxRamSlabs) {
-        this-> _ramColl.setNbSlabs (maxRamSlabs, *this);
-        LOG_INFO ("KV Store resized with ", this-> _ramColl.getNbSlabs (), " slabs in RAM");
+        uint32_t nbRemove = 0;
+        WITH_LOCK (this-> _ramMutex) {
+            this-> _ramColl.setNbSlabs (maxRamSlabs);
+            if (maxRamSlabs < this-> _ramColl.getNbLoadedSlabs ()) {
+                nbRemove = this-> _ramColl.getNbLoadedSlabs () - maxRamSlabs;
+            }
+        }
+
+        for (uint32_t i = 0  ; i < nbRemove ; i++) {
+            WITH_LOCK (this-> _ramMutex) {
+                this-> _ramColl.evictSlab (*this);
+            }
+        }
+
+        LOG_INFO ("KV Store resized with ", maxRamSlabs, " slabs in RAM - by removing ", nbRemove);
     }
 
     /*!
@@ -82,10 +109,12 @@ namespace kv_store {
 
     void HybridKVStore::loop () {
         this-> _currentTime += 1;
-        this-> _ramColl.markOldSlabs (this-> _currentTime); // , *this);
+        WITH_LOCK (this-> _ramMutex) {
+            this-> _ramColl.markOldSlabs (this-> _currentTime); // , *this);
+        }
 
         std::map <common::Key, common::Value> toPromote;
-        WITH_LOCK (this-> _m) {
+        WITH_LOCK (this-> _promoteMutex) {
             toPromote = std::move (this-> _promotions);
         }
 
@@ -93,7 +122,10 @@ namespace kv_store {
             LOG_INFO ("Promoting : ", toPromote.size (), " keys");
             for (auto &it : toPromote) {
                 this-> insert (it.first, it.second);
-                this-> _diskColl.remove (it.first);
+
+                WITH_LOCK (this-> _diskMutex) {
+                    this-> _diskColl.remove (it.first);
+                }
             }
         }
     }
