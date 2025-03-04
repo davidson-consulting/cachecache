@@ -7,6 +7,8 @@
 #include <list>
 #include "slab.hh"
 
+#include <rd_utils/concurrency/mutex.hh>
+
 namespace kv_store {
         class HybridKVStore;
 }
@@ -39,6 +41,8 @@ namespace kv_store::memory {
 
                 // The usage of slabs
                 std::unordered_map <uint32_t, SlabUsageInfo>  _used;
+
+                rd_utils::concurrency::mutex _m;
 
         public:
 
@@ -79,16 +83,6 @@ namespace kv_store::memory {
                  * ====================================================================================================
                  * ====================================================================================================
                  */
-
-                /**
-                 * Evict kvs in the collection until the memory fits
-                 * @info: insert the KV values in the memory
-                 * @returns:
-                 *   - maxAllocable: the maximum allocable size in the slab that freed the memory space
-                 *   - k: the key
-                 *   - v: the value
-                 */
-                 bool evictUntilFit (const common::Key & k, const common::Value & v, HybridKVStore & store);
 
                 /**
                  * Evict a slab and write it to disk

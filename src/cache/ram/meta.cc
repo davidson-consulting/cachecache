@@ -53,7 +53,10 @@ namespace kv_store::memory {
         for (auto & it : this-> _loadedSlabs) {
             auto & slab = it.second;
             if (slab-> maxAllocSize ().bytes () >= neededSize.bytes ()) {
-                slab-> insert (k, v);
+                WITH_LOCK (this-> _m) {
+                    slab-> insert (k, v);
+                }
+
                 this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
                 return true;
             }
@@ -61,6 +64,7 @@ namespace kv_store::memory {
 
         // Failed to allocate in already loaded slabs
         if (this-> _loadedSlabs.size () < this-> _maxNbSlabs) {
+            LOG_INFO ("Create a new slab in RAM : ", this-> _loadedSlabs.size () + 1, "/", this-> _maxNbSlabs);
             std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
             slab-> insert (k, v);
 
@@ -88,9 +92,11 @@ namespace kv_store::memory {
 
         for (auto & scd : fnd-> second) {
             auto & slab = this-> _loadedSlabs [scd.first];
-            if (slab-> remove (k)) {
-                this-> removeMetaData (h, slab-> getUniqId ());
-                return;
+            WITH_LOCK (this-> _m) {
+                if (slab-> remove (k)) {
+                    this-> removeMetaData (h, slab-> getUniqId ());
+                    return;
+                }
             }
         }
     }
@@ -159,35 +165,11 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    bool MetaRamCollection::evictUntilFit (const common::Key & k, const common::Value & v, HybridKVStore & store) {
-        MemorySize neededSize = MemorySize::B (k.len () + v.len () + sizeof (KVMapRAMSlab::node));
-        auto slb = this-> getLessUsed ();
-        if (slb == nullptr) return false;
-
-        for (;;) {
-            std::shared_ptr <common::Key> demoteK = nullptr;
-            std::shared_ptr <common::Value> demoteV = nullptr;
-            auto b = slb-> begin ();
-            if (b != slb-> end ()) {
-                auto kv = *b;
-                store.demote (*kv.first, *kv.second);
-
-                slb-> remove (*kv.first);
-                this-> removeMetaData (kv.first-> hash () % common::KVMAP_META_LIST_SIZE, slb-> getUniqId ());
-
-                if (slb-> maxAllocSize ().bytes () >= neededSize.bytes ()) {
-                    slb-> insert (k, v);
-                    this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slb-> getUniqId ());
-                    return true;
-                }
-            } else return false;
-        }
-    }
-
     void MetaRamCollection::evictSlab (HybridKVStore & store) {
-        LOG_INFO ("Evicting a slab");
         auto slb = this-> getLessUsed ();
         if (slb == nullptr) return;
+
+        LOG_INFO ("Evicting slab : ", slb-> getUniqId (), " ", this-> _loadedSlabs.size () - 1, "/", this-> _maxNbSlabs);
 
         auto hash = this-> removeSlab (slb-> getUniqId ());
         store.getDiskColl ().createSlabFromRAM (*slb, hash);
@@ -215,20 +197,22 @@ namespace kv_store::memory {
      */
 
     void MetaRamCollection::insertMetaData (uint64_t hash, uint32_t slabId) {
-        auto fnd = this-> _slabHeads.find (hash);
-        if (fnd != this-> _slabHeads.end ()) {
-            auto scd = fnd-> second.find (slabId);
-            if (scd == fnd-> second.end ()) {
-                fnd-> second.emplace (slabId, 1);
-            } else {
-                fnd-> second [slabId] += 1;
+        WITH_LOCK (this-> _m) {
+            auto fnd = this-> _slabHeads.find (hash);
+            if (fnd != this-> _slabHeads.end ()) {
+                auto scd = fnd-> second.find (slabId);
+                if (scd == fnd-> second.end ()) {
+                    fnd-> second.emplace (slabId, 1);
+                } else {
+                    fnd-> second [slabId] += 1;
+                }
+
+                return;
             }
 
-            return;
+            std::unordered_map <uint32_t, uint32_t> lst = {{slabId, 1}};
+            this-> _slabHeads.emplace (hash, lst);
         }
-
-        std::unordered_map <uint32_t, uint32_t> lst = {{slabId, 1}};
-        this-> _slabHeads.emplace (hash, lst);
     }
 
     void MetaRamCollection::removeMetaData (uint64_t hash, uint32_t slabId) {

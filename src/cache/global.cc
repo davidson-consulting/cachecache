@@ -72,6 +72,14 @@ namespace kv_store {
         LOG_INFO ("KV Store resized with ", this-> _ramColl.getNbSlabs (), " slabs in RAM");
     }
 
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===============================          PROMOTION/EVICTION          ===============================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
     void HybridKVStore::loop () {
         this-> _currentTime += 1;
         this-> _ramColl.markOldSlabs (this-> _currentTime); // , *this);
@@ -82,32 +90,12 @@ namespace kv_store {
         }
 
         if (toPromote.size () != 0) {
+            LOG_INFO ("Promoting : ", toPromote.size (), " keys");
             for (auto &it : toPromote) {
-                this-> promoteDisk (it.first, it.second);
+                this-> insert (it.first, it.second);
+                this-> _diskColl.remove (it.first);
             }
         }
-    }
-
-    /*!
-     * ====================================================================================================
-     * ====================================================================================================
-     * ===================================          PROMOTION          ====================================
-     * ====================================================================================================
-     * ====================================================================================================
-     */
-
-    void HybridKVStore::promoteDisk (const common::Key & k, const common::Value & v) {
-        if (!this-> _ramColl.insert (k, v)) {
-            if (this-> _ramColl.evictUntilFit (k, v, *this)) {
-                this-> _diskColl.remove (k);
-            } else {} // keep on disk
-        } else {
-            this-> _diskColl.remove (k);
-        }
-    }
-
-    void HybridKVStore::demote (const common::Key & k, const common::Value & v) {
-        this-> _diskColl.insert (k, v);
     }
 
     /*!

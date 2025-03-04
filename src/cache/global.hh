@@ -81,10 +81,6 @@ namespace kv_store {
                  */
                 void remove (const common::Key & k);
 
-                /**
-                 * Demote a key from RAM to disk
-                 */
-                void demote (const common::Key & k, const common::Value & v);
 
                 /*!
                  * ====================================================================================================
@@ -136,13 +132,6 @@ namespace kv_store {
                  */
 
                 friend std::ostream & operator<< (std::ostream & s, const HybridKVStore & mp);
-
-        private:
-
-                /**
-                 * Promote a kv from disk to RAM
-                 */
-                void promoteDisk (const common::Key & k, const common::Value & v);
 
         };
 
