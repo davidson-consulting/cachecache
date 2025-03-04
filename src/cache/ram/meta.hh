@@ -16,6 +16,7 @@ namespace kv_store::memory {
         struct SlabUsageInfo {
                 uint64_t nbHits;
                 uint64_t lastTouch;
+                bool markedVirtualEvict;
         };
 
         /**
@@ -96,13 +97,14 @@ namespace kv_store::memory {
 
                 /**
                  * Set the maximum number of slabs available in memory
+                 * Remove marked slabs in priority (during markOldSlab)
                  */
                 void setNbSlabs (uint32_t nbSlabs, HybridKVStore & store);
 
                 /**
-                 * Evict the slabs that are older than the collection TTL (to reduce the memory usage in RAM)
+                 * Mark old slabs for 'virtual' eviction
                  */
-                void evictOldSlabs (uint64_t currentTime, HybridKVStore & store);
+                void markOldSlabs (uint64_t currentTime);
 
                 /*!
                  * ====================================================================================================

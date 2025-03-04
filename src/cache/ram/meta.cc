@@ -136,7 +136,16 @@ namespace kv_store::memory {
     rd_utils::utils::MemorySize MetaRamCollection::getMemoryUsage () const {
         MemorySize result = MemorySize::B (0);
         for (auto & it : this-> _loadedSlabs) {
-            result += common::KVMAP_SLAB_SIZE - MemorySize::B (it.second-> getMemory ().remainingSize ());
+            bool consider = false;
+            auto usage = this-> _used.find (it.first);
+            if (usage == this-> _used.end ()) consider = true;
+            else if (!usage-> second.markedVirtualEvict) {
+                consider = true;
+            }
+
+            if (consider) {
+                result += common::KVMAP_SLAB_SIZE - MemorySize::B (it.second-> getMemory ().remainingSize ());
+            }
         }
 
         return result;
@@ -184,20 +193,16 @@ namespace kv_store::memory {
         store.getDiskColl ().createSlabFromRAM (*slb, hash);
     }
 
-    void MetaRamCollection::evictOldSlabs (uint64_t currentTime, HybridKVStore & store) {
+    void MetaRamCollection::markOldSlabs (uint64_t currentTime) {
         this-> _currentTime = currentTime;
         std::vector <uint32_t> toRemove;
         for (auto it : this-> _used) {
             if (this-> _currentTime - it.second.lastTouch > this-> _slabTTL) {
-                LOG_INFO ("Eviction of old slab : ", it.first, " ", it.second.lastTouch, " < ", this-> _currentTime, " - ", this-> _slabTTL);
-                toRemove.push_back (it.first);
+                LOG_INFO ("Old slab : ", it.first, " ", it.second.lastTouch, " < ", this-> _currentTime, " - ", this-> _slabTTL, " marked as touched");
+                it.second.markedVirtualEvict = true;
+            } else {
+                it.second.markedVirtualEvict = false;
             }
-        }
-
-        for (auto & it : toRemove) {
-            auto slb = this-> _loadedSlabs [it];
-            auto hash = this-> removeSlab (slb-> getUniqId ());
-            store.getDiskColl ().createSlabFromRAM (*slb, hash);
         }
     }
 
@@ -249,6 +254,11 @@ namespace kv_store::memory {
         uint64_t nb = 0xFFFFFFFFFFFFFFFF;
         uint32_t id = 0;
         for (auto &it : this-> _used) {
+            if (it.second.markedVirtualEvict) {
+                id = it.first; // if slab is marked as old, then return it
+                break;
+            }
+
             if (it.second.nbHits < nb) {
                 id = it.first;
                 nb = it.second.nbHits;

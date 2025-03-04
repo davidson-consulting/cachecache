@@ -2,13 +2,20 @@
 
 #include "ram/meta.hh"
 #include "disk/meta.hh"
+#include <rd_utils/concurrency/mutex.hh>
+#include <map>
 
 namespace kv_store {
 
         class HybridKVStore {
+        private:
 
-                // The buffer to keep only used keys in the ram
-                memory::MetaRamCollection _bufferColl;
+                struct Promotion {
+                        common::Key k;
+                        common::Value v;
+                };
+
+        private:
 
                 // The collection
                 memory::MetaRamCollection _ramColl;
@@ -22,8 +29,11 @@ namespace kv_store {
                 // Ram collection contains slabs
                 bool _hasRam = false;
 
-                // Buffer contains slabs
-                bool _hasBuffer = false;
+                // The list of k/v to promote from disk to slab
+                std::map <common::Key, common::Value> _promotions;
+
+                // Mutex to lock promotion set
+                rd_utils::concurrency::mutex _m;
 
         public :
 
@@ -32,7 +42,6 @@ namespace kv_store {
                  *    - maxRamSlabs: the number of slabs in the RAM
                  */
                 HybridKVStore (uint32_t maxRamSlabs, uint32_t slabTTL);
-
 
                 /*!
                  * ====================================================================================================
@@ -56,7 +65,6 @@ namespace kv_store {
                  * ====================================================================================================
                  * ====================================================================================================
                  */
-
 
                 /**
                  * Insert a key value in the collection
@@ -127,7 +135,6 @@ namespace kv_store {
                  * ====================================================================================================
                  */
 
-
                 friend std::ostream & operator<< (std::ostream & s, const HybridKVStore & mp);
 
         private:
@@ -136,20 +143,6 @@ namespace kv_store {
                  * Promote a kv from disk to RAM
                  */
                 void promoteDisk (const common::Key & k, const common::Value & v);
-
-                /**
-                 * Promote a kv from buffer to RAM
-                 */
-                void promoteBuffer (const common::Key & k, const common::Value & v);
-
-        private:
-
-                /**
-                 * @returns: the number of
-                 */
-                static uint32_t computeBufferSize (uint32_t maxRamSlabs);
-
-                static uint32_t computeRamSize (uint32_t maxRamSlabs);
 
         };
 
