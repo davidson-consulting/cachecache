@@ -75,6 +75,9 @@ namespace kv_store::supervisor {
     // of memory allocation
     float _decreasingSpeed;
 
+    static rd_utils::utils::MemorySize __SLAB_SIZE__;
+
+
   public:
 
     /**

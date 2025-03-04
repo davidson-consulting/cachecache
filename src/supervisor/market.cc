@@ -9,11 +9,13 @@ using namespace rd_utils::utils;
 
 namespace kv_store::supervisor {
 
+  MemorySize Market::__SLAB_SIZE__ = MemorySize::MB (4);
+
   Market::Market (MemorySize size)
     : _size (size)
     , _triggerIncrement (0.8)
     , _triggerDecrement (0.5)
-    , _increasingSpeed (0.1)
+    , _increasingSpeed (0.15)
     , _decreasingSpeed (0.1)
   {}
 
@@ -131,12 +133,19 @@ namespace kv_store::supervisor {
     /*
      *    - 4) Distribute the remaining memory to the cache entities equally
      */
-    MemorySize adding = zero;
+    MemorySize adding = zero, last = zero;
     if (market > zero && allocated.size () != 0) {
-      adding = market / allocated.size ();
+      adding = MemorySize::B (market.bytes () / allocated.size ());
+      last = MemorySize::B (market.bytes () % allocated.size ());
     }
 
+    uint64_t z = 0;
     for(auto& [id, cache]: this-> _entities) {
+      z += 1;
+      if (z == this-> _entities.size ()) {
+        adding += last;
+      }
+
       cache.last = cache.size; // Store the last cache size, to see check for size change
       cache.size = allocated [id] + adding; // set the cache size to what was given to the cache in base, auction, and final distribution
       cache.buyingSize = allocated [id]; // without the free memory size
@@ -146,7 +155,7 @@ namespace kv_store::supervisor {
       LOG_INFO ("Cache ", id, " Req ", cache.req.kilobytes(), "kb - Usage ", cache.usages.current().kilobytes(), "kb - Size ", cache.last.kilobytes(), ">", cache.size.kilobytes(), "kb - Wallet", cache.wallet.kilobytes());
     }
 
-    LOG_INFO ("After fourth step : ", allocated, " ", buyers, " ", market, " ", adding);
+    LOG_INFO ("After fourth step : ", allocated, " ", buyers, " ", market, " ", adding, " ", last);
   }
 
   std::map<uint64_t, MemorySize> Market::sellBaseMemory (MemorySize& market
@@ -155,7 +164,7 @@ namespace kv_store::supervisor {
 
     // Can't allocate less than four Slabs (4MB)-> with only one slab the cache tends to fail when allocating
     // And cannot allocate more than the size of the all cache
-    MemorySize min = MemorySize::min (market, MemorySize::MB (4));
+    MemorySize min = MemorySize::min (market, __SLAB_SIZE__);
     MemorySize max = market;
 
     for (auto & [id, cache]: this->_entities) {
@@ -183,14 +192,14 @@ namespace kv_store::supervisor {
        *    - 1) The cache is increasing its memory usage
        */
       if (overTrig) {
-        MemorySize increase = MemorySize::B ((float) size.bytes () * (float) (1.0 + this->_decreasingSpeed));  // increase by 1.x
+        MemorySize increase = MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 + this->_decreasingSpeed)), __SLAB_SIZE__);  // increase by 1.x
         MemorySize current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase))); // memory to set in base selling that does not go over requested
         LOG_INFO ("Cache increase : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;
         allocated [id] = current;
         if (increase > requested) {
-          buyers [id] = MemorySize::min (max - requested, increase - requested); // add to the buying queue
+          buyers [id] = MemorySize::roundUp (MemorySize::min (max - requested, increase - requested), __SLAB_SIZE__); // add to the buying queue
         } else {
           // using less the requested, means more money
           this-> increaseWallet (id, requested - increase);
@@ -201,14 +210,14 @@ namespace kv_store::supervisor {
        *    - 2) The cache is decreasing its memory usage
        */
       else if (underTrig) {
-        MemorySize increase = MemorySize::B ((float) size.bytes () * (float) (1.0 - this->_decreasingSpeed));
+        MemorySize increase = MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 - this->_decreasingSpeed)), __SLAB_SIZE__);
         MemorySize current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache decrease : ", id, " ", increase.kilobytes (), " ", requested.kilobytes (), " ", current.kilobytes (), " ", size.kilobytes ());
 
         market -= current;
         allocated [id] = current;
         if (increase > requested) {
-          buyers [id] = MemorySize::min (max - requested, increase - requested); // add to the buying queue
+          buyers [id] = MemorySize::roundUp (MemorySize::min (max - requested, increase - requested), __SLAB_SIZE__); // add to the buying queue
         } else {
           // using less the requested, means more money
           this-> increaseWallet (id, requested - increase);
@@ -219,14 +228,14 @@ namespace kv_store::supervisor {
        *    - 3) The cache use is steady (no big increase/decrease in the pase N seconds), or it just didn't trigger any change
        */
       else {
-        auto increase = MemorySize::min (max, usage + (max * 0.01));
+        auto increase = MemorySize::roundUp (MemorySize::min (max, usage + __SLAB_SIZE__), __SLAB_SIZE__);
         auto current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache steady : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;
         allocated [id] = current; // allocating current usage, or requested
         if (increase > requested) { // Steady but using more memory than requested
-          buyers [id] = MemorySize::min (max - requested, increase - requested); // add the rest to the buying queue
+          buyers [id] = MemorySize::roundUp (MemorySize::min (max - requested, increase - requested), __SLAB_SIZE__); // add the rest to the buying queue
         } else { // steady and using less than requested
           this-> increaseWallet (id, requested - increase);
         }
@@ -247,7 +256,7 @@ namespace kv_store::supervisor {
 
     allNeeded = MemorySize::MB (0);
     std::map<uint64_t, MemorySize> failed;
-    MemorySize defaultWindowSize = MemorySize::MB (32); // market.bytes () / buyers.size ());
+    MemorySize defaultWindowSize = __SLAB_SIZE__; // MemorySize::MB (32); // market.bytes () / buyers.size ());
 
     while (market.bytes () > 0 && buyers.size () > 0) {
       for (auto cache = buyers.cbegin (); cache != buyers.cend(); ) { // we cannot use : for (auto & v : buyers), because we need to erase elements in the map
