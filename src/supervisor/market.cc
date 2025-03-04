@@ -106,7 +106,7 @@ namespace kv_store::supervisor {
      */
     MemorySize allNeeded = zero;
     this-> buyExtraMemory (allocated, buyers, market, allNeeded);
-    LOG_DEBUG ("After second step : ", allocated, " ", buyers, " ", market);
+    LOG_INFO ("After second step : ", allocated, " ", buyers, " ", market);
 
     /*
      *   - 3) Distribute the remaining memory to the failing buyers for free
@@ -128,7 +128,7 @@ namespace kv_store::supervisor {
         market -= add;
       }
     }
-    LOG_DEBUG ("After third step : ", allocated, " ", buyers, " ", market, " ", allNeeded);
+    LOG_INFO ("After third step : ", allocated, " ", buyers, " ", market, " ", allNeeded);
 
     /*
      *    - 4) Distribute the remaining memory to the cache entities equally
@@ -228,7 +228,7 @@ namespace kv_store::supervisor {
        *    - 3) The cache use is steady (no big increase/decrease in the pase N seconds), or it just didn't trigger any change
        */
       else {
-        auto increase = MemorySize::roundUp (MemorySize::min (max, usage + __SLAB_SIZE__), __SLAB_SIZE__);
+        auto increase = MemorySize::roundUp (MemorySize::min (max, usage), __SLAB_SIZE__);
         auto current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache steady : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 

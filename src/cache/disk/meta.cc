@@ -19,20 +19,20 @@ namespace kv_store::disk {
      */
 
     void MetaDiskCollection::insert (const Key & k, const Value & v) {
-        for (auto it : directory_iterator (common::getSlabDirPath ())) {
-            std::string filename = get_filename (it);
-            if (filename.rfind("meta", 0) == std::string::npos) {
-                uint32_t id = std::stoi (filename);
-                KVMapDiskSlab slab (id);
-                if (slab.insert (k, v)) {
-                    this-> _metaColl.insert (k.hash () % KVMAP_META_LIST_SIZE, id);
-                    return;
-                }
+        std::cout << this-> _notFullSlabs << std::endl;
+        for (auto it = this-> _notFullSlabs.cbegin () ; it != this-> _notFullSlabs.cend () ; ) {
+            KVMapDiskSlab slab (*it);
+            if (slab.insert (k, v)) {
+                this-> _metaColl.insert (k.hash () % KVMAP_META_LIST_SIZE, *it);
+                return;
+            } else {
+                this-> _notFullSlabs.erase (it ++);
             }
         }
 
         KVMapDiskSlab newSlab;
         if (newSlab.insert (k, v)) {
+            this-> _notFullSlabs.emplace (newSlab.getUniqId ());
             this-> _metaColl.insert (k.hash () % KVMAP_META_LIST_SIZE, newSlab.getUniqId ());
         } else {
             throw std::runtime_error ("Failed to insert in slab no memory left");
@@ -41,6 +41,7 @@ namespace kv_store::disk {
 
     void MetaDiskCollection::createSlabFromRAM (const memory::KVMapRAMSlab & ram, const std::set <uint64_t> & hashs) {
         KVMapDiskSlab newSlab (ram);
+        this-> _notFullSlabs.emplace (newSlab.getUniqId ());
         for (auto & h : hashs) {
             this-> _metaColl.insert (h, newSlab.getUniqId ());
         }
@@ -60,6 +61,7 @@ namespace kv_store::disk {
         while (!lst.isEnd ()) {
             KVMapDiskSlab slab ((*lst).first);
             if (slab.remove (k)) {
+                this-> _notFullSlabs.emplace (slab.getUniqId ());
                 this-> _metaColl.remove (h, slab.getUniqId ());
                 return;
             }
