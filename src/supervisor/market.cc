@@ -28,6 +28,7 @@ namespace kv_store::supervisor {
   Market::~Market () {}
 
   void Market::registerCache (uint64_t uid, MemorySize req, MemorySize usage) {
+    LOG_INFO ("Register cache : ", uid, " ", req, " ", usage);
     if (this-> _entities.find (uid) != this-> _entities.end ()) {
       this-> _entities.erase (uid);
     }

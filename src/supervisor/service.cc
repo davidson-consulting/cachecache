@@ -174,7 +174,7 @@ namespace kv_store::supervisor {
       auto name = msg ["name"].getStr ();
       auto addr = msg ["addr"].getStr ();
       auto port = msg ["port"].getI ();
-      auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
+      auto unit = msg.getOr ("unit", "KB");
       auto ask = MemorySize::unit (msg ["size"].getI (), unit);
 
       auto remote = this-> _system-> remoteActor (name, addr + ":" + std::to_string (port));

@@ -283,7 +283,8 @@ namespace kv_store::instance {
     try {
       auto & conf = *cfg;
       std::string sName = "supervisor", sAddr = "127.0.0.1";
-      int64_t sPort = 8080, size = 1024 * 1024;
+      int64_t sPort = 8080;
+      MemorySize size = MemorySize::MB (1024);
 
       if (conf.contains ("supervisor")) {
         sName = conf ["supervisor"].getOr ("name", sName);
@@ -296,7 +297,10 @@ namespace kv_store::instance {
       }
 
       if (conf.contains ("cache")) {
-        size = conf ["cache"].getOr ("size", 1024) * 1024;
+        if (conf ["cache"].contains ("size")) {
+          auto unit = conf ["cache"].getOr ("unit", "MB");
+          size = MemorySize::nextPow2 (MemorySize::unit (conf ["cache"]["size"].getI (), unit));
+        }
       }
 
       std::string iface = "lo";
@@ -312,7 +316,8 @@ namespace kv_store::instance {
         .insert ("name", this-> _name)
         .insert ("addr", this-> _ifaceAddr)
         .insert ("port", (int64_t) this-> _system-> port ())
-        .insert ("size", size);
+        .insert ("size", (int64_t) size.kilobytes ())
+        .insert ("unit", "KB");
 
       auto resp = this-> _supervisor-> request (msg, 5).wait (); // 5 seconds timeout
       if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
