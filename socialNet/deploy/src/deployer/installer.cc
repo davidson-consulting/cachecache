@@ -109,8 +109,8 @@ namespace deployer {
         LOG_INFO ("Install socialNet on : ", m-> getName ());
         auto script = "mkdir -p " + m-> getHomeDir () + "\n"
             "cd " + m-> getHomeDir () + "\n"
-            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
-            "cd cachecache/\n"
+            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git socialNet\n"
+            "cd socialNet/\n"
             "git checkout webapp\n"
             "cd socialNet/app\n"
             "mkdir .build\n"
@@ -122,7 +122,7 @@ namespace deployer {
             "mv reg " + m-> getHomeDir () + "/execs/socialNet\n"
             "mv services " + m-> getHomeDir () + "/execs/socialNet\n"
             "cd " + m-> getHomeDir () + "\n"
-            "rm -rf cachecache\n"
+            // "rm -rf socialNet\n"
             ;
 
         auto r = m-> runScript (script);

@@ -177,10 +177,10 @@ namespace deployer {
 
             this-> _cluster-> prepareVJoule ();
             for (auto & it : this-> _dbs) {
+                it.second-> start ();
                 if (this-> _installDB) {
                     it.second-> restoreBase ();
                 }
-                it.second-> start ();
             }
 
 

@@ -93,14 +93,16 @@ namespace deployer {
         auto tmpDir = rd_utils::utils::create_temp_dirname (this-> _hostname);
         auto tmpFile = utils::join_path (tmpDir, "script.sh");
         rd_utils::utils::write_file (tmpFile, script);
+        auto scriptDir = utils::join_path (this-> _workingDir, "installs");
+        auto scriptFile = utils::join_path (this-> _workingDir, "installs/script.sh");
 
-        this-> run ("mkdir " + tmpDir)-> wait ();
-        this-> put (tmpFile, tmpFile);
+        this-> run ("mkdir -p " + scriptDir)-> wait ();
+        this-> put (tmpFile, scriptFile);
 
         utils::remove (tmpFile);
         utils::remove (tmpDir);
 
-        return this-> run ("bash " + tmpFile, ".");
+        return this-> run ("bash " + scriptFile, ".");
     }
 
     void Machine::putFromStr (const std::string & content, const std::string & where) {
