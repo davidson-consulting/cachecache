@@ -241,20 +241,22 @@ namespace socialNet::compose {
       if (timeline-> getOr ("code", -1) == ResponseCode::OK) {
         match ((*timeline)["content"]) {
           of (config::Array, arr) {
-            auto result = std::make_shared <config::Array> ();
-            for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
-              uint32_t id = (*arr) [i].getI ();
-              auto req = config::Dict ()
-                .insert ("type", RequestCode::READ_POST)
-                .insert ("postId", std::make_shared <config::Int> (id));
+	    auto result = std::make_shared <config::Array> ();
+	    if (arr-> getLen () != 0) {
+	      auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
+	      for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
+		uint32_t id = (*arr) [i].getI ();
+		auto req = config::Dict ()
+		  .insert ("type", RequestCode::READ_POST)
+		  .insert ("postId", std::make_shared <config::Int> (id));
 
-              auto postService = socialNet::findService (this-> _system, this-> _registry, "post");
-              auto post = postService-> request (req).wait ();
-              if (post && post-> getOr ("code", -1) == ResponseCode::OK) {
-                result-> insert (post-> get ("content"));
-              }
-            }
-
+		auto post = postService-> request (req).wait ();
+		if (post && post-> getOr ("code", -1) == ResponseCode::OK) {
+		  result-> insert (post-> get ("content"));
+		}
+	      }	   	      
+	    }
+	    
             return response (ResponseCode::OK, result);
           }
 
@@ -307,6 +309,7 @@ try {
       if (subs-> getOr ("code", -1) == ResponseCode::OK) {
         match ((*subs)["content"]) {
           of (config::Array, arr) {
+	    auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
             auto result = std::make_shared <config::Array> ();
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {
               uint32_t id = (*arr) [i].getI ();
@@ -314,7 +317,6 @@ try {
                 .insert ("type", RequestCode::FIND)
                 .insert ("id", std::make_shared <config::Int> (id));
 
-              auto userService = socialNet::findService (this-> _system, this-> _registry, "user");
               auto user = userService-> request (req).wait ();
               if (user && user-> getOr ("code", -1) == ResponseCode::OK) {
                 auto u = std::make_shared <config::Dict> ();
