@@ -1,9 +1,10 @@
 #pragma once
 
-#include "ram/meta.hh"
+#include "ram/meta/meta.hh"
 #include "disk/meta.hh"
 #include <rd_utils/concurrency/mutex.hh>
 #include <map>
+#include <memory>
 
 namespace kv_store {
 
@@ -18,7 +19,7 @@ namespace kv_store {
         private:
 
                 // The collection
-                memory::MetaRamCollection _ramColl;
+                std::unique_ptr<memory::MetaRamCollection> _ramColl;
 
                 // The collection on the disk
                 disk::MetaDiskCollection _diskColl;
@@ -95,22 +96,24 @@ namespace kv_store {
                 /**
                  * @returns: the disk collection
                  */
-                memory::MetaRamCollection& getRamColl ();
-
-                /**
-                 * @returns: the disk collection
-                 */
                 disk::MetaDiskCollection& getDiskColl ();
-
-                /**
-                 * @returns: the disk collection
-                 */
-                const memory::MetaRamCollection& getRamColl () const;
-
+ 
                 /**
                  * @returns: the disk collection
                  */
                 const disk::MetaDiskCollection& getDiskColl () const;
+
+                /**
+                 * @returns: the current memory usage of the ram collection
+                 */
+                rd_utils::utils::MemorySize getRamMemoryUsage () const;
+
+                /**
+                 * @returns: the current memory size of the ram collection
+                 */
+                rd_utils::utils::MemorySize getRamMemorySize () const;
+
+
 
                 /*!
                  * ====================================================================================================

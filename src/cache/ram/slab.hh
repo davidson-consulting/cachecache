@@ -15,6 +15,9 @@
 namespace kv_store::memory {
 
     class MetaRamCollection;
+    class TTLMetaRamCollection;
+    class WSSMetaRamCollection;
+
     class KVMapRAMSlab {
     private:
 
@@ -66,6 +69,8 @@ namespace kv_store::memory {
     public:
 
         friend MetaRamCollection;
+        friend TTLMetaRamCollection;
+        friend WSSMetaRamCollection;
 
     public:
 

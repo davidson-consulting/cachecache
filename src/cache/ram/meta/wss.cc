@@ -1,10 +1,10 @@
 #define LOG_LEVEL 10
 
-#include "meta.hh"
+#include "wss.hh"
 #include <rd_utils/utils/mem_size.hh>
 #include <rd_utils/utils/print.hh>
 #include <rd_utils/utils/log.hh>
-#include "../global.hh"
+#include "../../global.hh"
 
 
 using namespace rd_utils::utils;
@@ -12,7 +12,7 @@ using namespace kv_store::common;
 
 namespace kv_store::memory {
 
-    MetaRamCollection::MetaRamCollection (uint32_t maxNbSlabs, uint32_t slabTTL)
+    WSSMetaRamCollection::WSSMetaRamCollection (uint32_t maxNbSlabs, uint32_t slabTTL)
         : _maxNbSlabs (maxNbSlabs)
         , _slabTTL (slabTTL)
     {}
@@ -29,15 +29,15 @@ namespace kv_store::memory {
     /**
      * @returns: the maximum number of slabs in the collection
      */
-    uint32_t MetaRamCollection::getNbSlabs () const {
+    uint32_t WSSMetaRamCollection::getNbSlabs () const {
         return this-> _maxNbSlabs;
     }
 
-    uint32_t MetaRamCollection::getNbLoadedSlabs () const {
+    uint32_t WSSMetaRamCollection::getNbLoadedSlabs () const {
         return this-> _loadedSlabs.size ();
     }
 
-    void MetaRamCollection::setNbSlabs (uint32_t nbSlabs) {
+    void WSSMetaRamCollection::setNbSlabs (uint32_t nbSlabs) {
         this-> _maxNbSlabs = nbSlabs;
     }
 
@@ -49,7 +49,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    bool MetaRamCollection::insert (const Key & k, const Value & v) {
+    bool WSSMetaRamCollection::insert (const Key & k, const Value & v) {
         MemorySize neededSize = MemorySize::B (k.len () + v.len () + sizeof (KVMapRAMSlab::node));
         for (auto & it : this-> _loadedSlabs) {
             auto & slab = it.second;
@@ -84,7 +84,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    void MetaRamCollection::remove (const Key & k) {
+    void WSSMetaRamCollection::remove (const Key & k) {
         auto h =  k.hash () % common::KVMAP_META_LIST_SIZE;
         auto fnd = this-> _slabHeads.find (h);
         if (fnd == this-> _slabHeads.end ()) return;
@@ -106,7 +106,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    std::shared_ptr <Value> MetaRamCollection::find (const Key & k) {
+    std::shared_ptr <Value> WSSMetaRamCollection::find (const Key & k) {
         auto h = k.hash () % KVMAP_META_LIST_SIZE;
         auto fnd = this-> _slabHeads.find (h);
         if (fnd == this-> _slabHeads.end ()) return nullptr;
@@ -132,11 +132,11 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    rd_utils::utils::MemorySize MetaRamCollection::getMemorySize () const {
+    rd_utils::utils::MemorySize WSSMetaRamCollection::getMemorySize () const {
         return common::KVMAP_SLAB_SIZE * this-> _maxNbSlabs;
     }
 
-    rd_utils::utils::MemorySize MetaRamCollection::getMemoryUsage () const {
+    rd_utils::utils::MemorySize WSSMetaRamCollection::getMemoryUsage () const {
         MemorySize result = MemorySize::B (0);
         for (auto & it : this-> _loadedSlabs) {
             bool consider = false;
@@ -162,7 +162,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    void MetaRamCollection::evictSlab (HybridKVStore & store) {
+    void WSSMetaRamCollection::evictSlab (HybridKVStore & store) {
         auto slb = this-> getLessUsed ();
         if (slb == nullptr) return;
 
@@ -172,7 +172,7 @@ namespace kv_store::memory {
         store.getDiskColl ().createSlabFromRAM (*slb, hash);
     }
 
-    void MetaRamCollection::markOldSlabs (uint64_t currentTime) {
+    void WSSMetaRamCollection::markOldSlabs (uint64_t currentTime) {
         this-> _currentTime = currentTime;
         std::vector <uint32_t> toRemove;
         for (auto & it : this-> _used) {
@@ -193,7 +193,7 @@ namespace kv_store::memory {
      * ====================================================================================================
      */
 
-    void MetaRamCollection::insertMetaData (uint64_t hash, uint32_t slabId) {
+    void WSSMetaRamCollection::insertMetaData (uint64_t hash, uint32_t slabId) {
         auto fnd = this-> _slabHeads.find (hash);
         if (fnd != this-> _slabHeads.end ()) {
             auto scd = fnd-> second.find (slabId);
@@ -210,7 +210,7 @@ namespace kv_store::memory {
         this-> _slabHeads.emplace (hash, lst);
     }
 
-    void MetaRamCollection::removeMetaData (uint64_t hash, uint32_t slabId) {
+    void WSSMetaRamCollection::removeMetaData (uint64_t hash, uint32_t slabId) {
         auto fnd = this-> _slabHeads.find (hash);
         if (fnd != this-> _slabHeads.end ()) {
             auto scd = fnd-> second.find (slabId);
@@ -228,7 +228,7 @@ namespace kv_store::memory {
         }
     }
 
-    std::shared_ptr <KVMapRAMSlab> MetaRamCollection::getLessUsed () {
+    std::shared_ptr <KVMapRAMSlab> WSSMetaRamCollection::getLessUsed () {
         std::shared_ptr <KVMapRAMSlab> result = nullptr;
         uint64_t nb = 0xFFFFFFFFFFFFFFFF;
         uint32_t id = 0;
@@ -251,7 +251,7 @@ namespace kv_store::memory {
         return nullptr;
     }
 
-    std::set <uint64_t> MetaRamCollection::removeSlab (uint32_t id) {
+    std::set <uint64_t> WSSMetaRamCollection::removeSlab (uint32_t id) {
         this-> _loadedSlabs.erase (id);
         this-> _used.erase (id);
 
@@ -282,7 +282,7 @@ namespace kv_store::memory {
      */
 
 
-    std::ostream & operator<< (std::ostream & s, const MetaRamCollection & coll) {
+    std::ostream & operator<< (std::ostream & s, const WSSMetaRamCollection & coll) {
         for (auto & it : coll._loadedSlabs) {
             s << "SLAB : " << it.second-> getUniqId () << std::endl;
             s << *(it.second) << std::endl;

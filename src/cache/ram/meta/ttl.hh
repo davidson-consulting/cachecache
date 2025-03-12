@@ -5,7 +5,8 @@
 #include <unordered_map>
 #include <set>
 #include <list>
-#include "slab.hh"
+#include "../slab.hh"
+#include "meta.hh"
 
 #include <rd_utils/concurrency/mutex.hh>
 
@@ -24,7 +25,7 @@ namespace kv_store::memory {
         /**
          * The meta ram collection stores the informations of the keys stored in the RAM
          */
-        class MetaRamCollection {
+        class TTLMetaRamCollection: public MetaRamCollection {
 
                 // The number of slabs that can be managed by the collection
                 uint32_t _maxNbSlabs;
@@ -47,7 +48,7 @@ namespace kv_store::memory {
                 /**
                  * The maximum number of slabs that can be stored in the collection
                  */
-                MetaRamCollection (uint32_t maxNbSlabs, uint32_t slabTTL = 20);
+                TTLMetaRamCollection (uint32_t maxNbSlabs, uint32_t slabTTL = 20);
 
                 /*!
                  * ====================================================================================================
@@ -134,7 +135,7 @@ namespace kv_store::memory {
                  * ====================================================================================================
                  */
 
-                friend std::ostream & operator<< (std::ostream & s, const MetaRamCollection & mp);
+                friend std::ostream & operator<< (std::ostream & s, const TTLMetaRamCollection & mp);
 
         private:
 

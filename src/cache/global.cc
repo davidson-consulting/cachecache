@@ -2,16 +2,17 @@
 
 #include "global.hh"
 #include <rd_utils/utils/log.hh>
+#include "ram/meta/ttl.hh"
 
 
 namespace kv_store {
 
     HybridKVStore::HybridKVStore (uint32_t maxRamSlabs, uint32_t slabTTL)
-        :  _ramColl (maxRamSlabs, slabTTL)
+        :  _ramColl (std::make_unique<kv_store::memory::TTLMetaRamCollection>(maxRamSlabs, slabTTL))
         , _currentTime (0)
     {
-        this-> _hasRam = (this-> _ramColl.getNbSlabs () != 0);
-        LOG_INFO ("KV Store configured with ", this-> _ramColl.getNbSlabs (), " slabs in RAM");
+        this-> _hasRam = (this-> _ramColl->getNbSlabs () != 0);
+        LOG_INFO ("KV Store configured with ", this-> _ramColl->getNbSlabs (), " slabs in RAM");
     }
 
     /*!
@@ -25,7 +26,7 @@ namespace kv_store {
     void HybridKVStore::insert (const common::Key & k, const common::Value & v) {
         if (this-> _hasRam) {
             WITH_LOCK (this-> _ramMutex) {
-                if (!this-> _ramColl.insert (k, v)) {
+                if (!this-> _ramColl->insert (k, v)) {
                     this-> _diskColl.insert (k, v);
                     WITH_LOCK (this-> _promoteMutex) {
                         this-> _promotions.emplace (k.asString (), v.asString ());
@@ -43,7 +44,7 @@ namespace kv_store {
         std::shared_ptr <common::Value> v = nullptr;
         if (this-> _hasRam) {
             WITH_LOCK (this-> _ramMutex) {
-                v = this-> _ramColl.find (k);
+                v = this-> _ramColl->find (k);
             }
             if (v != nullptr) return v;
         }
@@ -67,7 +68,7 @@ namespace kv_store {
 
     void HybridKVStore::remove (const common::Key & k) {
         WITH_LOCK (this-> _ramMutex) {
-            this-> _ramColl.remove (k);
+            this-> _ramColl->remove (k);
         }
 
         WITH_LOCK (this-> _diskMutex) {
@@ -86,15 +87,15 @@ namespace kv_store {
     void HybridKVStore::resizeRamColl (uint32_t maxRamSlabs) {
         uint32_t nbRemove = 0;
         WITH_LOCK (this-> _ramMutex) {
-            this-> _ramColl.setNbSlabs (maxRamSlabs);
-            if (maxRamSlabs < this-> _ramColl.getNbLoadedSlabs ()) {
-                nbRemove = this-> _ramColl.getNbLoadedSlabs () - maxRamSlabs;
+            this-> _ramColl->setNbSlabs (maxRamSlabs);
+            if (maxRamSlabs < this-> _ramColl->getNbLoadedSlabs ()) {
+                nbRemove = this-> _ramColl->getNbLoadedSlabs () - maxRamSlabs;
             }
         }
 
         for (uint32_t i = 0  ; i < nbRemove ; i++) {
             WITH_LOCK (this-> _ramMutex) {
-                this-> _ramColl.evictSlab (*this);
+                this-> _ramColl->evictSlab (*this);
             }
         }
 
@@ -112,7 +113,7 @@ namespace kv_store {
     void HybridKVStore::loop () {
         this-> _currentTime += 1;
         WITH_LOCK (this-> _ramMutex) {
-            this-> _ramColl.markOldSlabs (this-> _currentTime); // , *this);
+            this-> _ramColl->markOldSlabs (this-> _currentTime); // , *this);
         }
 
         std::map <std::string, std::string> toPromote;
@@ -130,9 +131,9 @@ namespace kv_store {
                 v.set (it.second);
 
                 WITH_LOCK (this-> _ramMutex) {
-                    if (!this-> _ramColl.insert (k, v)) {
-                        this-> _ramColl.evictSlab (*this);
-                        this-> _ramColl.insert (k, v);
+                    if (!this-> _ramColl->insert (k, v)) {
+                        this-> _ramColl->evictSlab (*this);
+                        this-> _ramColl->insert (k, v);
                     }
                 }
 
@@ -155,16 +156,16 @@ namespace kv_store {
         return this-> _diskColl;
     }
 
-    memory::MetaRamCollection & HybridKVStore::getRamColl () {
-        return this-> _ramColl;
-    }
-
     const disk::MetaDiskCollection & HybridKVStore::getDiskColl () const {
         return this-> _diskColl;
     }
 
-    const memory::MetaRamCollection & HybridKVStore::getRamColl () const {
-        return this-> _ramColl;
+    rd_utils::utils::MemorySize HybridKVStore::getRamMemoryUsage () const {
+        return this-> _ramColl-> getMemoryUsage();
+    }
+
+    rd_utils::utils::MemorySize HybridKVStore::getRamMemorySize () const {
+        return this-> _ramColl-> getMemorySize();
     }
 
     /*!
@@ -176,7 +177,7 @@ namespace kv_store {
      */
 
     std::ostream & operator<< (std::ostream & s, const kv_store::HybridKVStore & coll) {
-        s << "RAM : {" << coll._ramColl << "}" << std::endl;
+        s << "RAM : {" << coll._ramColl.get() << "}" << std::endl;
         s << "Disk : {" << coll._diskColl << "}";
 
         return s;

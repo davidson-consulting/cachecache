@@ -54,7 +54,7 @@ namespace kv_store::instance {
 
   MemorySize CacheEntity::getCurrentMemoryUsage () const {
     if (this-> _entity == nullptr) return MemorySize::B (0);
-    return this-> _entity-> getRamColl ().getMemoryUsage ();
+    return this-> _entity-> getRamMemoryUsage ();
   }
 
   MemorySize CacheEntity::getMaxSize () const {
@@ -62,7 +62,7 @@ namespace kv_store::instance {
   }
 
   MemorySize CacheEntity::getSize() const {
-    return this-> _entity-> getRamColl ().getMemorySize ();
+    return this-> _entity-> getRamMemorySize ();
   }
 
   /**
