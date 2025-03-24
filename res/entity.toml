@@ -23,5 +23,6 @@ port = 0 # port of the tcp server
 # Configure cache entity default values
 # @optional
 [cache]
-size = 2048
-unit = "KB"
+size = 128 # 128 MB on ram
+disk-cap = 10240 # 10 GB on disk
+unit = "MB"
