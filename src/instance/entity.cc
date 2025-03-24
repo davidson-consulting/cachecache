@@ -19,9 +19,10 @@ namespace kv_store::instance {
    * ============================================================================================================
    */
 
-  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t slabTTL) {
+  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, rd_utils::utils::MemorySize diskSize, uint32_t slabTTL) {
     uint32_t nbSlabs = maxSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
-    this-> _entity = std::make_unique <HybridKVStore> (nbSlabs, slabTTL);
+    uint32_t maxDiskSlabs = diskSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
+    this-> _entity = std::make_unique <HybridKVStore> (nbSlabs, maxDiskSlabs, slabTTL);
   }
 
   /**

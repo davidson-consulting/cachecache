@@ -42,6 +42,7 @@ namespace kv_store::memory {
                 // The usage of slabs
                 std::unordered_map <uint32_t, SlabUsageInfo>  _used;
 
+
         public:
 
                 /**

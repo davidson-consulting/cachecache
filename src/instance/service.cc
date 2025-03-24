@@ -119,6 +119,7 @@ namespace kv_store::instance {
   CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t nb) :
     actor::ActorBase (name, sys)
     , _regSize (MemorySize::B (0))
+    , _diskSize (MemorySize::B (0))
     , _traceRoutine (0)
   {
     LOG_INFO ("Spawning a new cache instance -> ", name);
@@ -155,7 +156,7 @@ namespace kv_store::instance {
       }
 
       this-> _entity = std::make_shared <CacheEntity> ();
-      this-> _entity-> configure (name, this-> _regSize, ttl);
+      this-> _entity-> configure (name, this-> _regSize, this-> _diskSize, ttl);
     } catch (std::runtime_error & e) {
       LOG_ERROR ("Cache entity configuration failed (", e.what (), "). Abort");
       throw std::runtime_error ("in entity configuration");
@@ -300,6 +301,13 @@ namespace kv_store::instance {
         if (conf ["cache"].contains ("size")) {
           auto unit = conf ["cache"].getOr ("unit", "MB");
           size = MemorySize::nextPow2 (MemorySize::unit (conf ["cache"]["size"].getI (), unit));
+        }
+
+        if (conf ["cache"].contains ("disk-cap")) {
+          auto unit = conf ["cache"].getOr ("unit", "MB");
+          this-> _diskSize = MemorySize::nextPow2 (MemorySize::unit (conf ["cache"]["disk-cap"].getI (), unit));
+        } else {
+          this-> _diskSize = MemorySize::GB (10);
         }
       }
 

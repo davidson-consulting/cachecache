@@ -120,8 +120,9 @@ namespace kv_store::disk {
          * Remove a key from the memory segment in the slab
          * @info: does nothing if the key is not found
          * @returns: true if memory was freed, false if nothing was changed
+         *           - newLen: the number of keys in the slab after the remove
          */
-        bool remove (const common::Key & key);
+        bool remove (const common::Key & key, uint32_t & newLen);
 
         /*!
          * ====================================================================================================
@@ -269,7 +270,7 @@ namespace kv_store::disk {
         /**
          * Remove an entry in the list
          */
-        bool removeInList (const common::Key & k, uint32_t offset, uint32_t prevOffset);
+        bool removeInList (const common::Key & k, uint32_t offset, uint32_t prevOffset, uint32_t & newLen);
 
     };
 

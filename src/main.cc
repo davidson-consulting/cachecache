@@ -11,7 +11,7 @@ using namespace kv_store::common;
 
 
 void foo () {
-    disk::MetaDiskCollection store;
+    disk::MetaDiskCollection store (1024);
 
     srand (0); // time (NULL));
     std::string c ("Content_");
@@ -32,7 +32,7 @@ void foo () {
 
 auto main(int argc, char *argv[]) -> int {
     // foo ();
-    HybridKVStore store (6, 1);
+    HybridKVStore store (6, 1024, 1);
 
     srand (0); // time (NULL));
 

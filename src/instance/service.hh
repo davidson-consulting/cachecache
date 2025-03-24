@@ -21,6 +21,9 @@ namespace kv_store::instance {
                 // The memory pool size according to the supervisor
                 rd_utils::utils::MemorySize _regSize;
 
+                // The disk size capping
+                rd_utils::utils::MemorySize _diskSize;
+
                 // The reference to the supervisor actor
                 std::shared_ptr <rd_utils::concurrency::actor::ActorRef> _supervisor;
 

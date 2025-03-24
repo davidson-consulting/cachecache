@@ -42,8 +42,9 @@ namespace kv_store {
                 /**
                  * @params:
                  *    - maxRamSlabs: the number of slabs in the RAM
+                 *    - maxDiskSlabs: the maxim number of slabs on disk
                  */
-                HybridKVStore (uint32_t maxRamSlabs, uint32_t slabTTL);
+                HybridKVStore (uint32_t maxRamSlabs, uint32_t maxDiskSlabs, uint32_t slabTTL);
 
                 /*!
                  * ====================================================================================================

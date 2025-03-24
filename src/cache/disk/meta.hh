@@ -23,12 +23,18 @@ namespace kv_store::disk {
 
                 std::set <uint64_t> _notFullSlabs;
 
+                // The maximum number of slabs that can be written on disk
+                uint64_t _maxNbSlabs;
+
+                // The current number of slabs on disk
+                uint64_t _nbSlabs;
+
         public:
 
                 /**
                  * The maximum number of slabs that can be stored in the collection
                  */
-                MetaDiskCollection ();
+                MetaDiskCollection (uint32_t maxNbSlabs);
 
                 /**
                  * Create a new slab from a memory slab
@@ -48,6 +54,11 @@ namespace kv_store::disk {
                  * Find the key in the collection
                  */
                 std::shared_ptr <common::Value> find (const common::Key & k);
+
+                /**
+                 * @returns: the maximum number of slabs on disk
+                 */
+                uint32_t getMaxSlabs () const;
 
                 /**
                  * Remove the key in the collection
@@ -74,6 +85,13 @@ namespace kv_store::disk {
                  */
 
                 friend std::ostream & operator<< (std::ostream & s, const MetaDiskCollection & mp);
+
+        private:
+
+                /**
+                 * Find and erase one slab on disk
+                 */
+                void findAndEraseSlab ();
 
         };
 

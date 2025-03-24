@@ -174,32 +174,34 @@ namespace kv_store::disk {
      * ====================================================================================================
      */
 
-    bool KVMapDiskSlab::remove (const Key & key) {
+    bool KVMapDiskSlab::remove (const Key & key, uint32_t & newLen) {
         uint32_t h = key.hash () % kv_store::common::NB_KVMAP_SLAB_ENTRIES;
         uint32_t offset = this-> _context.read<uint32_t> ((h * sizeof (uint32_t)) + __HEAD_OFFSET__);
 
         if (offset != 0) {
-            return this-> removeInList (key, offset, (h * sizeof (uint32_t)) + __HEAD_OFFSET__);
+            return this-> removeInList (key, offset, (h * sizeof (uint32_t)) + __HEAD_OFFSET__, newLen);
         }
 
         return false;
     }
 
-    bool KVMapDiskSlab::removeInList (const Key & k, uint32_t offset, uint32_t prevOffset) {
+    bool KVMapDiskSlab::removeInList (const Key & k, uint32_t offset, uint32_t prevOffset, uint32_t & newLen) {
         node n = this-> _context.read <node> (offset);
 
         if (n.keySize == k.len ()) {
             if (this-> _context.compare (offset + sizeof (node), k.data (), k.len ())) {
                 this-> _context.free (offset);
                 this-> _context.write <uint32_t> (prevOffset, n.next);
-                this-> _context.write<uint32_t> (__LEN_OFFSET__, this-> _context.read<uint32_t> (__LEN_OFFSET__) + 1);
+                newLen = this-> _context.read<uint32_t> (__LEN_OFFSET__) - 1;
+
+                this-> _context.write<uint32_t> (__LEN_OFFSET__, newLen);
 
                 return true;
             }
         }
 
         if (n.next != 0) {
-            return this-> removeInList (k, n.next, offset + (2 * sizeof (uint32_t)));
+            return this-> removeInList (k, n.next, offset + (2 * sizeof (uint32_t)), newLen);
         }
 
         return false;
