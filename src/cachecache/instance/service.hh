@@ -93,14 +93,6 @@ namespace cachecache::instance {
                 void onMessage (const rd_utils::utils::config::ConfigNode & msg) override;
 
                 /**
-                 * Triggered when a request is sent from another actor
-                 * @params:
-                 *    - msg: the message sent to the actor
-                 * @returns: the response to that message
-                 */
-                std::shared_ptr<rd_utils::utils::config::ConfigNode> onRequest (const rd_utils::utils::config::ConfigNode & msg);
-
-                /**
                  * Triggered when the actor is killed
                  */
                 void onQuit () override;

@@ -119,7 +119,7 @@ namespace cachecache::instance {
   CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t nb) :
     actor::ActorBase (name, sys)
     , _regSize (MemorySize::B (0))
-    , _traceRoutine (0, nullptr)
+    , _traceRoutine (0)
   {
     LOG_INFO ("Spawning a new cache instance -> ", name);
     this-> _cfg = cfg;
@@ -128,14 +128,12 @@ namespace cachecache::instance {
 
   void CacheService::onStart () {
     this-> _fullyConfigured = false;
-    if (this-> connectSupervisor (this-> _cfg)) {
-      try {
-        this-> configureEntity (this-> _cfg);
-        this-> configureServer (this-> _cfg);
-      } catch (const std::runtime_error & err) {
-        this-> onQuit ();
-        throw err;
-      }
+    try {
+      this-> configureEntity (this-> _cfg);
+      this-> configureServer (this-> _cfg);
+    } catch (const std::runtime_error & err) {
+      this-> onQuit ();
+      throw err;
     }
 
     // no need to keep the configuration
@@ -152,6 +150,10 @@ namespace cachecache::instance {
       if (conf.contains ("cache")) {
         name = conf ["cache"].getOr ("name", name);
         ttl = conf ["cache"].getOr ("ttl", ttl);
+        CONF_LET (unit, conf ["cache"]["unit"].getStr (), std::string ("MB"));
+        this-> _regSize = MemorySize::unit (conf ["cache"].getOr ("size", 1024), unit);
+      } else {
+        this-> _regSize = MemorySize::MB (1024);
       }
 
       this-> _entity = std::make_shared <CacheEntity> ();
@@ -175,12 +177,8 @@ namespace cachecache::instance {
     LOG_INFO ("Cache instance (", this-> _name, ") received a message : ", type);
 
     switch (type) {
-    case RequestIds::UPDATE_SIZE :
-      this-> onSizeUpdate (msg);
-      break;
     case RequestIds::POISON_PILL :
       this-> _fullyConfigured = false;
-      this-> _supervisor = nullptr;
       this-> exit ();
       break;
     default:
@@ -189,27 +187,8 @@ namespace cachecache::instance {
     }
   }
 
-  std::shared_ptr<config::ConfigNode> CacheService::onRequest (const config::ConfigNode & msg) {
-    auto type = msg.getOr ("type", RequestIds::NONE);
-    switch (type) {
-    case RequestIds::ENTITY_INFO :
-      return this-> onEntityInfoRequest (msg);
-    }
-
-    return ResponseCode (404);
-  }
-
   void CacheService::onQuit () {
     this-> _fullyConfigured = false;
-    if (this-> _supervisor != nullptr) {
-      try {
-        this-> _supervisor-> send (config::Dict ()
-                                   .insert ("type", RequestIds::EXIT)
-                                   .insert ("uid", (int64_t) this-> _uid));
-      } catch (...) {
-        LOG_WARN ("Supervisor is offline.");
-      }
-    }
 
     if (this-> _clients != nullptr) {
       this-> _clients-> stop ();
@@ -222,7 +201,7 @@ namespace cachecache::instance {
       this-> _traceSleeping.post ();
 
       concurrency::join (this-> _traceRoutine);
-      this-> _traceRoutine = concurrency::Thread (0, nullptr);
+      this-> _traceRoutine = concurrency::Thread (0);
     }
 
     LOG_INFO ("Killing cache instance -> ", this-> _name);
@@ -232,106 +211,6 @@ namespace cachecache::instance {
         this-> _entity = nullptr;
       }
     }
-  }
-
-  /**
-   * ==========================================================================
-   * ==========================================================================
-   * ========================     MARKET ROUTINE     ==========================
-   * ==========================================================================
-   * ==========================================================================
-   */
-
-  void CacheService::onSizeUpdate (const config::ConfigNode & msg) {
-    WITH_LOCK (this-> _m) {
-      if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to be resized
-        auto unit = static_cast <MemorySize::Unit> (msg.getOr ("unit", (int64_t) MemorySize::Unit::KB));
-        auto size = MemorySize::unit (msg ["size"].getI (), unit);
-        this-> _entity-> resize (size);
-      }
-    }
-  }
-
-  std::shared_ptr <config::ConfigNode> CacheService::onEntityInfoRequest (const config::ConfigNode & msg) {
-    auto result = std::make_shared <config::Dict> ();
-    int64_t usage = 0;
-    int64_t size = 0;
-    WITH_LOCK (this-> _m) {
-      if (this-> _fullyConfigured && this-> _entity != nullptr) { // entity must be running to have a size
-        usage = (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ();
-        size = this-> _entity-> getSize ().kilobytes ();
-      }
-    }
-
-    result-> insert ("usage", usage);
-    result-> insert ("size", size);
-    result-> insert ("unit", (int64_t) MemorySize::Unit::KB);
-    return ResponseCode (200, result);
-  }
-
-  /**
-   * ==========================================================================
-   * ==========================================================================
-   * =========================     SUPERVISOR     =============================
-   * ==========================================================================
-   * ==========================================================================
-   */
-
-  bool CacheService::connectSupervisor (const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg) {
-    std::shared_ptr <rd_utils::concurrency::actor::ActorRef> act = nullptr;
-    try {
-      auto & conf = *cfg;
-      std::string sName = "supervisor", sAddr = "127.0.0.1";
-      int64_t sPort = 8080, size = 1024 * 1024;
-
-      if (conf.contains ("supervisor")) {
-        sName = conf ["supervisor"].getOr ("name", sName);
-        sAddr = conf ["supervisor"].getOr ("addr", sAddr);
-        sPort = conf ["supervisor"].getOr ("port", sPort);
-      }
-
-      if (sPort == 0) {
-        sPort = std::atoi (rd_utils::utils::read_file ("./super_port").c_str ());
-      }
-
-      if (conf.contains ("cache")) {
-        size = conf ["cache"].getOr ("size", 1024) * 1024;
-      }
-
-      std::string iface = "lo";
-      if (conf.contains ("sys")) {
-        iface = conf ["sys"].getOr ("iface", "lo");
-      } else iface = "lo";
-
-      this-> _supervisor = this-> _system-> remoteActor (sName, rd_utils::net::SockAddrV4 (sAddr, sPort));
-      this-> _ifaceAddr = rd_utils::net::Ipv4Address::getIfaceIp (iface).toString ();
-
-      auto msg = config::Dict ()
-        .insert ("type", RequestIds::REGISTER)
-        .insert ("name", this-> _name)
-        .insert ("addr", this-> _ifaceAddr)
-        .insert ("port", (int64_t) this-> _system-> port ())
-        .insert ("size", size);
-
-      auto resp = this-> _supervisor-> request (msg, 5).wait (); // 5 seconds timeout
-      if (resp == nullptr || resp-> getOr ("code", 0) != 200) {
-        LOG_ERROR ("Failure");
-        throw std::runtime_error ("Failed to register : " + this-> _name);
-      } else {
-        LOG_INFO ("Server response : ", *resp);
-        this-> _uid = (*resp) ["content"]["uid"].getI ();
-        auto unit = static_cast <MemorySize::Unit> ((*resp)["content"].getOr ("unit", (int64_t) MemorySize::Unit::KB));
-        this-> _regSize = MemorySize::unit ((*resp)["content"]["max-size"].getI (), unit);
-      }
-
-    } catch (std::runtime_error & err) {
-      LOG_ERROR ("Failed to connect to supervisor because, ", err.what ());
-      this-> exit ();
-      return false;
-    }
-
-    LOG_INFO ("Connected to supervisor");
-    return true;
   }
 
   /**

@@ -23,6 +23,6 @@ port = 0 # port of the tcp server
 # Configure cache entity default values
 # @optional
 [cache]
-ttl = 100
-size = 32
+ttl = -1
+size = 1024
 unit = "MB"

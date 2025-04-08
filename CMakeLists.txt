@@ -31,10 +31,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 # Cachecache
 add_library (cachecache ${SRC})
-add_executable (supervisor src/supervisor_main.cc)
 # add_dependencies (cachecache rd_utils)
-
-# add_dependencies (supervisor rd_utils)
 
 add_executable (cache src/instance_main.cc)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
@@ -43,16 +40,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 target_include_directories(cachecache PUBLIC # ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src
   ${CMAKE_BINARY_DIR}/../CacheLib/opt/cachelib/include)
-target_link_libraries(supervisor cachelib cachecache rd_utils)
 
 target_include_directories(cache PUBLIC # ${CMAKE_BINARY_DIR}/_deps/rd_utils-src/src
   ${CMAKE_BINARY_DIR}/../CacheLib/opt/cachelib/include)
 target_link_libraries(cache cachelib cachecache rd_utils)
-
-add_custom_command (TARGET supervisor
-                   POST_BUILD
-                   COMMAND patchelf --add-needed  libfolly_exception_tracer_base.so.0.58.0-dev supervisor
-    )
 
 add_custom_command (TARGET cache
                    POST_BUILD
