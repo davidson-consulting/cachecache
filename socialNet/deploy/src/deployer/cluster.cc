@@ -70,6 +70,7 @@ namespace deployer {
                 LOG_INFO ("Starting vjoule on ", it.first);
                 it.second-> run ("systemctl stop vjoule_service")-> wait ();
                 it.second-> run ("systemctl start vjoule_service")-> wait ();
+                it.second-> run ("free && sync && echo 3 > /proc/sys/vm/drop_caches && free")-> wait ();
             }
         }
     }

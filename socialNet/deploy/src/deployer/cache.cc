@@ -7,6 +7,8 @@ using namespace rd_utils::utils;
 
 namespace deployer {
 
+    rd_utils::utils::MemorySize Cache::__CACHE_FILE_SIZE__ = MemorySize::MB (128);
+
     Cache::Cache (Deployment * context, const std::string & name)
         : _context (context)
         , _name (name)
@@ -33,23 +35,33 @@ namespace deployer {
     void Cache::readCacheConfiguration (const config::Dict & cfg) {
         try {
             this-> _cacheHost = cfg ["host"].getStr ();
-            std::string version = cfg ["version"].getStr ();
-            if (version != "disk" && version != "cachelib") {
+            this-> _version = cfg ["version"].getStr ();
+            if (this-> _version != "disk" && this-> _version != "cachelib") {
                 throw std::runtime_error ("Cache versions are 'disk' and 'cachelib'");
             }
 
             auto unit = cfg ["unit"].getStr ();
             this-> _size = MemorySize::unit (cfg ["size"].getI (), unit);
-            this-> _context-> getCluster ()-> get (this-> _cacheHost)-> addFlag ("cache-" + version);
-            LOG_INFO ("Register cache supervisor ", this-> _name, " of size ", this-> _size.megabytes (), "MB, on host ", this-> _cacheHost);
+            if (cfg.contains ("cgroup_cache_file")) {
+                __CACHE_FILE_SIZE__ = MemorySize::unit (cfg ["cgroup_cache_file"].getI (), unit);
+            }
+
+            this-> _context-> getCluster ()-> get (this-> _cacheHost)-> addFlag ("cache-" + this-> _version);
+            LOG_INFO ("Register cache supervisor ", this-> _name, " of size ", this-> _size, ", on host ", this-> _cacheHost);
 
             match (cfg ["entities"]) {
                 of (config::Dict, en) {
                     for (auto & it : en-> getKeys ()) {
                         auto entitySize = MemorySize::unit ((*en)[it]["size"].getI (), unit);
-                        uint32_t ttl = (*en)[it].getOr ("ttl", 100);
-                        LOG_INFO ("Register cache entity for : ", this-> _name, " ", it, " of size ", entitySize.megabytes (), "MB, with TTL = ", ttl);
-                        this-> _entities.emplace (it, EntityInfo {.size = entitySize, .ttl = ttl});
+
+                        uint32_t ttl = (*en)[it].getOr ("ttl", 1000);
+                        MemorySize diskCap = MemorySize::GB (10);
+                        if ((*en)[it].contains ("disk-cap")) {
+                            diskCap = MemorySize::unit ((*en)[it]["disk-cap"].getI (), unit);
+                        }
+
+                        LOG_INFO ("Register cache entity for : ", this-> _name, " ", it, " of size ", entitySize, ", with TTL = ", ttl, ", and disk capping = ", diskCap);
+                        this-> _entities.emplace (it, EntityInfo {.size = entitySize, .ttl = ttl, .diskCap = diskCap});
                     }
                 } fo;
             }
@@ -152,31 +164,45 @@ namespace deployer {
      */
 
     void Cache::deploySupervisor () {
-        auto host = this-> _context-> getCluster ()-> get (this-> _cacheHost);
-        auto cfg = this-> createCacheSupervisorConfig (host);
-        auto path = this-> cachePath ();
+        if (this-> _version != "cachelib") {
+            auto host = this-> _context-> getCluster ()-> get (this-> _cacheHost);
+            auto cfg = this-> createCacheSupervisorConfig (host);
+            auto path = this-> cachePath ();
 
-        auto script = "cd " + path + "\n"
-            "rm super.out.txt\n"
-            "./supervisor -c ./res/super.toml >> super.out.txt 2>&1  &\n"
-            "echo -e $! > pidof_super\n";
+            auto script = "cd " + path + "\n"
+                "rm super.out.txt\n"
+                "./supervisor -c ./res/super.toml >> super.out.txt 2>&1  &\n"
+                "echo -e $! > pidof_super\n";
 
-        host-> putFromStr (cfg, utils::join_path (path, "/res/super.toml"));
-        LOG_INFO ("Launching cache supervisor on ", this-> _cacheHost);
+            host-> putFromStr (cfg, utils::join_path (path, "/res/super.toml"));
+            LOG_INFO ("Launching cache supervisor on ", this-> _cacheHost);
 
-        this-> _running.push_back (host-> runScript (script));
+            this-> _running.push_back (host-> runScript (script));
 
-        LOG_INFO ("Waiting for supervisor to be avaible");
-        auto pidStr = host-> getToStr (utils::join_path (path, "pidof_super"), 10, 0.1);
-        auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
+            LOG_INFO ("Waiting for supervisor to be avaible");
+            auto pidStr = host-> getToStr (utils::join_path (path, "pidof_super"), 10, 0.1);
+            auto pid = std::strtoull (pidStr.c_str (), NULL, 0);
 
-        host-> run ("cgclassify -g cpu,memory:cache/" + this-> _name + " " + pidStr)-> wait ();
+            host-> run ("cgclassify -g cpu,memory:cache/" + this-> _name + " " + pidStr)-> wait ();
 
-        auto portStr = host-> getToStr (utils::join_path (path, "super_port"), 10, 0.1);
-        this-> _superPort = std::strtoull (portStr.c_str (), NULL, 0);
+            auto portStr = host-> getToStr (utils::join_path (path, "super_port"), 10, 0.1);
+            this-> _superPort = std::strtoull (portStr.c_str (), NULL, 0);
 
-        LOG_INFO ("Cache supervisor is running on ", this-> _cacheHost, " on port = ", this-> _superPort, ", and pid = ", pid);
-        this-> _killing.push_back ("kill -2 " + std::to_string (pid));
+            LOG_INFO ("Cache supervisor is running on ", this-> _cacheHost, " on port = ", this-> _superPort, ", and pid = ", pid);
+            this-> _killing.push_back ("kill -2 " + std::to_string (pid));
+
+            // Add 32 MB of memory room to prevent OOM killer in extreme cases
+            auto cgroupCap = MemorySize::roundUp (this-> _size + MemorySize::MB (32), MemorySize::MB (4));
+            if (this-> _size.bytes () < Cache::__CACHE_FILE_SIZE__.bytes ()) {
+                cgroupCap = Cache::__CACHE_FILE_SIZE__;
+            }
+
+
+            LOG_INFO ("Capping cgroup cache/", this-> _name, " memory size = ", cgroupCap);
+            host-> run ("cgset -r memory.high=" + std::to_string (cgroupCap.bytes ()) + " cache/" + this-> _name);
+
+            this-> _killing.push_back ("cgset -r memory.high=max cache/" + this-> _name);
+        }
     }
 
     std::string Cache::createCacheSupervisorConfig (std::shared_ptr <Machine> host) {
@@ -248,10 +274,6 @@ namespace deployer {
         sys-> insert ("instances", (int64_t) 1);
         sys-> insert ("export-traces", tracePath);
 
-        auto super = std::make_shared <config::Dict> ();
-        super-> insert ("addr", "127.0.0.1");
-        super-> insert ("port", (int64_t) this-> _superPort);
-
         auto service = std::make_shared <config::Dict> ();
         service-> insert ("addr", "0.0.0.0");
         service-> insert ("port", (int64_t) 0);
@@ -259,14 +281,25 @@ namespace deployer {
 
         auto cache = std::make_shared <config::Dict> ();
         cache-> insert ("size", (int64_t) this-> _entities [entityName].size.kilobytes ());
-        cache-> insert ("ttl", (int64_t) this-> _entities [entityName].ttl);
         cache-> insert ("unit", "KB");
+        cache-> insert ("ttl", (int64_t) this-> _entities [entityName].ttl);
+
+        if (this-> _version != "cachelib") {
+            cache-> insert ("disk-cap", (int64_t) this-> _entities [entityName].diskCap.kilobytes ());
+        }
 
         auto result = config::Dict ()
             .insert ("sys", sys)
-            .insert ("supervisor", super)
             .insert ("cache", cache)
             .insert ("service", service);
+
+        if (this-> _version != "cachelib") {
+            auto super = std::make_shared <config::Dict> ();
+            super-> insert ("addr", "127.0.0.1");
+            super-> insert ("port", (int64_t) this-> _superPort);
+
+            result.insert ("supervisor", super);
+        }
 
         return toml::dump (result);
     }
@@ -275,11 +308,15 @@ namespace deployer {
         auto host = this-> _context-> getCluster ()-> get (this-> _cacheHost);
         auto path = utils::join_path (host-> getHomeDir (), "/run/caches/" + this-> _name);
         if (!this-> _hasPath) {
+            auto cpath = "execs/";
+            if (this-> _version == "cachelib") { cpath = "execs/cachelib/"; }
+            else { cpath = "execs/cache-disk/"; }
+
             host-> run ("mkdir -p " + path)-> wait ();
             host-> run ("mkdir -p " + utils::join_path (path, "res"))-> wait ();
-            host-> run ("cp -r " + utils::join_path (host-> getHomeDir (), "execs/cache/libs") + " " + path)-> wait ();
-            host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/cache/supervisor") + " " + path)-> wait ();
-            host-> run ("cp " + utils::join_path (host-> getHomeDir (), "execs/cache/cache") + " " + path)-> wait ();
+            host-> run ("cp -r " + utils::join_path (host-> getHomeDir (), utils::join_path (cpath, "libs")) + " " + path)-> wait ();
+            host-> run ("cp " + utils::join_path (host-> getHomeDir (), utils::join_path (cpath, "supervisor")) + " " + path)-> wait ();
+            host-> run ("cp " + utils::join_path (host-> getHomeDir (), utils::join_path (cpath, "cache")) + " " + path)-> wait ();
 
             host-> run ("cgcreate -g cpu,memory:cache/" + this-> _name)-> wait ();
             this-> _hasPath = true;

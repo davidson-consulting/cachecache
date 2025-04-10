@@ -144,9 +144,9 @@ namespace deployer {
                 "cd .build\n"
                 "cmake ..\n"
                 "make -j12\n"
-                "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
-                "mv " + m-> getHomeDir () + "/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
-                "mv " + m-> getHomeDir () + "/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
+                "mkdir -p " + m-> getHomeDir () + "/execs/cache-disk\n"
+                "mv " + m-> getHomeDir () + "/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache-disk/\n"
+                "mv " + m-> getHomeDir () + "/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache-disk/\n"
                 // "rm -rf " + m-> getHomeDir () + "/cachecache/"
                 ;
         } else if (version == "cachelib") {
@@ -156,12 +156,12 @@ namespace deployer {
                 "cd .build\n"
                 "cmake ..\n"
                 "make -j12\n"
-                "mkdir -p " + m-> getHomeDir () + "/execs/cache\n"
-                "mkdir " + m-> getHomeDir () + "/execs/cache/libs\n"
-                "mv " + m-> getHomeDir () + "/cachecache/cachecache/CacheLib/opt/cachelib/lib/lib* " + m-> getHomeDir () + "/execs/cache/libs\n"
-                "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cache/\n"
-                "mv " + m-> getHomeDir () + "/cachecache/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cache/\n"
-                "cd " + m-> getHomeDir () + "/execs/cache\n"
+                "mkdir -p " + m-> getHomeDir () + "/execs/cachelib\n"
+                "mkdir " + m-> getHomeDir () + "/execs/cachelib/libs\n"
+                "mv " + m-> getHomeDir () + "/cachecache/CacheLib/opt/cachelib/lib/lib* " + m-> getHomeDir () + "/execs/cachelib/libs\n"
+                "mv " + m-> getHomeDir () + "/cachecache/.build/supervisor " + m-> getHomeDir () + "/execs/cachelib/\n"
+                "mv " + m-> getHomeDir () + "/cachecache/.build/cache " + m-> getHomeDir () + "/execs/cachelib/\n"
+                "cd " + m-> getHomeDir () + "/execs/cachelib\n"
                 "for j in {0..3};\n"
                 "do\n"
                 "    for i in $(ldd supervisor | grep \"not found\" | awk '{ print $1 }');\n"
@@ -178,7 +178,7 @@ namespace deployer {
                 "    done\n"
                 "done\n"
                 "\n"
-                "rm -rf " + m-> getHomeDir () + "/cachecache/"
+                // "rm -rf " + m-> getHomeDir () + "/cachecache/"
                 ;
         } else {
             LOG_ERROR ("Unkown cache version : ", version);

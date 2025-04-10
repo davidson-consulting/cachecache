@@ -16,6 +16,7 @@ namespace deployer {
                 struct EntityInfo {
                         rd_utils::utils::MemorySize size;
                         uint32_t ttl;
+                        rd_utils::utils::MemorySize diskCap;
                 };
 
         private:
@@ -24,6 +25,12 @@ namespace deployer {
 
                 // The name of the cache
                 std::string _name;
+
+                // The allowed file cache size of the cgroup
+                static rd_utils::utils::MemorySize __CACHE_FILE_SIZE__;
+
+                // Disk/Cachelib
+                std::string _version;
 
         private:
 
