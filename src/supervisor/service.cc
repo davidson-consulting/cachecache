@@ -117,7 +117,7 @@ namespace kv_store::supervisor {
     if (conf.contains ("cache")) {
       if (conf ["cache"].contains ("size")) {
         auto unit = conf ["cache"].getOr ("unit", "MB");
-        this-> _memoryPoolSize = MemorySize::nextPow2 (MemorySize::unit (conf ["cache"]["size"].getI (), unit));
+        this-> _memoryPoolSize = MemorySize::roundUp (MemorySize::unit (conf ["cache"]["size"].getI (), unit), MemorySize::MB (4));
       }
     }
 
