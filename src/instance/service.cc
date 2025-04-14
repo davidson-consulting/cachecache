@@ -300,12 +300,12 @@ namespace kv_store::instance {
       if (conf.contains ("cache")) {
         if (conf ["cache"].contains ("size")) {
           auto unit = conf ["cache"].getOr ("unit", "MB");
-          size = MemorySize::nextPow2 (MemorySize::unit (conf ["cache"]["size"].getI (), unit));
+          size = MemorySize::roundUp (MemorySize::unit (conf ["cache"]["size"].getI (), unit), MemorySize::MB (4));
         }
 
         if (conf ["cache"].contains ("disk-cap")) {
           auto unit = conf ["cache"].getOr ("unit", "MB");
-          this-> _diskSize = MemorySize::nextPow2 (MemorySize::unit (conf ["cache"]["disk-cap"].getI (), unit));
+          this-> _diskSize = MemorySize::roundUp (MemorySize::unit (conf ["cache"]["disk-cap"].getI (), unit), MemorySize::MB (4));
         } else {
           this-> _diskSize = MemorySize::GB (10);
         }

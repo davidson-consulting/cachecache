@@ -193,7 +193,7 @@ namespace kv_store::supervisor {
        */
       if (overTrig) {
         MemorySize increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 + this->_decreasingSpeed)), __SLAB_SIZE__));  // increase by 1.x
-        MemorySize current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase))); // memory to set in base selling that does not go over requested
+        MemorySize current = MemorySize::max (min, MemorySize::min (market, MemorySize::min (requested, increase))); // memory to set in base selling that does not go over requested
         LOG_INFO ("Cache increase : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;
@@ -211,7 +211,7 @@ namespace kv_store::supervisor {
        */
       else if (underTrig) {
         MemorySize increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 - this->_decreasingSpeed)), __SLAB_SIZE__));
-        MemorySize current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase)));
+        MemorySize current = MemorySize::max (min, MemorySize::min (market, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache decrease : ", id, " ", increase.kilobytes (), " ", requested.kilobytes (), " ", current.kilobytes (), " ", size.kilobytes ());
 
         market -= current;
@@ -229,7 +229,7 @@ namespace kv_store::supervisor {
        */
       else {
         auto increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::min (max, usage), __SLAB_SIZE__));
-        auto current = MemorySize::min (market, MemorySize::max (min, MemorySize::min (requested, increase)));
+        auto current = MemorySize::max (min, MemorySize::min (market, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache steady : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
         market -= current;
