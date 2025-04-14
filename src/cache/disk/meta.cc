@@ -158,6 +158,10 @@ namespace kv_store::disk {
         return this-> _maxNbSlabs;
     }
 
+    MemorySize MetaDiskCollection::getMemoryUsage () const {
+        return common::KVMAP_SLAB_SIZE * this-> _nbSlabs;
+    }
+
     std::ostream & operator<< (std::ostream & s, const MetaDiskCollection & coll) {
         for (auto it : directory_iterator (common::getSlabDirPath ())) {
             std::string filename = get_filename (it);

@@ -54,6 +54,9 @@ namespace kv_store::instance {
                 // Number of hit
                 int64_t _hit = 0;
 
+                // Number of hits on disk
+                int64_t _disk_hit = 0;
+
                 // Number of misses
                 int64_t _miss = 0;
 

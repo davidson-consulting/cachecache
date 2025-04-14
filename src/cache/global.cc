@@ -40,7 +40,7 @@ namespace kv_store {
         }
     }
 
-    std::shared_ptr <common::Value> HybridKVStore::find (const common::Key & k) {
+    std::shared_ptr <common::Value> HybridKVStore::find (const common::Key & k, bool & onDisk) {
         std::shared_ptr <common::Value> v = nullptr;
         if (this-> _hasRam) {
             WITH_LOCK (this-> _ramMutex) {
@@ -61,6 +61,7 @@ namespace kv_store {
         }
 
         if (v != nullptr) {
+            onDisk = true;
             if (this-> _hasRam) {
                 WITH_LOCK (this-> _promoteMutex) {
                     this-> _promotions.emplace (k.asString (), v-> asString ());

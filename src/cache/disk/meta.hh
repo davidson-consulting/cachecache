@@ -60,6 +60,8 @@ namespace kv_store::disk {
                  */
                 uint32_t getMaxSlabs () const;
 
+                rd_utils::utils::MemorySize getMemoryUsage () const;
+
                 /**
                  * Remove the key in the collection
                  * @info: does nothing if the key is not found

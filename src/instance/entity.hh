@@ -90,6 +90,11 @@ namespace kv_store::instance {
                 rd_utils::utils::MemorySize getCurrentMemoryUsage () const;
 
                 /**
+                 * @returns: the memory actually used by the cache on disk
+                 */
+                rd_utils::utils::MemorySize getCurrentDiskUsage () const;
+
+                /**
                  * Insert a new key value
                  * @params:
                  *    - key: the key to insert
@@ -105,7 +110,7 @@ namespace kv_store::instance {
                  * @returns:
                  *    - true iif found
                  */
-                bool find (const std::string & key, rd_utils::net::TcpStream& session);
+                bool find (const std::string & key, rd_utils::net::TcpStream& session, bool & onDisk);
 
                 /**
                  * Dispose all content of the cache, and free all handles

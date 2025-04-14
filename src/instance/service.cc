@@ -440,7 +440,9 @@ namespace kv_store::instance {
 
     std::string key = this-> readStr (session, keyLen);
     WITH_LOCK (this-> _m) {
-      if (this-> _entity-> find (key, session)) {
+      bool onDisk = false;
+      if (this-> _entity-> find (key, session, onDisk)) {
+        if (onDisk) this-> _disk_hit += 1;
         this-> _hit += 1;
       } else {
         this-> _miss += 1;
@@ -483,15 +485,18 @@ namespace kv_store::instance {
       WITH_LOCK (this-> _m) { // instances cannot register/quit during a market run
         config::Dict d;
         d.insert ("hit", this-> _hit);
+        d.insert ("disk-hit", this-> _disk_hit);
         d.insert ("miss", this-> _miss);
         d.insert ("set", this-> _set);
         d.insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
+        d.insert ("disk-usage", (int64_t) this-> _entity-> getCurrentDiskUsage ().kilobytes ());
         d.insert ("size", (int64_t) this-> _entity-> getSize ().kilobytes ());
         d.insert ("unit", "KB");
 
         this-> _traces-> append (time (NULL), d);
 
         this-> _hit = 0;
+        this-> _disk_hit = 0;
         this-> _miss = 0;
         this-> _set = 0;
       }

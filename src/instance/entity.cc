@@ -58,6 +58,11 @@ namespace kv_store::instance {
     return this-> _entity-> getRamColl ().getMemoryUsage ();
   }
 
+  MemorySize CacheEntity::getCurrentDiskUsage () const {
+    if (this-> _entity == nullptr) return MemorySize::B (0);
+    return this-> _entity-> getDiskColl ().getMemoryUsage ();
+  }
+
   MemorySize CacheEntity::getMaxSize () const {
     return this-> _maxSize;
   }
@@ -97,12 +102,12 @@ namespace kv_store::instance {
     }
   }
 
-  bool CacheEntity::find (const std::string & key, rd_utils::net::TcpStream& session) {
+  bool CacheEntity::find (const std::string & key, rd_utils::net::TcpStream& session, bool & onDisk) {
     try {
       common::Key k;
       k.set (key);
 
-      auto value = this-> _entity-> find (k);
+      auto value = this-> _entity-> find (k, onDisk);
       if (value != nullptr) {
         session.sendU32 (value-> len ());
         session.sendRaw (value-> data (), value-> len ());

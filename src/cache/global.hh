@@ -77,7 +77,7 @@ namespace kv_store {
                 /**
                  * Find a value in the collection
                  */
-                std::shared_ptr <common::Value> find (const common::Key & k);
+                std::shared_ptr <common::Value> find (const common::Key & k, bool & onDisk);
 
                 /**
                  * Remove a key from the collection
