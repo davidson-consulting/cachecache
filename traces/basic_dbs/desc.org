@@ -13,4 +13,9 @@ This folder contains default databases used to replicate deployements.
   where the users subscription follows a zip law. (i.e. all users are subscribed
   to the first user, half to the seconds, a third to the third, etc.)
 
-- all_10_then_3_subs: contains a default social graph where every user is subscribed to the first 10 users, and to 3 others randomly selected users.
+- all_10_then_3_subs: contains a default social graph where every user is
+  subscribed to the first 10 users, and to 3 others randomly selected users.
+
+- all_10_then_3_subs_filled: contains a default social graph where every user is
+  subscribed to the first 10 users, and to 3 others randomly selected users.
+  Each user has published 10 to 100 posts.
