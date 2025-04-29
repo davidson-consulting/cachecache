@@ -1,0 +1,93 @@
+diff --git a/cachelib/allocator/Cache.h b/cachelib/allocator/Cache.h
+index e225ba8..bcbee0f 100644
+--- a/cachelib/allocator/Cache.h
++++ b/cachelib/allocator/Cache.h
+@@ -213,7 +213,7 @@ class CacheBase {
+   // <Stat -> Count/Delta> maps
+   mutable RateMap counters_;
+ 
+- protected:
++ public:
+   // move bytes from one pool to another. The source pool should be at least
+   // _bytes_ in size.
+   //
+@@ -234,6 +234,7 @@ class CacheBase {
+   // serialize cache allocator config for exporting to Scuba
+   virtual std::map<std::string, std::string> serializeConfigParams() const = 0;
+ 
++ public:
+   // Releases a slab from a pool into its corresponding memory pool
+   // or back to the slab allocator, depending on SlabReleaseMode.
+   //  SlabReleaseMode::kRebalance -> back to the pool
+@@ -255,6 +256,7 @@ class CacheBase {
+                            SlabReleaseMode mode,
+                            const void* hint = nullptr) = 0;
+ 
++ protected:
+   // update the number of slabs to be advised
+   virtual void updateNumSlabsToAdvise(int32_t numSlabsToAdvise) = 0;
+ 
+@@ -283,12 +285,14 @@ class CacheBase {
+   //
+   // @throw std::invalid_argument if the hint is invalid or if the pid or cid
+   //        is invalid.
++ public:
+   virtual void releaseSlab(PoolId pid,
+                            ClassId victim,
+                            ClassId receiver,
+                            SlabReleaseMode mode,
+                            const void* hint = nullptr) = 0;
+ 
++ protected:
+   // Reclaim slabs from the slab allocator that were advised away using
+   // releaseSlab in SlabReleaseMode::kAdvise mode.
+   //
+diff --git a/cachelib/allocator/CacheAllocator.h b/cachelib/allocator/CacheAllocator.h
+index 7440c11..41ee566 100644
+--- a/cachelib/allocator/CacheAllocator.h
++++ b/cachelib/allocator/CacheAllocator.h
+@@ -1419,6 +1419,7 @@ class CacheAllocator : public CacheBase {
+       std::array<std::array<MMContainerPtr, MemoryAllocator::kMaxClasses>,
+                  MemoryPoolManager::kMaxPools>;
+ 
++ public:
+   void createMMContainers(const PoolId pid, MMConfig config);
+ 
+   // acquire the MMContainer corresponding to the the Item's class and pool.
+@@ -1430,6 +1431,7 @@ class CacheAllocator : public CacheBase {
+ 
+   MMContainer& getMMContainer(PoolId pid, ClassId cid) const noexcept;
+ 
++ private:
+   // create a new cache allocation. The allocation can be initialized
+   // appropriately and made accessible through insert or insertOrReplace.
+   // If the handle returned from this api is not passed on to
+@@ -1782,6 +1784,7 @@ class CacheAllocator : public CacheBase {
+   // @throw std::invalid_argument if the hint is invalid or if the pid or cid
+   //        is invalid.
+   // @throw std::runtime_error if fail to release a slab due to internal error
++ public:
+   void releaseSlab(PoolId pid,
+                    ClassId cid,
+                    SlabReleaseMode mode,
+@@ -1819,6 +1822,7 @@ class CacheAllocator : public CacheBase {
+   // @param releaseContext  slab release context
+   void releaseSlabImpl(const SlabReleaseContext& releaseContext);
+ 
++ private:
+   // @return  true when successfully marked as moving,
+   //          fasle when this item has already been freed
+   bool markMovingForSlabRelease(const SlabReleaseContext& ctx,
+diff --git a/contrib/build.sh b/contrib/build.sh
+index b9de071..148db3d 100755
+--- a/contrib/build.sh
++++ b/contrib/build.sh
+@@ -163,7 +163,7 @@ detect_os
+ if test -z "$skip_os_pkgs" ; then
+   case "$DETECTED" in
+     debian10|debian11) build_debian_10 ;;
+-    ubuntu18.04|ubuntu20.04|ubuntu21.04|ubuntu22.04) build_ubuntu_18 ;;
++    ubuntu18.04|ubuntu20.04|ubuntu21.04|ubuntu22.04|ubuntu24.04) build_ubuntu_18 ;;
+     centos8|rocky8.*) build_centos_8 ;;
+     centos9) build_centos_9 ;;
+     rocky9.?) build_rocky_9 ;;

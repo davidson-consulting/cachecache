@@ -1,0 +1,93 @@
+[machines.nuc-intel]
+hostname = "nuc-amd"
+work-dir = "/root/"
+user = "root"
+iface = "eth0"
+has-pdu = false
+
+[apps.app1]
+registry = {host = "nuc-intel"}
+front = {host = "nuc-intel", port = 8081, cache = "cache1.service1", thread = 12}
+
+compose = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+post = [{host = "nuc-intel", nb = 12, cache = "cache1.service1", db = "mysql1"}]
+social = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "file1"}]
+short = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "mysql1"}]
+user = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "mysql1"}]
+timeline = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "file1"}]
+
+[apps.app2]
+registry = {host = "nuc-intel"}
+front = {host = "nuc-intel", port = 8082, cache = "cache1.service2", thread = 12}
+
+compose = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+post = [{host = "nuc-intel", nb = 12, cache = "cache1.service2", db = "mysql2"}]
+social = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "file2"}]
+short = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "mysql2"}]
+user = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "mysql2"}]
+timeline = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "file2"}]
+
+[apps.app3]
+registry = {host = "nuc-intel"}
+front = {host = "nuc-intel", port = 8083, cache = "cache1.service3", thread = 12}
+
+compose = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+post = [{host = "nuc-intel", nb = 12, cache = "cache1.service3", db = "mysql3"}]
+social = [{host = "nuc-intel", cache = "cache1.service3", nb = 12, db = "file3"}]
+short = [{host = "nuc-intel", cache = "cache1.service3", nb = 12, db = "mysql3"}]
+user = [{host = "nuc-intel", cache = "cache1.service3", nb = 12, db = "mysql3"}]
+timeline = [{host = "nuc-intel", cache = "cache1.service3", nb = 12, db = "file3"}]
+
+# Available for all services
+[dbs.mysql1]
+host = "nuc-intel"
+port = 3309
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+kind = "mysql"
+
+# Only timeline and social_graph works with file dbs
+[dbs.file1]
+host = "nuc-intel"
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+kind = "file"
+
+# Available for all services
+[dbs.mysql2]
+host = "nuc-intel"
+port = 3310
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+kind = "mysql"
+
+# Only timeline and social_graph works with file dbs
+[dbs.file2]
+host = "nuc-intel"
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+kind = "file"
+
+# Available for all services
+[dbs.mysql3]
+host = "nuc-intel"
+port = 3311
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+kind = "mysql"
+
+# Only timeline and social_graph works with file dbs
+[dbs.file3]
+host = "nuc-intel"
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+kind = "file"
+
+[caches.cache1]
+host = "nuc-intel"
+version = "cachelib"
+size = 384
+unit = "MB"
+cgroup_cache_file = 384 # minimum memory size set in the cgroup in order to have some space for in RAM file caching
+entities = {
+     service1 = { size = 128, ttl = 1000, disk-cap = 512 },
+     service2 = { size = 128, ttl = 1000, disk-cap = 512 },
+     service3 = { size = 128, ttl = 1000, disk-cap = 512 },
+}

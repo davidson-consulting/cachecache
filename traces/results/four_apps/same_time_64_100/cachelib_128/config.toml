@@ -1,0 +1,103 @@
+
+[apps.app1]
+compose = [{host = "nuc-intel", nb = 12}]
+front = {cache = "cache1.service1", host = "nuc-intel", port = 8081, thread = 12}
+post = [{cache = "cache1.service1", db = "mysql1", host = "nuc-intel", nb = 12}]
+registry = {host = "nuc-intel"}
+short = [{cache = "cache1.service1", db = "mysql1", host = "nuc-intel", nb = 12}]
+social = [{cache = "cache1.service1", db = "file1", host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+timeline = [{cache = "cache1.service1", db = "file1", host = "nuc-intel", nb = 12}]
+user = [{cache = "cache1.service1", db = "mysql1", host = "nuc-intel", nb = 12}]
+
+[apps.app2]
+compose = [{host = "nuc-intel", nb = 12}]
+front = {cache = "cache1.service2", host = "nuc-intel", port = 8082, thread = 12}
+post = [{cache = "cache1.service2", db = "mysql2", host = "nuc-intel", nb = 12}]
+registry = {host = "nuc-intel"}
+short = [{cache = "cache1.service2", db = "mysql2", host = "nuc-intel", nb = 12}]
+social = [{cache = "cache1.service2", db = "file2", host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+timeline = [{cache = "cache1.service2", db = "file2", host = "nuc-intel", nb = 12}]
+user = [{cache = "cache1.service2", db = "mysql2", host = "nuc-intel", nb = 12}]
+
+[apps.app3]
+compose = [{host = "nuc-intel", nb = 12}]
+front = {cache = "cache1.service3", host = "nuc-intel", port = 8083, thread = 12}
+post = [{cache = "cache1.service3", db = "mysql3", host = "nuc-intel", nb = 12}]
+registry = {host = "nuc-intel"}
+short = [{cache = "cache1.service3", db = "mysql3", host = "nuc-intel", nb = 12}]
+social = [{cache = "cache1.service3", db = "file3", host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+timeline = [{cache = "cache1.service3", db = "file3", host = "nuc-intel", nb = 12}]
+user = [{cache = "cache1.service3", db = "mysql3", host = "nuc-intel", nb = 12}]
+
+[apps.app4]
+compose = [{host = "nuc-intel", nb = 12}]
+front = {cache = "cache1.service4", host = "nuc-intel", port = 8084, thread = 12}
+post = [{cache = "cache1.service4", db = "mysql4", host = "nuc-intel", nb = 12}]
+registry = {host = "nuc-intel"}
+short = [{cache = "cache1.service4", db = "mysql4", host = "nuc-intel", nb = 12}]
+social = [{cache = "cache1.service4", db = "file4", host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+timeline = [{cache = "cache1.service4", db = "file4", host = "nuc-intel", nb = 12}]
+user = [{cache = "cache1.service4", db = "mysql4", host = "nuc-intel", nb = 12}]
+
+[caches.cache1]
+cgroup_cache_file = 1024
+entities = {service1 = {disk-cap = 512, size = 128, ttl = 1000}, service2 = {disk-cap = 512, size = 128, ttl = 1000}, service3 = {disk-cap = 512, size = 128, ttl = 1000}, service4 = {disk-cap = 512, size = 128, ttl = 1000}}
+host = "nuc-intel"
+size = 512
+unit = "MB"
+version = "cachelib"
+
+[dbs.file1]
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+host = "nuc-intel"
+kind = "file"
+
+[dbs.file2]
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+host = "nuc-intel"
+kind = "file"
+
+[dbs.file3]
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+host = "nuc-intel"
+kind = "file"
+
+[dbs.file4]
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+host = "nuc-intel"
+kind = "file"
+
+[dbs.mysql1]
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+host = "nuc-intel"
+kind = "mysql"
+port = 3309
+
+[dbs.mysql2]
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+host = "nuc-intel"
+kind = "mysql"
+port = 3310
+
+[dbs.mysql3]
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+host = "nuc-intel"
+kind = "mysql"
+port = 3311
+
+[dbs.mysql4]
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+host = "nuc-intel"
+kind = "mysql"
+port = 3312
+
+[machines.nuc-intel]
+has-pdu = true
+hostname = "nuc-amd"
+iface = "eth0"
+user = "root"
+work-dir = "/root/"

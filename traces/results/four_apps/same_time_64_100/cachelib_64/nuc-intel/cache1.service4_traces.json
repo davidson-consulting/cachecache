@@ -1,0 +1,757 @@
+[
+	{"timestamp" : 1745306965, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306966, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306967, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306968, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306969, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306970, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306971, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306972, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306973, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306974, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306975, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306976, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306977, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306978, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306979, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306980, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306981, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306982, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306983, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306984, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306985, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306986, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306987, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306988, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306989, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306990, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306991, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306992, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306993, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306994, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306995, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306996, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306997, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306998, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306999, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307000, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307001, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307002, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307003, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307004, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307005, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307006, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307007, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307008, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307009, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307010, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307011, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307012, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307013, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307014, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307015, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745307016, "hit" : 65, "miss" : 249, "set" : 237, "size" : 61440, "unit" : "KB", "usage" : 165}
+,
+	{"timestamp" : 1745307017, "hit" : 1404, "miss" : 1192, "set" : 1199, "size" : 61440, "unit" : "KB", "usage" : 3076}
+,
+	{"timestamp" : 1745307018, "hit" : 1291, "miss" : 1188, "set" : 1184, "size" : 61440, "unit" : "KB", "usage" : 5893}
+,
+	{"timestamp" : 1745307019, "hit" : 781, "miss" : 1217, "set" : 1217, "size" : 61440, "unit" : "KB", "usage" : 8622}
+,
+	{"timestamp" : 1745307020, "hit" : 390, "miss" : 1436, "set" : 1434, "size" : 61440, "unit" : "KB", "usage" : 11257}
+,
+	{"timestamp" : 1745307021, "hit" : 395, "miss" : 1510, "set" : 1510, "size" : 61440, "unit" : "KB", "usage" : 14136}
+,
+	{"timestamp" : 1745307022, "hit" : 847, "miss" : 1379, "set" : 1380, "size" : 61440, "unit" : "KB", "usage" : 17116}
+,
+	{"timestamp" : 1745307023, "hit" : 420, "miss" : 1510, "set" : 1510, "size" : 61440, "unit" : "KB", "usage" : 19995}
+,
+	{"timestamp" : 1745307024, "hit" : 607, "miss" : 1377, "set" : 1378, "size" : 61440, "unit" : "KB", "usage" : 22848}
+,
+	{"timestamp" : 1745307025, "hit" : 829, "miss" : 1262, "set" : 1262, "size" : 61440, "unit" : "KB", "usage" : 25466}
+,
+	{"timestamp" : 1745307026, "hit" : 842, "miss" : 1345, "set" : 1345, "size" : 61440, "unit" : "KB", "usage" : 28233}
+,
+	{"timestamp" : 1745307027, "hit" : 1355, "miss" : 1323, "set" : 1326, "size" : 61440, "unit" : "KB", "usage" : 31403}
+,
+	{"timestamp" : 1745307028, "hit" : 1211, "miss" : 1270, "set" : 1265, "size" : 61440, "unit" : "KB", "usage" : 34439}
+,
+	{"timestamp" : 1745307029, "hit" : 1170, "miss" : 1248, "set" : 1252, "size" : 61440, "unit" : "KB", "usage" : 37335}
+,
+	{"timestamp" : 1745307030, "hit" : 1588, "miss" : 1050, "set" : 1046, "size" : 61440, "unit" : "KB", "usage" : 40244}
+,
+	{"timestamp" : 1745307031, "hit" : 735, "miss" : 1469, "set" : 1466, "size" : 61440, "unit" : "KB", "usage" : 43198}
+,
+	{"timestamp" : 1745307032, "hit" : 1175, "miss" : 1242, "set" : 1245, "size" : 61440, "unit" : "KB", "usage" : 46083}
+,
+	{"timestamp" : 1745307033, "hit" : 1100, "miss" : 1206, "set" : 1205, "size" : 61440, "unit" : "KB", "usage" : 48685}
+,
+	{"timestamp" : 1745307034, "hit" : 1382, "miss" : 1018, "set" : 1020, "size" : 61440, "unit" : "KB", "usage" : 51313}
+,
+	{"timestamp" : 1745307035, "hit" : 1689, "miss" : 837, "set" : 837, "size" : 61440, "unit" : "KB", "usage" : 53854}
+,
+	{"timestamp" : 1745307036, "hit" : 1863, "miss" : 924, "set" : 926, "size" : 61440, "unit" : "KB", "usage" : 56496}
+,
+	{"timestamp" : 1745307037, "hit" : 1193, "miss" : 1133, "set" : 1129, "size" : 61440, "unit" : "KB", "usage" : 57467}
+,
+	{"timestamp" : 1745307038, "hit" : 1733, "miss" : 863, "set" : 866, "size" : 61440, "unit" : "KB", "usage" : 57481}
+,
+	{"timestamp" : 1745307039, "hit" : 1412, "miss" : 1144, "set" : 1139, "size" : 61440, "unit" : "KB", "usage" : 57496}
+,
+	{"timestamp" : 1745307040, "hit" : 1244, "miss" : 1060, "set" : 1058, "size" : 61440, "unit" : "KB", "usage" : 57509}
+,
+	{"timestamp" : 1745307041, "hit" : 1827, "miss" : 866, "set" : 865, "size" : 61440, "unit" : "KB", "usage" : 57524}
+,
+	{"timestamp" : 1745307042, "hit" : 1904, "miss" : 741, "set" : 744, "size" : 61440, "unit" : "KB", "usage" : 57538}
+,
+	{"timestamp" : 1745307043, "hit" : 1325, "miss" : 1021, "set" : 1018, "size" : 61440, "unit" : "KB", "usage" : 57550}
+,
+	{"timestamp" : 1745307044, "hit" : 1511, "miss" : 1088, "set" : 1088, "size" : 61440, "unit" : "KB", "usage" : 57564}
+,
+	{"timestamp" : 1745307045, "hit" : 2419, "miss" : 735, "set" : 736, "size" : 61440, "unit" : "KB", "usage" : 57580}
+,
+	{"timestamp" : 1745307046, "hit" : 2222, "miss" : 906, "set" : 902, "size" : 61440, "unit" : "KB", "usage" : 57532}
+,
+	{"timestamp" : 1745307047, "hit" : 2758, "miss" : 872, "set" : 868, "size" : 61440, "unit" : "KB", "usage" : 57616}
+,
+	{"timestamp" : 1745307048, "hit" : 1812, "miss" : 986, "set" : 987, "size" : 61440, "unit" : "KB", "usage" : 57630}
+,
+	{"timestamp" : 1745307049, "hit" : 1967, "miss" : 1006, "set" : 1005, "size" : 61440, "unit" : "KB", "usage" : 57645}
+,
+	{"timestamp" : 1745307050, "hit" : 2153, "miss" : 790, "set" : 790, "size" : 61440, "unit" : "KB", "usage" : 57661}
+,
+	{"timestamp" : 1745307051, "hit" : 1241, "miss" : 1165, "set" : 1166, "size" : 61440, "unit" : "KB", "usage" : 57674}
+,
+	{"timestamp" : 1745307052, "hit" : 2106, "miss" : 924, "set" : 921, "size" : 61440, "unit" : "KB", "usage" : 57689}
+,
+	{"timestamp" : 1745307053, "hit" : 2201, "miss" : 965, "set" : 962, "size" : 61440, "unit" : "KB", "usage" : 57704}
+,
+	{"timestamp" : 1745307054, "hit" : 2638, "miss" : 580, "set" : 584, "size" : 61440, "unit" : "KB", "usage" : 57717}
+,
+	{"timestamp" : 1745307055, "hit" : 1938, "miss" : 1073, "set" : 1072, "size" : 61440, "unit" : "KB", "usage" : 57732}
+,
+	{"timestamp" : 1745307056, "hit" : 2049, "miss" : 1065, "set" : 1061, "size" : 61440, "unit" : "KB", "usage" : 57745}
+,
+	{"timestamp" : 1745307057, "hit" : 1790, "miss" : 983, "set" : 983, "size" : 61440, "unit" : "KB", "usage" : 57758}
+,
+	{"timestamp" : 1745307058, "hit" : 2091, "miss" : 822, "set" : 821, "size" : 61440, "unit" : "KB", "usage" : 57770}
+,
+	{"timestamp" : 1745307059, "hit" : 2386, "miss" : 900, "set" : 898, "size" : 61440, "unit" : "KB", "usage" : 57786}
+,
+	{"timestamp" : 1745307060, "hit" : 2040, "miss" : 999, "set" : 999, "size" : 61440, "unit" : "KB", "usage" : 57802}
+,
+	{"timestamp" : 1745307061, "hit" : 1808, "miss" : 891, "set" : 894, "size" : 61440, "unit" : "KB", "usage" : 57814}
+,
+	{"timestamp" : 1745307062, "hit" : 1985, "miss" : 1121, "set" : 1118, "size" : 61440, "unit" : "KB", "usage" : 57828}
+,
+	{"timestamp" : 1745307063, "hit" : 2050, "miss" : 954, "set" : 958, "size" : 61440, "unit" : "KB", "usage" : 57839}
+,
+	{"timestamp" : 1745307064, "hit" : 2429, "miss" : 826, "set" : 826, "size" : 61440, "unit" : "KB", "usage" : 57855}
+,
+	{"timestamp" : 1745307065, "hit" : 1842, "miss" : 939, "set" : 933, "size" : 61440, "unit" : "KB", "usage" : 57867}
+,
+	{"timestamp" : 1745307066, "hit" : 1774, "miss" : 954, "set" : 954, "size" : 61440, "unit" : "KB", "usage" : 57880}
+,
+	{"timestamp" : 1745307067, "hit" : 1361, "miss" : 972, "set" : 969, "size" : 61440, "unit" : "KB", "usage" : 57891}
+,
+	{"timestamp" : 1745307068, "hit" : 1624, "miss" : 879, "set" : 879, "size" : 61440, "unit" : "KB", "usage" : 57903}
+,
+	{"timestamp" : 1745307069, "hit" : 1755, "miss" : 845, "set" : 845, "size" : 61440, "unit" : "KB", "usage" : 57914}
+,
+	{"timestamp" : 1745307070, "hit" : 1529, "miss" : 948, "set" : 948, "size" : 61440, "unit" : "KB", "usage" : 57926}
+,
+	{"timestamp" : 1745307071, "hit" : 1150, "miss" : 1230, "set" : 1231, "size" : 61440, "unit" : "KB", "usage" : 57937}
+,
+	{"timestamp" : 1745307072, "hit" : 1598, "miss" : 1031, "set" : 1032, "size" : 61440, "unit" : "KB", "usage" : 57948}
+,
+	{"timestamp" : 1745307073, "hit" : 1910, "miss" : 1079, "set" : 1075, "size" : 61440, "unit" : "KB", "usage" : 57963}
+,
+	{"timestamp" : 1745307074, "hit" : 2228, "miss" : 1012, "set" : 1012, "size" : 61440, "unit" : "KB", "usage" : 57977}
+,
+	{"timestamp" : 1745307075, "hit" : 2289, "miss" : 827, "set" : 824, "size" : 61440, "unit" : "KB", "usage" : 57992}
+,
+	{"timestamp" : 1745307076, "hit" : 1802, "miss" : 1047, "set" : 1048, "size" : 61440, "unit" : "KB", "usage" : 58005}
+,
+	{"timestamp" : 1745307077, "hit" : 1746, "miss" : 997, "set" : 996, "size" : 61440, "unit" : "KB", "usage" : 58015}
+,
+	{"timestamp" : 1745307078, "hit" : 1780, "miss" : 949, "set" : 951, "size" : 61440, "unit" : "KB", "usage" : 58025}
+,
+	{"timestamp" : 1745307079, "hit" : 2104, "miss" : 893, "set" : 888, "size" : 61440, "unit" : "KB", "usage" : 58038}
+,
+	{"timestamp" : 1745307080, "hit" : 1676, "miss" : 1147, "set" : 1149, "size" : 61440, "unit" : "KB", "usage" : 58051}
+,
+	{"timestamp" : 1745307081, "hit" : 1938, "miss" : 796, "set" : 797, "size" : 61440, "unit" : "KB", "usage" : 58062}
+,
+	{"timestamp" : 1745307082, "hit" : 1834, "miss" : 913, "set" : 910, "size" : 61440, "unit" : "KB", "usage" : 58073}
+,
+	{"timestamp" : 1745307083, "hit" : 2233, "miss" : 779, "set" : 778, "size" : 61440, "unit" : "KB", "usage" : 58085}
+,
+	{"timestamp" : 1745307084, "hit" : 1834, "miss" : 923, "set" : 920, "size" : 61440, "unit" : "KB", "usage" : 58100}
+,
+	{"timestamp" : 1745307085, "hit" : 1772, "miss" : 837, "set" : 838, "size" : 61440, "unit" : "KB", "usage" : 58111}
+,
+	{"timestamp" : 1745307086, "hit" : 1888, "miss" : 971, "set" : 970, "size" : 61440, "unit" : "KB", "usage" : 58124}
+,
+	{"timestamp" : 1745307087, "hit" : 1654, "miss" : 1013, "set" : 1014, "size" : 61440, "unit" : "KB", "usage" : 58135}
+,
+	{"timestamp" : 1745307088, "hit" : 1495, "miss" : 894, "set" : 892, "size" : 61440, "unit" : "KB", "usage" : 58146}
+,
+	{"timestamp" : 1745307089, "hit" : 1943, "miss" : 899, "set" : 901, "size" : 61440, "unit" : "KB", "usage" : 58159}
+,
+	{"timestamp" : 1745307090, "hit" : 1862, "miss" : 1051, "set" : 1050, "size" : 61440, "unit" : "KB", "usage" : 58169}
+,
+	{"timestamp" : 1745307091, "hit" : 2311, "miss" : 795, "set" : 793, "size" : 61440, "unit" : "KB", "usage" : 58182}
+,
+	{"timestamp" : 1745307092, "hit" : 1690, "miss" : 964, "set" : 965, "size" : 61440, "unit" : "KB", "usage" : 58193}
+,
+	{"timestamp" : 1745307093, "hit" : 2121, "miss" : 777, "set" : 775, "size" : 61440, "unit" : "KB", "usage" : 58204}
+,
+	{"timestamp" : 1745307094, "hit" : 1923, "miss" : 893, "set" : 892, "size" : 61440, "unit" : "KB", "usage" : 58216}
+,
+	{"timestamp" : 1745307095, "hit" : 2453, "miss" : 762, "set" : 763, "size" : 61440, "unit" : "KB", "usage" : 58228}
+,
+	{"timestamp" : 1745307096, "hit" : 2194, "miss" : 938, "set" : 934, "size" : 61440, "unit" : "KB", "usage" : 58241}
+,
+	{"timestamp" : 1745307097, "hit" : 1712, "miss" : 1081, "set" : 1079, "size" : 61440, "unit" : "KB", "usage" : 58254}
+,
+	{"timestamp" : 1745307098, "hit" : 1702, "miss" : 906, "set" : 907, "size" : 61440, "unit" : "KB", "usage" : 58267}
+,
+	{"timestamp" : 1745307099, "hit" : 2014, "miss" : 799, "set" : 800, "size" : 61440, "unit" : "KB", "usage" : 58278}
+,
+	{"timestamp" : 1745307100, "hit" : 2166, "miss" : 796, "set" : 793, "size" : 61440, "unit" : "KB", "usage" : 58291}
+,
+	{"timestamp" : 1745307101, "hit" : 2263, "miss" : 657, "set" : 656, "size" : 61440, "unit" : "KB", "usage" : 58302}
+,
+	{"timestamp" : 1745307102, "hit" : 1541, "miss" : 891, "set" : 890, "size" : 61440, "unit" : "KB", "usage" : 58311}
+,
+	{"timestamp" : 1745307103, "hit" : 1815, "miss" : 780, "set" : 779, "size" : 61440, "unit" : "KB", "usage" : 58323}
+,
+	{"timestamp" : 1745307104, "hit" : 1779, "miss" : 907, "set" : 910, "size" : 61440, "unit" : "KB", "usage" : 58334}
+,
+	{"timestamp" : 1745307105, "hit" : 1377, "miss" : 996, "set" : 992, "size" : 61440, "unit" : "KB", "usage" : 58343}
+,
+	{"timestamp" : 1745307106, "hit" : 2028, "miss" : 750, "set" : 751, "size" : 61440, "unit" : "KB", "usage" : 58355}
+,
+	{"timestamp" : 1745307107, "hit" : 1854, "miss" : 852, "set" : 852, "size" : 61440, "unit" : "KB", "usage" : 58366}
+,
+	{"timestamp" : 1745307108, "hit" : 2035, "miss" : 832, "set" : 831, "size" : 61440, "unit" : "KB", "usage" : 58378}
+,
+	{"timestamp" : 1745307109, "hit" : 2183, "miss" : 823, "set" : 821, "size" : 61440, "unit" : "KB", "usage" : 58392}
+,
+	{"timestamp" : 1745307110, "hit" : 2570, "miss" : 697, "set" : 698, "size" : 61440, "unit" : "KB", "usage" : 58405}
+,
+	{"timestamp" : 1745307111, "hit" : 1502, "miss" : 1002, "set" : 1003, "size" : 61440, "unit" : "KB", "usage" : 58415}
+,
+	{"timestamp" : 1745307112, "hit" : 1985, "miss" : 908, "set" : 906, "size" : 61440, "unit" : "KB", "usage" : 58425}
+,
+	{"timestamp" : 1745307113, "hit" : 1679, "miss" : 955, "set" : 959, "size" : 61440, "unit" : "KB", "usage" : 58436}
+,
+	{"timestamp" : 1745307114, "hit" : 1429, "miss" : 988, "set" : 985, "size" : 61440, "unit" : "KB", "usage" : 58448}
+,
+	{"timestamp" : 1745307115, "hit" : 1916, "miss" : 1017, "set" : 1015, "size" : 61440, "unit" : "KB", "usage" : 58458}
+,
+	{"timestamp" : 1745307116, "hit" : 1959, "miss" : 932, "set" : 933, "size" : 61440, "unit" : "KB", "usage" : 58469}
+,
+	{"timestamp" : 1745307117, "hit" : 2051, "miss" : 789, "set" : 790, "size" : 61440, "unit" : "KB", "usage" : 58479}
+,
+	{"timestamp" : 1745307118, "hit" : 2220, "miss" : 777, "set" : 776, "size" : 61440, "unit" : "KB", "usage" : 58493}
+,
+	{"timestamp" : 1745307119, "hit" : 1836, "miss" : 1093, "set" : 1091, "size" : 61440, "unit" : "KB", "usage" : 58505}
+,
+	{"timestamp" : 1745307120, "hit" : 1942, "miss" : 974, "set" : 973, "size" : 61440, "unit" : "KB", "usage" : 58516}
+,
+	{"timestamp" : 1745307121, "hit" : 2015, "miss" : 1019, "set" : 1019, "size" : 61440, "unit" : "KB", "usage" : 58527}
+,
+	{"timestamp" : 1745307122, "hit" : 1953, "miss" : 882, "set" : 883, "size" : 61440, "unit" : "KB", "usage" : 58538}
+,
+	{"timestamp" : 1745307123, "hit" : 1588, "miss" : 1033, "set" : 1029, "size" : 61440, "unit" : "KB", "usage" : 58547}
+,
+	{"timestamp" : 1745307124, "hit" : 1464, "miss" : 1051, "set" : 1051, "size" : 61440, "unit" : "KB", "usage" : 58557}
+,
+	{"timestamp" : 1745307125, "hit" : 2197, "miss" : 790, "set" : 791, "size" : 61440, "unit" : "KB", "usage" : 58569}
+,
+	{"timestamp" : 1745307126, "hit" : 1426, "miss" : 1085, "set" : 1084, "size" : 61440, "unit" : "KB", "usage" : 58579}
+,
+	{"timestamp" : 1745307127, "hit" : 1705, "miss" : 1085, "set" : 1085, "size" : 61440, "unit" : "KB", "usage" : 58592}
+,
+	{"timestamp" : 1745307128, "hit" : 1731, "miss" : 1137, "set" : 1132, "size" : 61440, "unit" : "KB", "usage" : 58600}
+,
+	{"timestamp" : 1745307129, "hit" : 1828, "miss" : 980, "set" : 983, "size" : 61440, "unit" : "KB", "usage" : 58609}
+,
+	{"timestamp" : 1745307130, "hit" : 1645, "miss" : 1090, "set" : 1089, "size" : 61440, "unit" : "KB", "usage" : 58622}
+,
+	{"timestamp" : 1745307131, "hit" : 2014, "miss" : 968, "set" : 967, "size" : 61440, "unit" : "KB", "usage" : 58632}
+,
+	{"timestamp" : 1745307132, "hit" : 1362, "miss" : 1173, "set" : 1171, "size" : 61440, "unit" : "KB", "usage" : 58642}
+,
+	{"timestamp" : 1745307133, "hit" : 1924, "miss" : 964, "set" : 966, "size" : 61440, "unit" : "KB", "usage" : 58650}
+,
+	{"timestamp" : 1745307134, "hit" : 2249, "miss" : 878, "set" : 878, "size" : 61440, "unit" : "KB", "usage" : 58663}
+,
+	{"timestamp" : 1745307135, "hit" : 2306, "miss" : 823, "set" : 820, "size" : 61440, "unit" : "KB", "usage" : 58675}
+,
+	{"timestamp" : 1745307136, "hit" : 1650, "miss" : 995, "set" : 994, "size" : 61440, "unit" : "KB", "usage" : 58686}
+,
+	{"timestamp" : 1745307137, "hit" : 1340, "miss" : 988, "set" : 992, "size" : 61440, "unit" : "KB", "usage" : 58692}
+,
+	{"timestamp" : 1745307138, "hit" : 2066, "miss" : 810, "set" : 808, "size" : 61440, "unit" : "KB", "usage" : 58704}
+,
+	{"timestamp" : 1745307139, "hit" : 1816, "miss" : 854, "set" : 853, "size" : 61440, "unit" : "KB", "usage" : 58715}
+,
+	{"timestamp" : 1745307140, "hit" : 1695, "miss" : 1017, "set" : 1014, "size" : 61440, "unit" : "KB", "usage" : 58724}
+,
+	{"timestamp" : 1745307141, "hit" : 1355, "miss" : 1167, "set" : 1167, "size" : 61440, "unit" : "KB", "usage" : 58732}
+,
+	{"timestamp" : 1745307142, "hit" : 1685, "miss" : 950, "set" : 949, "size" : 61440, "unit" : "KB", "usage" : 58742}
+,
+	{"timestamp" : 1745307143, "hit" : 2062, "miss" : 802, "set" : 801, "size" : 61440, "unit" : "KB", "usage" : 58751}
+,
+	{"timestamp" : 1745307144, "hit" : 1924, "miss" : 901, "set" : 904, "size" : 61440, "unit" : "KB", "usage" : 58762}
+,
+	{"timestamp" : 1745307145, "hit" : 1676, "miss" : 929, "set" : 925, "size" : 61440, "unit" : "KB", "usage" : 58772}
+,
+	{"timestamp" : 1745307146, "hit" : 1918, "miss" : 886, "set" : 889, "size" : 61440, "unit" : "KB", "usage" : 58783}
+,
+	{"timestamp" : 1745307147, "hit" : 2032, "miss" : 782, "set" : 780, "size" : 61440, "unit" : "KB", "usage" : 58793}
+,
+	{"timestamp" : 1745307148, "hit" : 1539, "miss" : 936, "set" : 936, "size" : 61440, "unit" : "KB", "usage" : 58801}
+,
+	{"timestamp" : 1745307149, "hit" : 1162, "miss" : 1047, "set" : 1042, "size" : 61440, "unit" : "KB", "usage" : 58807}
+,
+	{"timestamp" : 1745307150, "hit" : 1810, "miss" : 858, "set" : 858, "size" : 61440, "unit" : "KB", "usage" : 58817}
+,
+	{"timestamp" : 1745307151, "hit" : 2010, "miss" : 849, "set" : 851, "size" : 61440, "unit" : "KB", "usage" : 58830}
+,
+	{"timestamp" : 1745307152, "hit" : 2415, "miss" : 572, "set" : 572, "size" : 61440, "unit" : "KB", "usage" : 58840}
+,
+	{"timestamp" : 1745307153, "hit" : 2098, "miss" : 620, "set" : 616, "size" : 61440, "unit" : "KB", "usage" : 58850}
+,
+	{"timestamp" : 1745307154, "hit" : 1372, "miss" : 941, "set" : 940, "size" : 61440, "unit" : "KB", "usage" : 58858}
+,
+	{"timestamp" : 1745307155, "hit" : 1513, "miss" : 945, "set" : 944, "size" : 61440, "unit" : "KB", "usage" : 58868}
+,
+	{"timestamp" : 1745307156, "hit" : 2014, "miss" : 827, "set" : 828, "size" : 61440, "unit" : "KB", "usage" : 58881}
+,
+	{"timestamp" : 1745307157, "hit" : 1971, "miss" : 899, "set" : 899, "size" : 61440, "unit" : "KB", "usage" : 58892}
+,
+	{"timestamp" : 1745307158, "hit" : 1883, "miss" : 940, "set" : 942, "size" : 61440, "unit" : "KB", "usage" : 58900}
+,
+	{"timestamp" : 1745307159, "hit" : 2094, "miss" : 678, "set" : 675, "size" : 61440, "unit" : "KB", "usage" : 58909}
+,
+	{"timestamp" : 1745307160, "hit" : 1282, "miss" : 1153, "set" : 1152, "size" : 61440, "unit" : "KB", "usage" : 58916}
+,
+	{"timestamp" : 1745307161, "hit" : 2355, "miss" : 682, "set" : 684, "size" : 61440, "unit" : "KB", "usage" : 58925}
+,
+	{"timestamp" : 1745307162, "hit" : 2174, "miss" : 694, "set" : 694, "size" : 61440, "unit" : "KB", "usage" : 58934}
+,
+	{"timestamp" : 1745307163, "hit" : 1927, "miss" : 914, "set" : 912, "size" : 61440, "unit" : "KB", "usage" : 58943}
+,
+	{"timestamp" : 1745307164, "hit" : 2034, "miss" : 814, "set" : 813, "size" : 61440, "unit" : "KB", "usage" : 58952}
+,
+	{"timestamp" : 1745307165, "hit" : 2816, "miss" : 658, "set" : 655, "size" : 61440, "unit" : "KB", "usage" : 58965}
+,
+	{"timestamp" : 1745307166, "hit" : 2200, "miss" : 860, "set" : 860, "size" : 61440, "unit" : "KB", "usage" : 58975}
+,
+	{"timestamp" : 1745307167, "hit" : 1994, "miss" : 773, "set" : 774, "size" : 61440, "unit" : "KB", "usage" : 58985}
+,
+	{"timestamp" : 1745307168, "hit" : 1525, "miss" : 1055, "set" : 1055, "size" : 61440, "unit" : "KB", "usage" : 58992}
+,
+	{"timestamp" : 1745307169, "hit" : 2062, "miss" : 982, "set" : 982, "size" : 61440, "unit" : "KB", "usage" : 59002}
+,
+	{"timestamp" : 1745307170, "hit" : 2101, "miss" : 871, "set" : 869, "size" : 61440, "unit" : "KB", "usage" : 59011}
+,
+	{"timestamp" : 1745307171, "hit" : 2500, "miss" : 804, "set" : 803, "size" : 61440, "unit" : "KB", "usage" : 59023}
+,
+	{"timestamp" : 1745307172, "hit" : 2450, "miss" : 794, "set" : 796, "size" : 61440, "unit" : "KB", "usage" : 59035}
+,
+	{"timestamp" : 1745307173, "hit" : 1987, "miss" : 965, "set" : 961, "size" : 61440, "unit" : "KB", "usage" : 59048}
+,
+	{"timestamp" : 1745307174, "hit" : 2910, "miss" : 695, "set" : 697, "size" : 61440, "unit" : "KB", "usage" : 59060}
+,
+	{"timestamp" : 1745307175, "hit" : 1724, "miss" : 1034, "set" : 1033, "size" : 61440, "unit" : "KB", "usage" : 59069}
+,
+	{"timestamp" : 1745307176, "hit" : 1932, "miss" : 1116, "set" : 1115, "size" : 61440, "unit" : "KB", "usage" : 59077}
+,
+	{"timestamp" : 1745307177, "hit" : 1992, "miss" : 1031, "set" : 1030, "size" : 61440, "unit" : "KB", "usage" : 59089}
+,
+	{"timestamp" : 1745307178, "hit" : 2394, "miss" : 1024, "set" : 1024, "size" : 61440, "unit" : "KB", "usage" : 59104}
+,
+	{"timestamp" : 1745307179, "hit" : 2367, "miss" : 914, "set" : 918, "size" : 61440, "unit" : "KB", "usage" : 59118}
+,
+	{"timestamp" : 1745307180, "hit" : 2175, "miss" : 871, "set" : 869, "size" : 61440, "unit" : "KB", "usage" : 59128}
+,
+	{"timestamp" : 1745307181, "hit" : 2229, "miss" : 959, "set" : 960, "size" : 61440, "unit" : "KB", "usage" : 59138}
+,
+	{"timestamp" : 1745307182, "hit" : 2273, "miss" : 818, "set" : 818, "size" : 61440, "unit" : "KB", "usage" : 59149}
+,
+	{"timestamp" : 1745307183, "hit" : 1810, "miss" : 845, "set" : 846, "size" : 61440, "unit" : "KB", "usage" : 59156}
+,
+	{"timestamp" : 1745307184, "hit" : 1494, "miss" : 891, "set" : 891, "size" : 61440, "unit" : "KB", "usage" : 59164}
+,
+	{"timestamp" : 1745307185, "hit" : 1753, "miss" : 811, "set" : 808, "size" : 61440, "unit" : "KB", "usage" : 59172}
+,
+	{"timestamp" : 1745307186, "hit" : 1862, "miss" : 906, "set" : 907, "size" : 61440, "unit" : "KB", "usage" : 59181}
+,
+	{"timestamp" : 1745307187, "hit" : 1973, "miss" : 789, "set" : 787, "size" : 61440, "unit" : "KB", "usage" : 59190}
+,
+	{"timestamp" : 1745307188, "hit" : 2270, "miss" : 705, "set" : 703, "size" : 61440, "unit" : "KB", "usage" : 59201}
+,
+	{"timestamp" : 1745307189, "hit" : 1461, "miss" : 980, "set" : 982, "size" : 61440, "unit" : "KB", "usage" : 59210}
+,
+	{"timestamp" : 1745307190, "hit" : 1416, "miss" : 1043, "set" : 1043, "size" : 61440, "unit" : "KB", "usage" : 59217}
+,
+	{"timestamp" : 1745307191, "hit" : 1974, "miss" : 863, "set" : 860, "size" : 61440, "unit" : "KB", "usage" : 59225}
+,
+	{"timestamp" : 1745307192, "hit" : 1484, "miss" : 997, "set" : 996, "size" : 61440, "unit" : "KB", "usage" : 59234}
+,
+	{"timestamp" : 1745307193, "hit" : 1841, "miss" : 852, "set" : 852, "size" : 61440, "unit" : "KB", "usage" : 59240}
+,
+	{"timestamp" : 1745307194, "hit" : 1493, "miss" : 945, "set" : 946, "size" : 61440, "unit" : "KB", "usage" : 59250}
+,
+	{"timestamp" : 1745307195, "hit" : 1511, "miss" : 977, "set" : 974, "size" : 61440, "unit" : "KB", "usage" : 59260}
+,
+	{"timestamp" : 1745307196, "hit" : 1759, "miss" : 880, "set" : 883, "size" : 61440, "unit" : "KB", "usage" : 59269}
+,
+	{"timestamp" : 1745307197, "hit" : 1360, "miss" : 986, "set" : 986, "size" : 61440, "unit" : "KB", "usage" : 59278}
+,
+	{"timestamp" : 1745307198, "hit" : 1611, "miss" : 940, "set" : 940, "size" : 61440, "unit" : "KB", "usage" : 59284}
+,
+	{"timestamp" : 1745307199, "hit" : 2278, "miss" : 732, "set" : 733, "size" : 61440, "unit" : "KB", "usage" : 59292}
+,
+	{"timestamp" : 1745307200, "hit" : 1421, "miss" : 1048, "set" : 1048, "size" : 61440, "unit" : "KB", "usage" : 59299}
+,
+	{"timestamp" : 1745307201, "hit" : 1760, "miss" : 934, "set" : 932, "size" : 61440, "unit" : "KB", "usage" : 59308}
+,
+	{"timestamp" : 1745307202, "hit" : 2587, "miss" : 668, "set" : 670, "size" : 61440, "unit" : "KB", "usage" : 59320}
+,
+	{"timestamp" : 1745307203, "hit" : 1832, "miss" : 928, "set" : 926, "size" : 61440, "unit" : "KB", "usage" : 59328}
+,
+	{"timestamp" : 1745307204, "hit" : 2610, "miss" : 763, "set" : 763, "size" : 61440, "unit" : "KB", "usage" : 59340}
+,
+	{"timestamp" : 1745307205, "hit" : 1494, "miss" : 945, "set" : 946, "size" : 61440, "unit" : "KB", "usage" : 59348}
+,
+	{"timestamp" : 1745307206, "hit" : 1597, "miss" : 1047, "set" : 1047, "size" : 61440, "unit" : "KB", "usage" : 59353}
+,
+	{"timestamp" : 1745307207, "hit" : 1526, "miss" : 997, "set" : 995, "size" : 61440, "unit" : "KB", "usage" : 59362}
+,
+	{"timestamp" : 1745307208, "hit" : 1867, "miss" : 804, "set" : 807, "size" : 61440, "unit" : "KB", "usage" : 59373}
+,
+	{"timestamp" : 1745307209, "hit" : 2153, "miss" : 818, "set" : 815, "size" : 61440, "unit" : "KB", "usage" : 59382}
+,
+	{"timestamp" : 1745307210, "hit" : 2409, "miss" : 759, "set" : 757, "size" : 61440, "unit" : "KB", "usage" : 59390}
+,
+	{"timestamp" : 1745307211, "hit" : 1103, "miss" : 1167, "set" : 1170, "size" : 61440, "unit" : "KB", "usage" : 59399}
+,
+	{"timestamp" : 1745307212, "hit" : 2248, "miss" : 720, "set" : 719, "size" : 61440, "unit" : "KB", "usage" : 59408}
+,
+	{"timestamp" : 1745307213, "hit" : 1807, "miss" : 877, "set" : 877, "size" : 61440, "unit" : "KB", "usage" : 59418}
+,
+	{"timestamp" : 1745307214, "hit" : 1458, "miss" : 986, "set" : 986, "size" : 61440, "unit" : "KB", "usage" : 59427}
+,
+	{"timestamp" : 1745307215, "hit" : 1501, "miss" : 1019, "set" : 1017, "size" : 61440, "unit" : "KB", "usage" : 59433}
+,
+	{"timestamp" : 1745307216, "hit" : 1907, "miss" : 877, "set" : 880, "size" : 61440, "unit" : "KB", "usage" : 59444}
+,
+	{"timestamp" : 1745307217, "hit" : 1981, "miss" : 742, "set" : 741, "size" : 61440, "unit" : "KB", "usage" : 59453}
+,
+	{"timestamp" : 1745307218, "hit" : 1576, "miss" : 837, "set" : 838, "size" : 61440, "unit" : "KB", "usage" : 59461}
+,
+	{"timestamp" : 1745307219, "hit" : 1671, "miss" : 960, "set" : 959, "size" : 61440, "unit" : "KB", "usage" : 59469}
+,
+	{"timestamp" : 1745307220, "hit" : 2014, "miss" : 907, "set" : 907, "size" : 61440, "unit" : "KB", "usage" : 59479}
+,
+	{"timestamp" : 1745307221, "hit" : 1473, "miss" : 1099, "set" : 1097, "size" : 61440, "unit" : "KB", "usage" : 59484}
+,
+	{"timestamp" : 1745307222, "hit" : 1763, "miss" : 849, "set" : 851, "size" : 61440, "unit" : "KB", "usage" : 59491}
+,
+	{"timestamp" : 1745307223, "hit" : 1235, "miss" : 891, "set" : 889, "size" : 61440, "unit" : "KB", "usage" : 59496}
+,
+	{"timestamp" : 1745307224, "hit" : 1775, "miss" : 697, "set" : 699, "size" : 61440, "unit" : "KB", "usage" : 59505}
+,
+	{"timestamp" : 1745307225, "hit" : 1283, "miss" : 888, "set" : 888, "size" : 61440, "unit" : "KB", "usage" : 59512}
+,
+	{"timestamp" : 1745307226, "hit" : 1894, "miss" : 752, "set" : 751, "size" : 61440, "unit" : "KB", "usage" : 59522}
+,
+	{"timestamp" : 1745307227, "hit" : 1554, "miss" : 815, "set" : 815, "size" : 61440, "unit" : "KB", "usage" : 59529}
+,
+	{"timestamp" : 1745307228, "hit" : 1294, "miss" : 933, "set" : 931, "size" : 61440, "unit" : "KB", "usage" : 59535}
+,
+	{"timestamp" : 1745307229, "hit" : 1495, "miss" : 784, "set" : 783, "size" : 61440, "unit" : "KB", "usage" : 59540}
+,
+	{"timestamp" : 1745307230, "hit" : 2176, "miss" : 531, "set" : 528, "size" : 61440, "unit" : "KB", "usage" : 59551}
+,
+	{"timestamp" : 1745307231, "hit" : 1512, "miss" : 763, "set" : 763, "size" : 61440, "unit" : "KB", "usage" : 59557}
+,
+	{"timestamp" : 1745307232, "hit" : 1616, "miss" : 721, "set" : 722, "size" : 61440, "unit" : "KB", "usage" : 59567}
+,
+	{"timestamp" : 1745307233, "hit" : 1452, "miss" : 680, "set" : 680, "size" : 61440, "unit" : "KB", "usage" : 59574}
+,
+	{"timestamp" : 1745307234, "hit" : 1322, "miss" : 802, "set" : 799, "size" : 61440, "unit" : "KB", "usage" : 59581}
+,
+	{"timestamp" : 1745307235, "hit" : 1571, "miss" : 710, "set" : 709, "size" : 61440, "unit" : "KB", "usage" : 59587}
+,
+	{"timestamp" : 1745307236, "hit" : 1621, "miss" : 649, "set" : 651, "size" : 61440, "unit" : "KB", "usage" : 59594}
+,
+	{"timestamp" : 1745307237, "hit" : 876, "miss" : 892, "set" : 891, "size" : 61440, "unit" : "KB", "usage" : 59599}
+,
+	{"timestamp" : 1745307238, "hit" : 1072, "miss" : 893, "set" : 895, "size" : 61440, "unit" : "KB", "usage" : 59604}
+,
+	{"timestamp" : 1745307239, "hit" : 1563, "miss" : 787, "set" : 784, "size" : 61440, "unit" : "KB", "usage" : 59612}
+,
+	{"timestamp" : 1745307240, "hit" : 1493, "miss" : 908, "set" : 908, "size" : 61440, "unit" : "KB", "usage" : 59619}
+,
+	{"timestamp" : 1745307241, "hit" : 1451, "miss" : 958, "set" : 957, "size" : 61440, "unit" : "KB", "usage" : 59622}
+,
+	{"timestamp" : 1745307242, "hit" : 1808, "miss" : 789, "set" : 786, "size" : 61440, "unit" : "KB", "usage" : 59631}
+,
+	{"timestamp" : 1745307243, "hit" : 1585, "miss" : 853, "set" : 852, "size" : 61440, "unit" : "KB", "usage" : 59639}
+,
+	{"timestamp" : 1745307244, "hit" : 2799, "miss" : 442, "set" : 443, "size" : 61440, "unit" : "KB", "usage" : 59652}
+,
+	{"timestamp" : 1745307245, "hit" : 1384, "miss" : 979, "set" : 979, "size" : 61440, "unit" : "KB", "usage" : 59659}
+,
+	{"timestamp" : 1745307246, "hit" : 1442, "miss" : 921, "set" : 920, "size" : 61440, "unit" : "KB", "usage" : 59663}
+,
+	{"timestamp" : 1745307247, "hit" : 2001, "miss" : 682, "set" : 683, "size" : 61440, "unit" : "KB", "usage" : 59672}
+,
+	{"timestamp" : 1745307248, "hit" : 1307, "miss" : 911, "set" : 911, "size" : 61440, "unit" : "KB", "usage" : 59679}
+,
+	{"timestamp" : 1745307249, "hit" : 1757, "miss" : 671, "set" : 670, "size" : 61440, "unit" : "KB", "usage" : 59686}
+,
+	{"timestamp" : 1745307250, "hit" : 1147, "miss" : 792, "set" : 794, "size" : 61440, "unit" : "KB", "usage" : 59690}
+,
+	{"timestamp" : 1745307251, "hit" : 1577, "miss" : 649, "set" : 648, "size" : 61440, "unit" : "KB", "usage" : 59701}
+,
+	{"timestamp" : 1745307252, "hit" : 1884, "miss" : 504, "set" : 504, "size" : 61440, "unit" : "KB", "usage" : 59709}
+,
+	{"timestamp" : 1745307253, "hit" : 1525, "miss" : 642, "set" : 640, "size" : 61440, "unit" : "KB", "usage" : 59717}
+,
+	{"timestamp" : 1745307254, "hit" : 1808, "miss" : 452, "set" : 452, "size" : 61440, "unit" : "KB", "usage" : 59724}
+,
+	{"timestamp" : 1745307255, "hit" : 848, "miss" : 819, "set" : 820, "size" : 61440, "unit" : "KB", "usage" : 59730}
+,
+	{"timestamp" : 1745307256, "hit" : 1284, "miss" : 726, "set" : 726, "size" : 61440, "unit" : "KB", "usage" : 59737}
+,
+	{"timestamp" : 1745307257, "hit" : 1425, "miss" : 674, "set" : 666, "size" : 61440, "unit" : "KB", "usage" : 59744}
+,
+	{"timestamp" : 1745307258, "hit" : 1057, "miss" : 723, "set" : 723, "size" : 61440, "unit" : "KB", "usage" : 59750}
+,
+	{"timestamp" : 1745307259, "hit" : 2040, "miss" : 379, "set" : 377, "size" : 61440, "unit" : "KB", "usage" : 59757}
+,
+	{"timestamp" : 1745307260, "hit" : 1694, "miss" : 544, "set" : 543, "size" : 61440, "unit" : "KB", "usage" : 59764}
+,
+	{"timestamp" : 1745307261, "hit" : 1467, "miss" : 618, "set" : 618, "size" : 61440, "unit" : "KB", "usage" : 59768}
+,
+	{"timestamp" : 1745307262, "hit" : 1267, "miss" : 706, "set" : 707, "size" : 61440, "unit" : "KB", "usage" : 59772}
+,
+	{"timestamp" : 1745307263, "hit" : 1012, "miss" : 815, "set" : 815, "size" : 61440, "unit" : "KB", "usage" : 59775}
+,
+	{"timestamp" : 1745307264, "hit" : 1282, "miss" : 751, "set" : 750, "size" : 61440, "unit" : "KB", "usage" : 59781}
+,
+	{"timestamp" : 1745307265, "hit" : 1232, "miss" : 802, "set" : 803, "size" : 61440, "unit" : "KB", "usage" : 59786}
+,
+	{"timestamp" : 1745307266, "hit" : 1422, "miss" : 636, "set" : 634, "size" : 61440, "unit" : "KB", "usage" : 59792}
+,
+	{"timestamp" : 1745307267, "hit" : 1058, "miss" : 781, "set" : 782, "size" : 61440, "unit" : "KB", "usage" : 59797}
+,
+	{"timestamp" : 1745307268, "hit" : 1294, "miss" : 690, "set" : 689, "size" : 61440, "unit" : "KB", "usage" : 59803}
+,
+	{"timestamp" : 1745307269, "hit" : 994, "miss" : 810, "set" : 804, "size" : 61440, "unit" : "KB", "usage" : 59807}
+,
+	{"timestamp" : 1745307270, "hit" : 1315, "miss" : 746, "set" : 748, "size" : 61440, "unit" : "KB", "usage" : 59813}
+,
+	{"timestamp" : 1745307271, "hit" : 1395, "miss" : 723, "set" : 723, "size" : 61440, "unit" : "KB", "usage" : 59820}
+,
+	{"timestamp" : 1745307272, "hit" : 1702, "miss" : 582, "set" : 579, "size" : 61440, "unit" : "KB", "usage" : 59826}
+,
+	{"timestamp" : 1745307273, "hit" : 1145, "miss" : 842, "set" : 839, "size" : 61440, "unit" : "KB", "usage" : 59831}
+,
+	{"timestamp" : 1745307274, "hit" : 1634, "miss" : 634, "set" : 634, "size" : 61440, "unit" : "KB", "usage" : 59839}
+,
+	{"timestamp" : 1745307275, "hit" : 1249, "miss" : 761, "set" : 759, "size" : 61440, "unit" : "KB", "usage" : 59844}
+,
+	{"timestamp" : 1745307276, "hit" : 1381, "miss" : 759, "set" : 759, "size" : 61440, "unit" : "KB", "usage" : 59851}
+,
+	{"timestamp" : 1745307277, "hit" : 1852, "miss" : 606, "set" : 608, "size" : 61440, "unit" : "KB", "usage" : 59857}
+,
+	{"timestamp" : 1745307278, "hit" : 1389, "miss" : 727, "set" : 726, "size" : 61440, "unit" : "KB", "usage" : 59862}
+,
+	{"timestamp" : 1745307279, "hit" : 1705, "miss" : 681, "set" : 679, "size" : 61440, "unit" : "KB", "usage" : 59866}
+,
+	{"timestamp" : 1745307280, "hit" : 985, "miss" : 929, "set" : 928, "size" : 61440, "unit" : "KB", "usage" : 59872}
+,
+	{"timestamp" : 1745307281, "hit" : 1799, "miss" : 598, "set" : 595, "size" : 61440, "unit" : "KB", "usage" : 59879}
+,
+	{"timestamp" : 1745307282, "hit" : 1859, "miss" : 592, "set" : 592, "size" : 61440, "unit" : "KB", "usage" : 59887}
+,
+	{"timestamp" : 1745307283, "hit" : 1553, "miss" : 633, "set" : 631, "size" : 61440, "unit" : "KB", "usage" : 59896}
+,
+	{"timestamp" : 1745307284, "hit" : 1298, "miss" : 424, "set" : 426, "size" : 61440, "unit" : "KB", "usage" : 59901}
+,
+	{"timestamp" : 1745307285, "hit" : 836, "miss" : 420, "set" : 419, "size" : 61440, "unit" : "KB", "usage" : 59906}
+,
+	{"timestamp" : 1745307286, "hit" : 437, "miss" : 532, "set" : 532, "size" : 61440, "unit" : "KB", "usage" : 59910}
+,
+	{"timestamp" : 1745307287, "hit" : 836, "miss" : 417, "set" : 417, "size" : 61440, "unit" : "KB", "usage" : 59914}
+,
+	{"timestamp" : 1745307288, "hit" : 1253, "miss" : 306, "set" : 307, "size" : 61440, "unit" : "KB", "usage" : 59918}
+,
+	{"timestamp" : 1745307289, "hit" : 778, "miss" : 471, "set" : 469, "size" : 61440, "unit" : "KB", "usage" : 59921}
+,
+	{"timestamp" : 1745307290, "hit" : 941, "miss" : 447, "set" : 447, "size" : 61440, "unit" : "KB", "usage" : 59925}
+,
+	{"timestamp" : 1745307291, "hit" : 1107, "miss" : 400, "set" : 399, "size" : 61440, "unit" : "KB", "usage" : 59930}
+,
+	{"timestamp" : 1745307292, "hit" : 900, "miss" : 442, "set" : 443, "size" : 61440, "unit" : "KB", "usage" : 59935}
+,
+	{"timestamp" : 1745307293, "hit" : 1194, "miss" : 421, "set" : 421, "size" : 61440, "unit" : "KB", "usage" : 59941}
+,
+	{"timestamp" : 1745307294, "hit" : 995, "miss" : 461, "set" : 458, "size" : 61440, "unit" : "KB", "usage" : 59945}
+,
+	{"timestamp" : 1745307295, "hit" : 752, "miss" : 522, "set" : 520, "size" : 61440, "unit" : "KB", "usage" : 59949}
+,
+	{"timestamp" : 1745307296, "hit" : 957, "miss" : 451, "set" : 449, "size" : 61440, "unit" : "KB", "usage" : 59955}
+,
+	{"timestamp" : 1745307297, "hit" : 1001, "miss" : 465, "set" : 466, "size" : 61440, "unit" : "KB", "usage" : 59957}
+,
+	{"timestamp" : 1745307298, "hit" : 1103, "miss" : 413, "set" : 413, "size" : 61440, "unit" : "KB", "usage" : 59963}
+,
+	{"timestamp" : 1745307299, "hit" : 886, "miss" : 511, "set" : 511, "size" : 61440, "unit" : "KB", "usage" : 59965}
+,
+	{"timestamp" : 1745307300, "hit" : 814, "miss" : 501, "set" : 501, "size" : 61440, "unit" : "KB", "usage" : 59967}
+,
+	{"timestamp" : 1745307301, "hit" : 1275, "miss" : 348, "set" : 347, "size" : 61440, "unit" : "KB", "usage" : 59972}
+,
+	{"timestamp" : 1745307302, "hit" : 695, "miss" : 506, "set" : 507, "size" : 61440, "unit" : "KB", "usage" : 59976}
+,
+	{"timestamp" : 1745307303, "hit" : 1378, "miss" : 338, "set" : 338, "size" : 61440, "unit" : "KB", "usage" : 59981}
+,
+	{"timestamp" : 1745307304, "hit" : 548, "miss" : 591, "set" : 590, "size" : 61440, "unit" : "KB", "usage" : 59984}
+,
+	{"timestamp" : 1745307305, "hit" : 894, "miss" : 488, "set" : 488, "size" : 61440, "unit" : "KB", "usage" : 59989}
+,
+	{"timestamp" : 1745307306, "hit" : 416, "miss" : 710, "set" : 709, "size" : 61440, "unit" : "KB", "usage" : 59991}
+,
+	{"timestamp" : 1745307307, "hit" : 1403, "miss" : 491, "set" : 490, "size" : 61440, "unit" : "KB", "usage" : 59997}
+,
+	{"timestamp" : 1745307308, "hit" : 1192, "miss" : 523, "set" : 523, "size" : 61440, "unit" : "KB", "usage" : 60001}
+,
+	{"timestamp" : 1745307309, "hit" : 1142, "miss" : 576, "set" : 577, "size" : 61440, "unit" : "KB", "usage" : 60008}
+,
+	{"timestamp" : 1745307310, "hit" : 1283, "miss" : 501, "set" : 501, "size" : 61440, "unit" : "KB", "usage" : 60014}
+,
+	{"timestamp" : 1745307311, "hit" : 1211, "miss" : 534, "set" : 534, "size" : 61440, "unit" : "KB", "usage" : 60019}
+,
+	{"timestamp" : 1745307312, "hit" : 1383, "miss" : 462, "set" : 462, "size" : 61440, "unit" : "KB", "usage" : 60022}
+,
+	{"timestamp" : 1745307313, "hit" : 1480, "miss" : 427, "set" : 424, "size" : 61440, "unit" : "KB", "usage" : 60024}
+,
+	{"timestamp" : 1745307314, "hit" : 1170, "miss" : 510, "set" : 511, "size" : 61440, "unit" : "KB", "usage" : 60030}
+,
+	{"timestamp" : 1745307315, "hit" : 1275, "miss" : 474, "set" : 474, "size" : 61440, "unit" : "KB", "usage" : 60036}
+,
+	{"timestamp" : 1745307316, "hit" : 1395, "miss" : 512, "set" : 512, "size" : 61440, "unit" : "KB", "usage" : 60041}
+,
+	{"timestamp" : 1745307317, "hit" : 1237, "miss" : 578, "set" : 575, "size" : 61440, "unit" : "KB", "usage" : 60045}
+,
+	{"timestamp" : 1745307318, "hit" : 818, "miss" : 705, "set" : 705, "size" : 61440, "unit" : "KB", "usage" : 60052}
+,
+	{"timestamp" : 1745307319, "hit" : 1185, "miss" : 613, "set" : 611, "size" : 61440, "unit" : "KB", "usage" : 60057}
+,
+	{"timestamp" : 1745307320, "hit" : 1277, "miss" : 653, "set" : 654, "size" : 61440, "unit" : "KB", "usage" : 60062}
+,
+	{"timestamp" : 1745307321, "hit" : 1302, "miss" : 678, "set" : 678, "size" : 61440, "unit" : "KB", "usage" : 60066}
+,
+	{"timestamp" : 1745307322, "hit" : 1570, "miss" : 597, "set" : 597, "size" : 61440, "unit" : "KB", "usage" : 60069}
+,
+	{"timestamp" : 1745307323, "hit" : 2061, "miss" : 518, "set" : 516, "size" : 61440, "unit" : "KB", "usage" : 60075}
+,
+	{"timestamp" : 1745307324, "hit" : 769, "miss" : 633, "set" : 633, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307325, "hit" : 228, "miss" : 162, "set" : 163, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307326, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307327, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307328, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307329, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307330, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307331, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307332, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307333, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307334, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307335, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307336, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307337, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307338, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307339, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307340, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307341, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+,
+	{"timestamp" : 1745307342, "hit" : 0, "miss" : 0, "set" : 0, "size" : 61440, "unit" : "KB", "usage" : 60079}
+]

@@ -1,0 +1,707 @@
+[
+	{"timestamp" : 1745306117, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 524288, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306118, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306119, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306120, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306121, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306122, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306123, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306124, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306125, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306126, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306127, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306128, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306129, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306130, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306131, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306132, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306133, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306134, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306135, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306136, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306137, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306138, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306139, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306140, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306141, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306142, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306143, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306144, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306145, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306146, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306147, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306148, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306149, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306150, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306151, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306152, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306153, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306154, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306155, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306156, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306157, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306158, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306159, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306160, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306161, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306162, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306163, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306164, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306165, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306166, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306167, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306168, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306169, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306170, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306171, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306172, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306173, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306174, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306175, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306176, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306177, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306178, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306179, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306180, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306181, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306182, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306183, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306184, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306185, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306186, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306187, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306188, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306189, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306190, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306191, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306192, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306193, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306194, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306195, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306196, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306197, "disk-hit" : 0, "disk-usage" : 0, "hit" : 311, "miss" : 592, "set" : 582, "size" : 131072, "unit" : "KB", "usage" : 641}
+,
+	{"timestamp" : 1745306198, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1201, "miss" : 1294, "set" : 1298, "size" : 131072, "unit" : "KB", "usage" : 2536}
+,
+	{"timestamp" : 1745306199, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1402, "miss" : 1158, "set" : 1154, "size" : 135168, "unit" : "KB", "usage" : 4478}
+,
+	{"timestamp" : 1745306200, "disk-hit" : 0, "disk-usage" : 0, "hit" : 777, "miss" : 1448, "set" : 1451, "size" : 131072, "unit" : "KB", "usage" : 6426}
+,
+	{"timestamp" : 1745306201, "disk-hit" : 0, "disk-usage" : 0, "hit" : 452, "miss" : 1626, "set" : 1621, "size" : 131072, "unit" : "KB", "usage" : 8385}
+,
+	{"timestamp" : 1745306202, "disk-hit" : 0, "disk-usage" : 0, "hit" : 417, "miss" : 1625, "set" : 1628, "size" : 131072, "unit" : "KB", "usage" : 10320}
+,
+	{"timestamp" : 1745306203, "disk-hit" : 0, "disk-usage" : 0, "hit" : 470, "miss" : 1627, "set" : 1626, "size" : 131072, "unit" : "KB", "usage" : 12247}
+,
+	{"timestamp" : 1745306204, "disk-hit" : 0, "disk-usage" : 0, "hit" : 682, "miss" : 1416, "set" : 1416, "size" : 131072, "unit" : "KB", "usage" : 14087}
+,
+	{"timestamp" : 1745306205, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1000, "miss" : 1343, "set" : 1343, "size" : 131072, "unit" : "KB", "usage" : 16094}
+,
+	{"timestamp" : 1745306206, "disk-hit" : 0, "disk-usage" : 0, "hit" : 901, "miss" : 1413, "set" : 1413, "size" : 131072, "unit" : "KB", "usage" : 18020}
+,
+	{"timestamp" : 1745306207, "disk-hit" : 0, "disk-usage" : 0, "hit" : 511, "miss" : 1523, "set" : 1522, "size" : 131072, "unit" : "KB", "usage" : 15784}
+,
+	{"timestamp" : 1745306208, "disk-hit" : 0, "disk-usage" : 0, "hit" : 715, "miss" : 1368, "set" : 1372, "size" : 131072, "unit" : "KB", "usage" : 21686}
+,
+	{"timestamp" : 1745306209, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1016, "miss" : 1363, "set" : 1361, "size" : 143360, "unit" : "KB", "usage" : 23661}
+,
+	{"timestamp" : 1745306210, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1420, "miss" : 1286, "set" : 1285, "size" : 126976, "unit" : "KB", "usage" : 25610}
+,
+	{"timestamp" : 1745306211, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1114, "miss" : 1404, "set" : 1405, "size" : 139264, "unit" : "KB", "usage" : 27573}
+,
+	{"timestamp" : 1745306212, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1721, "miss" : 1104, "set" : 1106, "size" : 131072, "unit" : "KB", "usage" : 29612}
+,
+	{"timestamp" : 1745306213, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1394, "miss" : 1045, "set" : 1047, "size" : 139264, "unit" : "KB", "usage" : 31474}
+,
+	{"timestamp" : 1745306214, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1557, "miss" : 1047, "set" : 1041, "size" : 126976, "unit" : "KB", "usage" : 33242}
+,
+	{"timestamp" : 1745306215, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2027, "miss" : 1102, "set" : 1102, "size" : 139264, "unit" : "KB", "usage" : 35322}
+,
+	{"timestamp" : 1745306216, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1813, "miss" : 1009, "set" : 1005, "size" : 126976, "unit" : "KB", "usage" : 37113}
+,
+	{"timestamp" : 1745306217, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1475, "miss" : 1095, "set" : 1094, "size" : 135168, "unit" : "KB", "usage" : 39010}
+,
+	{"timestamp" : 1745306218, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1345, "miss" : 1125, "set" : 1127, "size" : 122880, "unit" : "KB", "usage" : 40837}
+,
+	{"timestamp" : 1745306219, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1560, "miss" : 1037, "set" : 1039, "size" : 139264, "unit" : "KB", "usage" : 42649}
+,
+	{"timestamp" : 1745306220, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1715, "miss" : 875, "set" : 873, "size" : 122880, "unit" : "KB", "usage" : 44306}
+,
+	{"timestamp" : 1745306221, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1804, "miss" : 995, "set" : 995, "size" : 139264, "unit" : "KB", "usage" : 46179}
+,
+	{"timestamp" : 1745306222, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1670, "miss" : 982, "set" : 981, "size" : 122880, "unit" : "KB", "usage" : 48007}
+,
+	{"timestamp" : 1745306223, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2322, "miss" : 552, "set" : 555, "size" : 139264, "unit" : "KB", "usage" : 49687}
+,
+	{"timestamp" : 1745306224, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2577, "miss" : 625, "set" : 625, "size" : 118784, "unit" : "KB", "usage" : 49149}
+,
+	{"timestamp" : 1745306225, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1632, "miss" : 756, "set" : 755, "size" : 135168, "unit" : "KB", "usage" : 53028}
+,
+	{"timestamp" : 1745306226, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2064, "miss" : 454, "set" : 456, "size" : 122880, "unit" : "KB", "usage" : 54504}
+,
+	{"timestamp" : 1745306227, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2060, "miss" : 727, "set" : 725, "size" : 143360, "unit" : "KB", "usage" : 56109}
+,
+	{"timestamp" : 1745306228, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1781, "miss" : 1055, "set" : 1054, "size" : 122880, "unit" : "KB", "usage" : 57979}
+,
+	{"timestamp" : 1745306229, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1931, "miss" : 881, "set" : 879, "size" : 143360, "unit" : "KB", "usage" : 59871}
+,
+	{"timestamp" : 1745306230, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1791, "miss" : 454, "set" : 455, "size" : 122880, "unit" : "KB", "usage" : 61162}
+,
+	{"timestamp" : 1745306231, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2127, "miss" : 726, "set" : 730, "size" : 139264, "unit" : "KB", "usage" : 62957}
+,
+	{"timestamp" : 1745306232, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1746, "miss" : 532, "set" : 526, "size" : 118784, "unit" : "KB", "usage" : 64157}
+,
+	{"timestamp" : 1745306233, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1675, "miss" : 446, "set" : 449, "size" : 143360, "unit" : "KB", "usage" : 65489}
+,
+	{"timestamp" : 1745306234, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1940, "miss" : 685, "set" : 682, "size" : 118784, "unit" : "KB", "usage" : 67068}
+,
+	{"timestamp" : 1745306235, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1569, "miss" : 601, "set" : 599, "size" : 143360, "unit" : "KB", "usage" : 68363}
+,
+	{"timestamp" : 1745306236, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1690, "miss" : 877, "set" : 878, "size" : 122880, "unit" : "KB", "usage" : 70073}
+,
+	{"timestamp" : 1745306237, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1434, "miss" : 622, "set" : 623, "size" : 143360, "unit" : "KB", "usage" : 71385}
+,
+	{"timestamp" : 1745306238, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2149, "miss" : 650, "set" : 645, "size" : 118784, "unit" : "KB", "usage" : 73024}
+,
+	{"timestamp" : 1745306239, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2074, "miss" : 780, "set" : 780, "size" : 143360, "unit" : "KB", "usage" : 74761}
+,
+	{"timestamp" : 1745306240, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1946, "miss" : 346, "set" : 346, "size" : 118784, "unit" : "KB", "usage" : 76025}
+,
+	{"timestamp" : 1745306241, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1940, "miss" : 763, "set" : 759, "size" : 139264, "unit" : "KB", "usage" : 77653}
+,
+	{"timestamp" : 1745306242, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1352, "miss" : 529, "set" : 530, "size" : 118784, "unit" : "KB", "usage" : 78906}
+,
+	{"timestamp" : 1745306243, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2136, "miss" : 644, "set" : 645, "size" : 147456, "unit" : "KB", "usage" : 80501}
+,
+	{"timestamp" : 1745306244, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2073, "miss" : 440, "set" : 435, "size" : 118784, "unit" : "KB", "usage" : 81822}
+,
+	{"timestamp" : 1745306245, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1932, "miss" : 778, "set" : 780, "size" : 143360, "unit" : "KB", "usage" : 83557}
+,
+	{"timestamp" : 1745306246, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1709, "miss" : 801, "set" : 799, "size" : 118784, "unit" : "KB", "usage" : 85119}
+,
+	{"timestamp" : 1745306247, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1699, "miss" : 488, "set" : 489, "size" : 143360, "unit" : "KB", "usage" : 86480}
+,
+	{"timestamp" : 1745306248, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1701, "miss" : 667, "set" : 663, "size" : 118784, "unit" : "KB", "usage" : 87860}
+,
+	{"timestamp" : 1745306249, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2151, "miss" : 677, "set" : 677, "size" : 143360, "unit" : "KB", "usage" : 89572}
+,
+	{"timestamp" : 1745306250, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1539, "miss" : 888, "set" : 890, "size" : 118784, "unit" : "KB", "usage" : 91240}
+,
+	{"timestamp" : 1745306251, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2165, "miss" : 495, "set" : 498, "size" : 147456, "unit" : "KB", "usage" : 92791}
+,
+	{"timestamp" : 1745306252, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1887, "miss" : 535, "set" : 532, "size" : 114688, "unit" : "KB", "usage" : 94178}
+,
+	{"timestamp" : 1745306253, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1959, "miss" : 497, "set" : 500, "size" : 147456, "unit" : "KB", "usage" : 95592}
+,
+	{"timestamp" : 1745306254, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1551, "miss" : 758, "set" : 753, "size" : 114688, "unit" : "KB", "usage" : 96990}
+,
+	{"timestamp" : 1745306255, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1675, "miss" : 486, "set" : 489, "size" : 147456, "unit" : "KB", "usage" : 98307}
+,
+	{"timestamp" : 1745306256, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1501, "miss" : 479, "set" : 479, "size" : 118784, "unit" : "KB", "usage" : 99480}
+,
+	{"timestamp" : 1745306257, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2238, "miss" : 459, "set" : 456, "size" : 147456, "unit" : "KB", "usage" : 100908}
+,
+	{"timestamp" : 1745306258, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1644, "miss" : 405, "set" : 407, "size" : 114688, "unit" : "KB", "usage" : 102127}
+,
+	{"timestamp" : 1745306259, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2114, "miss" : 464, "set" : 461, "size" : 147456, "unit" : "KB", "usage" : 103517}
+,
+	{"timestamp" : 1745306260, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1695, "miss" : 524, "set" : 524, "size" : 114688, "unit" : "KB", "usage" : 104903}
+,
+	{"timestamp" : 1745306261, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1531, "miss" : 354, "set" : 354, "size" : 151552, "unit" : "KB", "usage" : 105951}
+,
+	{"timestamp" : 1745306262, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1631, "miss" : 449, "set" : 447, "size" : 114688, "unit" : "KB", "usage" : 107151}
+,
+	{"timestamp" : 1745306263, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2176, "miss" : 515, "set" : 515, "size" : 147456, "unit" : "KB", "usage" : 108665}
+,
+	{"timestamp" : 1745306264, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1889, "miss" : 384, "set" : 380, "size" : 114688, "unit" : "KB", "usage" : 109816}
+,
+	{"timestamp" : 1745306265, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2462, "miss" : 441, "set" : 443, "size" : 143360, "unit" : "KB", "usage" : 111460}
+,
+	{"timestamp" : 1745306266, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2468, "miss" : 407, "set" : 405, "size" : 118784, "unit" : "KB", "usage" : 112900}
+,
+	{"timestamp" : 1745306267, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1543, "miss" : 556, "set" : 558, "size" : 135168, "unit" : "KB", "usage" : 114258}
+,
+	{"timestamp" : 1745306268, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2043, "miss" : 341, "set" : 341, "size" : 131072, "unit" : "KB", "usage" : 115521}
+,
+	{"timestamp" : 1745306269, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1546, "miss" : 361, "set" : 354, "size" : 131072, "unit" : "KB", "usage" : 116567}
+,
+	{"timestamp" : 1745306270, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1465, "miss" : 192, "set" : 193, "size" : 131072, "unit" : "KB", "usage" : 114683}
+,
+	{"timestamp" : 1745306271, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2016, "miss" : 363, "set" : 363, "size" : 131072, "unit" : "KB", "usage" : 118692}
+,
+	{"timestamp" : 1745306272, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1702, "miss" : 228, "set" : 224, "size" : 131072, "unit" : "KB", "usage" : 119650}
+,
+	{"timestamp" : 1745306273, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1893, "miss" : 510, "set" : 510, "size" : 131072, "unit" : "KB", "usage" : 121025}
+,
+	{"timestamp" : 1745306274, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1904, "miss" : 466, "set" : 467, "size" : 131072, "unit" : "KB", "usage" : 122372}
+,
+	{"timestamp" : 1745306275, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1760, "miss" : 381, "set" : 377, "size" : 131072, "unit" : "KB", "usage" : 123481}
+,
+	{"timestamp" : 1745306276, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1835, "miss" : 332, "set" : 336, "size" : 131072, "unit" : "KB", "usage" : 124694}
+,
+	{"timestamp" : 1745306277, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2095, "miss" : 408, "set" : 407, "size" : 131072, "unit" : "KB", "usage" : 126091}
+,
+	{"timestamp" : 1745306278, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1705, "miss" : 361, "set" : 359, "size" : 131072, "unit" : "KB", "usage" : 127188}
+,
+	{"timestamp" : 1745306279, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1282, "miss" : 338, "set" : 334, "size" : 131072, "unit" : "KB", "usage" : 128040}
+,
+	{"timestamp" : 1745306280, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1963, "miss" : 326, "set" : 328, "size" : 131072, "unit" : "KB", "usage" : 129293}
+,
+	{"timestamp" : 1745306281, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1594, "miss" : 363, "set" : 364, "size" : 131072, "unit" : "KB", "usage" : 130435}
+,
+	{"timestamp" : 1745306282, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2416, "miss" : 440, "set" : 433, "size" : 131072, "unit" : "KB", "usage" : 127796}
+,
+	{"timestamp" : 1745306283, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1612, "miss" : 982, "set" : 985, "size" : 131072, "unit" : "KB", "usage" : 129575}
+,
+	{"timestamp" : 1745306284, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1851, "miss" : 905, "set" : 906, "size" : 131072, "unit" : "KB", "usage" : 127299}
+,
+	{"timestamp" : 1745306285, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2154, "miss" : 487, "set" : 489, "size" : 131072, "unit" : "KB", "usage" : 128840}
+,
+	{"timestamp" : 1745306286, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1582, "miss" : 763, "set" : 760, "size" : 131072, "unit" : "KB", "usage" : 130332}
+,
+	{"timestamp" : 1745306287, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1456, "miss" : 562, "set" : 559, "size" : 131072, "unit" : "KB", "usage" : 127464}
+,
+	{"timestamp" : 1745306288, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2023, "miss" : 698, "set" : 698, "size" : 131072, "unit" : "KB", "usage" : 129050}
+,
+	{"timestamp" : 1745306289, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1413, "miss" : 711, "set" : 712, "size" : 131072, "unit" : "KB", "usage" : 130469}
+,
+	{"timestamp" : 1745306290, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2068, "miss" : 547, "set" : 544, "size" : 131072, "unit" : "KB", "usage" : 127865}
+,
+	{"timestamp" : 1745306291, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1233, "miss" : 671, "set" : 672, "size" : 131072, "unit" : "KB", "usage" : 129103}
+,
+	{"timestamp" : 1745306292, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2449, "miss" : 440, "set" : 438, "size" : 131072, "unit" : "KB", "usage" : 130609}
+,
+	{"timestamp" : 1745306293, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2042, "miss" : 628, "set" : 631, "size" : 131072, "unit" : "KB", "usage" : 128103}
+,
+	{"timestamp" : 1745306294, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1298, "miss" : 331, "set" : 329, "size" : 131072, "unit" : "KB", "usage" : 128995}
+,
+	{"timestamp" : 1745306295, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1982, "miss" : 761, "set" : 759, "size" : 131072, "unit" : "KB", "usage" : 130712}
+,
+	{"timestamp" : 1745306296, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2312, "miss" : 346, "set" : 344, "size" : 131072, "unit" : "KB", "usage" : 127928}
+,
+	{"timestamp" : 1745306297, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1670, "miss" : 385, "set" : 385, "size" : 131072, "unit" : "KB", "usage" : 129081}
+,
+	{"timestamp" : 1745306298, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1820, "miss" : 416, "set" : 417, "size" : 131072, "unit" : "KB", "usage" : 130351}
+,
+	{"timestamp" : 1745306299, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2011, "miss" : 481, "set" : 479, "size" : 131072, "unit" : "KB", "usage" : 127700}
+,
+	{"timestamp" : 1745306300, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1866, "miss" : 820, "set" : 819, "size" : 131072, "unit" : "KB", "usage" : 129416}
+,
+	{"timestamp" : 1745306301, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2174, "miss" : 497, "set" : 496, "size" : 131072, "unit" : "KB", "usage" : 130871}
+,
+	{"timestamp" : 1745306302, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1653, "miss" : 243, "set" : 244, "size" : 131072, "unit" : "KB", "usage" : 127797}
+,
+	{"timestamp" : 1745306303, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2082, "miss" : 298, "set" : 297, "size" : 131072, "unit" : "KB", "usage" : 128985}
+,
+	{"timestamp" : 1745306304, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1209, "miss" : 527, "set" : 527, "size" : 131072, "unit" : "KB", "usage" : 130101}
+,
+	{"timestamp" : 1745306305, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1655, "miss" : 350, "set" : 350, "size" : 131072, "unit" : "KB", "usage" : 127127}
+,
+	{"timestamp" : 1745306306, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2518, "miss" : 497, "set" : 496, "size" : 131072, "unit" : "KB", "usage" : 128807}
+,
+	{"timestamp" : 1745306307, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1577, "miss" : 208, "set" : 203, "size" : 131072, "unit" : "KB", "usage" : 129661}
+,
+	{"timestamp" : 1745306308, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1584, "miss" : 496, "set" : 498, "size" : 131072, "unit" : "KB", "usage" : 130936}
+,
+	{"timestamp" : 1745306309, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1508, "miss" : 454, "set" : 451, "size" : 131072, "unit" : "KB", "usage" : 127951}
+,
+	{"timestamp" : 1745306310, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1938, "miss" : 762, "set" : 764, "size" : 131072, "unit" : "KB", "usage" : 129629}
+,
+	{"timestamp" : 1745306311, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1672, "miss" : 361, "set" : 360, "size" : 131072, "unit" : "KB", "usage" : 130723}
+,
+	{"timestamp" : 1745306312, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1949, "miss" : 452, "set" : 452, "size" : 131072, "unit" : "KB", "usage" : 127964}
+,
+	{"timestamp" : 1745306313, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1775, "miss" : 702, "set" : 701, "size" : 131072, "unit" : "KB", "usage" : 129463}
+,
+	{"timestamp" : 1745306314, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1875, "miss" : 369, "set" : 371, "size" : 131072, "unit" : "KB", "usage" : 130745}
+,
+	{"timestamp" : 1745306315, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1529, "miss" : 212, "set" : 211, "size" : 131072, "unit" : "KB", "usage" : 127512}
+,
+	{"timestamp" : 1745306316, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1371, "miss" : 543, "set" : 542, "size" : 131072, "unit" : "KB", "usage" : 128725}
+,
+	{"timestamp" : 1745306317, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1687, "miss" : 530, "set" : 527, "size" : 131072, "unit" : "KB", "usage" : 129977}
+,
+	{"timestamp" : 1745306318, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1892, "miss" : 349, "set" : 346, "size" : 131072, "unit" : "KB", "usage" : 131058}
+,
+	{"timestamp" : 1745306319, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1670, "miss" : 347, "set" : 347, "size" : 131072, "unit" : "KB", "usage" : 128190}
+,
+	{"timestamp" : 1745306320, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1513, "miss" : 422, "set" : 417, "size" : 131072, "unit" : "KB", "usage" : 129277}
+,
+	{"timestamp" : 1745306321, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1735, "miss" : 423, "set" : 425, "size" : 131072, "unit" : "KB", "usage" : 130505}
+,
+	{"timestamp" : 1745306322, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2058, "miss" : 380, "set" : 381, "size" : 131072, "unit" : "KB", "usage" : 127789}
+,
+	{"timestamp" : 1745306323, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2079, "miss" : 368, "set" : 362, "size" : 131072, "unit" : "KB", "usage" : 128975}
+,
+	{"timestamp" : 1745306324, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1606, "miss" : 317, "set" : 319, "size" : 131072, "unit" : "KB", "usage" : 130129}
+,
+	{"timestamp" : 1745306325, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1612, "miss" : 298, "set" : 297, "size" : 131072, "unit" : "KB", "usage" : 131045}
+,
+	{"timestamp" : 1745306326, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1170, "miss" : 405, "set" : 403, "size" : 131072, "unit" : "KB", "usage" : 127984}
+,
+	{"timestamp" : 1745306327, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2117, "miss" : 867, "set" : 869, "size" : 131072, "unit" : "KB", "usage" : 129873}
+,
+	{"timestamp" : 1745306328, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1825, "miss" : 626, "set" : 625, "size" : 131072, "unit" : "KB", "usage" : 127266}
+,
+	{"timestamp" : 1745306329, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1823, "miss" : 173, "set" : 175, "size" : 131072, "unit" : "KB", "usage" : 128284}
+,
+	{"timestamp" : 1745306330, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1845, "miss" : 491, "set" : 490, "size" : 131072, "unit" : "KB", "usage" : 126971}
+,
+	{"timestamp" : 1745306331, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1903, "miss" : 679, "set" : 679, "size" : 131072, "unit" : "KB", "usage" : 131067}
+,
+	{"timestamp" : 1745306332, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1971, "miss" : 525, "set" : 525, "size" : 131072, "unit" : "KB", "usage" : 128510}
+,
+	{"timestamp" : 1745306333, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1479, "miss" : 288, "set" : 287, "size" : 131072, "unit" : "KB", "usage" : 129465}
+,
+	{"timestamp" : 1745306334, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1701, "miss" : 330, "set" : 329, "size" : 131072, "unit" : "KB", "usage" : 130540}
+,
+	{"timestamp" : 1745306335, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1730, "miss" : 481, "set" : 477, "size" : 131072, "unit" : "KB", "usage" : 127663}
+,
+	{"timestamp" : 1745306336, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1996, "miss" : 492, "set" : 495, "size" : 131072, "unit" : "KB", "usage" : 129118}
+,
+	{"timestamp" : 1745306337, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1889, "miss" : 266, "set" : 269, "size" : 131072, "unit" : "KB", "usage" : 130291}
+,
+	{"timestamp" : 1745306338, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1324, "miss" : 215, "set" : 213, "size" : 131072, "unit" : "KB", "usage" : 131062}
+,
+	{"timestamp" : 1745306339, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2033, "miss" : 469, "set" : 467, "size" : 131072, "unit" : "KB", "usage" : 128357}
+,
+	{"timestamp" : 1745306340, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1554, "miss" : 354, "set" : 356, "size" : 131072, "unit" : "KB", "usage" : 129447}
+,
+	{"timestamp" : 1745306341, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1919, "miss" : 430, "set" : 428, "size" : 131072, "unit" : "KB", "usage" : 130722}
+,
+	{"timestamp" : 1745306342, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2318, "miss" : 316, "set" : 316, "size" : 131072, "unit" : "KB", "usage" : 128009}
+,
+	{"timestamp" : 1745306343, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1631, "miss" : 327, "set" : 322, "size" : 131072, "unit" : "KB", "usage" : 128986}
+,
+	{"timestamp" : 1745306344, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1878, "miss" : 336, "set" : 339, "size" : 131072, "unit" : "KB", "usage" : 130247}
+,
+	{"timestamp" : 1745306345, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1597, "miss" : 315, "set" : 315, "size" : 131072, "unit" : "KB", "usage" : 127159}
+,
+	{"timestamp" : 1745306346, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2033, "miss" : 291, "set" : 289, "size" : 131072, "unit" : "KB", "usage" : 128387}
+,
+	{"timestamp" : 1745306347, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1436, "miss" : 372, "set" : 373, "size" : 131072, "unit" : "KB", "usage" : 129444}
+,
+	{"timestamp" : 1745306348, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1874, "miss" : 488, "set" : 487, "size" : 131072, "unit" : "KB", "usage" : 130716}
+,
+	{"timestamp" : 1745306349, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2034, "miss" : 221, "set" : 221, "size" : 131072, "unit" : "KB", "usage" : 127804}
+,
+	{"timestamp" : 1745306350, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1694, "miss" : 335, "set" : 337, "size" : 131072, "unit" : "KB", "usage" : 128928}
+,
+	{"timestamp" : 1745306351, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2425, "miss" : 456, "set" : 453, "size" : 131072, "unit" : "KB", "usage" : 130445}
+,
+	{"timestamp" : 1745306352, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1114, "miss" : 404, "set" : 406, "size" : 131072, "unit" : "KB", "usage" : 127297}
+,
+	{"timestamp" : 1745306353, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1912, "miss" : 469, "set" : 469, "size" : 131072, "unit" : "KB", "usage" : 128646}
+,
+	{"timestamp" : 1745306354, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1803, "miss" : 297, "set" : 296, "size" : 131072, "unit" : "KB", "usage" : 129745}
+,
+	{"timestamp" : 1745306355, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1559, "miss" : 363, "set" : 362, "size" : 131072, "unit" : "KB", "usage" : 130797}
+,
+	{"timestamp" : 1745306356, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1349, "miss" : 567, "set" : 563, "size" : 131072, "unit" : "KB", "usage" : 127887}
+,
+	{"timestamp" : 1745306357, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1553, "miss" : 519, "set" : 524, "size" : 131072, "unit" : "KB", "usage" : 129181}
+,
+	{"timestamp" : 1745306358, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1993, "miss" : 293, "set" : 293, "size" : 131072, "unit" : "KB", "usage" : 126268}
+,
+	{"timestamp" : 1745306359, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1561, "miss" : 307, "set" : 306, "size" : 131072, "unit" : "KB", "usage" : 127258}
+,
+	{"timestamp" : 1745306360, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2228, "miss" : 569, "set" : 565, "size" : 131072, "unit" : "KB", "usage" : 128848}
+,
+	{"timestamp" : 1745306361, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1473, "miss" : 773, "set" : 775, "size" : 131072, "unit" : "KB", "usage" : 130352}
+,
+	{"timestamp" : 1745306362, "disk-hit" : 0, "disk-usage" : 0, "hit" : 714, "miss" : 267, "set" : 266, "size" : 131072, "unit" : "KB", "usage" : 130934}
+,
+	{"timestamp" : 1745306363, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1667, "miss" : 691, "set" : 691, "size" : 131072, "unit" : "KB", "usage" : 128335}
+,
+	{"timestamp" : 1745306364, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1933, "miss" : 210, "set" : 209, "size" : 131072, "unit" : "KB", "usage" : 129376}
+,
+	{"timestamp" : 1745306365, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1779, "miss" : 512, "set" : 512, "size" : 131072, "unit" : "KB", "usage" : 130752}
+,
+	{"timestamp" : 1745306366, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1437, "miss" : 445, "set" : 444, "size" : 131072, "unit" : "KB", "usage" : 127766}
+,
+	{"timestamp" : 1745306367, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1592, "miss" : 491, "set" : 491, "size" : 131072, "unit" : "KB", "usage" : 128991}
+,
+	{"timestamp" : 1745306368, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1506, "miss" : 471, "set" : 471, "size" : 131072, "unit" : "KB", "usage" : 130161}
+,
+	{"timestamp" : 1745306369, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1470, "miss" : 692, "set" : 690, "size" : 131072, "unit" : "KB", "usage" : 127426}
+,
+	{"timestamp" : 1745306370, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1940, "miss" : 378, "set" : 379, "size" : 131072, "unit" : "KB", "usage" : 128717}
+,
+	{"timestamp" : 1745306371, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2015, "miss" : 437, "set" : 434, "size" : 131072, "unit" : "KB", "usage" : 130043}
+,
+	{"timestamp" : 1745306372, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1599, "miss" : 515, "set" : 515, "size" : 131072, "unit" : "KB", "usage" : 131067}
+,
+	{"timestamp" : 1745306373, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1717, "miss" : 163, "set" : 162, "size" : 131072, "unit" : "KB", "usage" : 128152}
+,
+	{"timestamp" : 1745306374, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1525, "miss" : 440, "set" : 438, "size" : 131072, "unit" : "KB", "usage" : 129254}
+,
+	{"timestamp" : 1745306375, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2488, "miss" : 431, "set" : 433, "size" : 131072, "unit" : "KB", "usage" : 130846}
+,
+	{"timestamp" : 1745306376, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1178, "miss" : 293, "set" : 293, "size" : 131072, "unit" : "KB", "usage" : 127578}
+,
+	{"timestamp" : 1745306377, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1349, "miss" : 355, "set" : 352, "size" : 131072, "unit" : "KB", "usage" : 128441}
+,
+	{"timestamp" : 1745306378, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2179, "miss" : 474, "set" : 478, "size" : 131072, "unit" : "KB", "usage" : 130020}
+,
+	{"timestamp" : 1745306379, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1891, "miss" : 334, "set" : 330, "size" : 131072, "unit" : "KB", "usage" : 131066}
+,
+	{"timestamp" : 1745306380, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1293, "miss" : 266, "set" : 262, "size" : 131072, "unit" : "KB", "usage" : 127947}
+,
+	{"timestamp" : 1745306381, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1741, "miss" : 498, "set" : 495, "size" : 131072, "unit" : "KB", "usage" : 129224}
+,
+	{"timestamp" : 1745306382, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2224, "miss" : 396, "set" : 399, "size" : 131072, "unit" : "KB", "usage" : 130664}
+,
+	{"timestamp" : 1745306383, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1766, "miss" : 356, "set" : 353, "size" : 131072, "unit" : "KB", "usage" : 127703}
+,
+	{"timestamp" : 1745306384, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1314, "miss" : 476, "set" : 475, "size" : 131072, "unit" : "KB", "usage" : 128782}
+,
+	{"timestamp" : 1745306385, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1942, "miss" : 344, "set" : 345, "size" : 131072, "unit" : "KB", "usage" : 130003}
+,
+	{"timestamp" : 1745306386, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2037, "miss" : 506, "set" : 503, "size" : 131072, "unit" : "KB", "usage" : 127389}
+,
+	{"timestamp" : 1745306387, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1786, "miss" : 496, "set" : 498, "size" : 131072, "unit" : "KB", "usage" : 128710}
+,
+	{"timestamp" : 1745306388, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2091, "miss" : 503, "set" : 501, "size" : 131072, "unit" : "KB", "usage" : 130124}
+,
+	{"timestamp" : 1745306389, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1190, "miss" : 332, "set" : 327, "size" : 131072, "unit" : "KB", "usage" : 130967}
+,
+	{"timestamp" : 1745306390, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1864, "miss" : 179, "set" : 182, "size" : 131072, "unit" : "KB", "usage" : 127940}
+,
+	{"timestamp" : 1745306391, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1800, "miss" : 411, "set" : 409, "size" : 131072, "unit" : "KB", "usage" : 129112}
+,
+	{"timestamp" : 1745306392, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1290, "miss" : 404, "set" : 404, "size" : 131072, "unit" : "KB", "usage" : 130148}
+,
+	{"timestamp" : 1745306393, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2535, "miss" : 321, "set" : 320, "size" : 131072, "unit" : "KB", "usage" : 127483}
+,
+	{"timestamp" : 1745306394, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1685, "miss" : 246, "set" : 247, "size" : 131072, "unit" : "KB", "usage" : 128503}
+,
+	{"timestamp" : 1745306395, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1572, "miss" : 409, "set" : 406, "size" : 131072, "unit" : "KB", "usage" : 129581}
+,
+	{"timestamp" : 1745306396, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1579, "miss" : 665, "set" : 666, "size" : 131072, "unit" : "KB", "usage" : 131065}
+,
+	{"timestamp" : 1745306397, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1402, "miss" : 429, "set" : 428, "size" : 131072, "unit" : "KB", "usage" : 128022}
+,
+	{"timestamp" : 1745306398, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1532, "miss" : 407, "set" : 405, "size" : 131072, "unit" : "KB", "usage" : 129054}
+,
+	{"timestamp" : 1745306399, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2341, "miss" : 423, "set" : 424, "size" : 131072, "unit" : "KB", "usage" : 130640}
+,
+	{"timestamp" : 1745306400, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2462, "miss" : 426, "set" : 426, "size" : 131072, "unit" : "KB", "usage" : 128089}
+,
+	{"timestamp" : 1745306401, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1373, "miss" : 341, "set" : 339, "size" : 131072, "unit" : "KB", "usage" : 129034}
+,
+	{"timestamp" : 1745306402, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1328, "miss" : 115, "set" : 117, "size" : 131072, "unit" : "KB", "usage" : 129744}
+,
+	{"timestamp" : 1745306403, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1520, "miss" : 518, "set" : 514, "size" : 131072, "unit" : "KB", "usage" : 130941}
+,
+	{"timestamp" : 1745306404, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2129, "miss" : 691, "set" : 693, "size" : 131072, "unit" : "KB", "usage" : 128474}
+,
+	{"timestamp" : 1745306405, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1411, "miss" : 587, "set" : 587, "size" : 131072, "unit" : "KB", "usage" : 129807}
+,
+	{"timestamp" : 1745306406, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1534, "miss" : 396, "set" : 394, "size" : 131072, "unit" : "KB", "usage" : 130879}
+,
+	{"timestamp" : 1745306407, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1494, "miss" : 538, "set" : 538, "size" : 131072, "unit" : "KB", "usage" : 128042}
+,
+	{"timestamp" : 1745306408, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2087, "miss" : 302, "set" : 302, "size" : 131072, "unit" : "KB", "usage" : 129277}
+,
+	{"timestamp" : 1745306409, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1999, "miss" : 305, "set" : 303, "size" : 131072, "unit" : "KB", "usage" : 126325}
+,
+	{"timestamp" : 1745306410, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1077, "miss" : 311, "set" : 307, "size" : 131072, "unit" : "KB", "usage" : 131067}
+,
+	{"timestamp" : 1745306411, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1740, "miss" : 462, "set" : 465, "size" : 131072, "unit" : "KB", "usage" : 128416}
+,
+	{"timestamp" : 1745306412, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1786, "miss" : 251, "set" : 252, "size" : 131072, "unit" : "KB", "usage" : 129484}
+,
+	{"timestamp" : 1745306413, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2096, "miss" : 322, "set" : 320, "size" : 131072, "unit" : "KB", "usage" : 122875}
+,
+	{"timestamp" : 1745306414, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1757, "miss" : 283, "set" : 284, "size" : 131072, "unit" : "KB", "usage" : 127681}
+,
+	{"timestamp" : 1745306415, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1415, "miss" : 356, "set" : 356, "size" : 131072, "unit" : "KB", "usage" : 128684}
+,
+	{"timestamp" : 1745306416, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2209, "miss" : 287, "set" : 285, "size" : 131072, "unit" : "KB", "usage" : 129951}
+,
+	{"timestamp" : 1745306417, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2464, "miss" : 374, "set" : 376, "size" : 131072, "unit" : "KB", "usage" : 127367}
+,
+	{"timestamp" : 1745306418, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1407, "miss" : 467, "set" : 465, "size" : 131072, "unit" : "KB", "usage" : 128442}
+,
+	{"timestamp" : 1745306419, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2645, "miss" : 523, "set" : 526, "size" : 131072, "unit" : "KB", "usage" : 130237}
+,
+	{"timestamp" : 1745306420, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1994, "miss" : 499, "set" : 497, "size" : 131072, "unit" : "KB", "usage" : 127552}
+,
+	{"timestamp" : 1745306421, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1881, "miss" : 210, "set" : 207, "size" : 131072, "unit" : "KB", "usage" : 128500}
+,
+	{"timestamp" : 1745306422, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2049, "miss" : 550, "set" : 550, "size" : 131072, "unit" : "KB", "usage" : 130037}
+,
+	{"timestamp" : 1745306423, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1486, "miss" : 587, "set" : 588, "size" : 131072, "unit" : "KB", "usage" : 127281}
+,
+	{"timestamp" : 1745306424, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2322, "miss" : 431, "set" : 429, "size" : 131072, "unit" : "KB", "usage" : 128687}
+,
+	{"timestamp" : 1745306425, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1111, "miss" : 536, "set" : 537, "size" : 131072, "unit" : "KB", "usage" : 129810}
+,
+	{"timestamp" : 1745306426, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2231, "miss" : 422, "set" : 423, "size" : 131072, "unit" : "KB", "usage" : 131067}
+,
+	{"timestamp" : 1745306427, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2025, "miss" : 467, "set" : 463, "size" : 131072, "unit" : "KB", "usage" : 128555}
+,
+	{"timestamp" : 1745306428, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1687, "miss" : 561, "set" : 557, "size" : 131072, "unit" : "KB", "usage" : 129869}
+,
+	{"timestamp" : 1745306429, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1228, "miss" : 368, "set" : 368, "size" : 131072, "unit" : "KB", "usage" : 130789}
+,
+	{"timestamp" : 1745306430, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1487, "miss" : 429, "set" : 429, "size" : 131072, "unit" : "KB", "usage" : 127836}
+,
+	{"timestamp" : 1745306431, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2243, "miss" : 417, "set" : 415, "size" : 131072, "unit" : "KB", "usage" : 129239}
+,
+	{"timestamp" : 1745306432, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1995, "miss" : 315, "set" : 317, "size" : 131072, "unit" : "KB", "usage" : 130489}
+,
+	{"timestamp" : 1745306433, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1441, "miss" : 530, "set" : 528, "size" : 131072, "unit" : "KB", "usage" : 127556}
+,
+	{"timestamp" : 1745306434, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1554, "miss" : 144, "set" : 144, "size" : 131072, "unit" : "KB", "usage" : 128417}
+,
+	{"timestamp" : 1745306435, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1040, "miss" : 365, "set" : 361, "size" : 131072, "unit" : "KB", "usage" : 126971}
+,
+	{"timestamp" : 1745306436, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2391, "miss" : 416, "set" : 413, "size" : 131072, "unit" : "KB", "usage" : 130689}
+,
+	{"timestamp" : 1745306437, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1844, "miss" : 287, "set" : 290, "size" : 131072, "unit" : "KB", "usage" : 127779}
+,
+	{"timestamp" : 1745306438, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1270, "miss" : 481, "set" : 477, "size" : 131072, "unit" : "KB", "usage" : 128813}
+,
+	{"timestamp" : 1745306439, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1799, "miss" : 564, "set" : 565, "size" : 131072, "unit" : "KB", "usage" : 130223}
+,
+	{"timestamp" : 1745306440, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1924, "miss" : 509, "set" : 510, "size" : 131072, "unit" : "KB", "usage" : 127552}
+,
+	{"timestamp" : 1745306441, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1482, "miss" : 393, "set" : 393, "size" : 131072, "unit" : "KB", "usage" : 128621}
+,
+	{"timestamp" : 1745306442, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1247, "miss" : 237, "set" : 236, "size" : 131072, "unit" : "KB", "usage" : 129410}
+,
+	{"timestamp" : 1745306443, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1330, "miss" : 322, "set" : 320, "size" : 131072, "unit" : "KB", "usage" : 130298}
+,
+	{"timestamp" : 1745306444, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1866, "miss" : 591, "set" : 591, "size" : 131072, "unit" : "KB", "usage" : 127634}
+,
+	{"timestamp" : 1745306445, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1961, "miss" : 570, "set" : 573, "size" : 131072, "unit" : "KB", "usage" : 129186}
+,
+	{"timestamp" : 1745306446, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1370, "miss" : 377, "set" : 374, "size" : 131072, "unit" : "KB", "usage" : 130153}
+,
+	{"timestamp" : 1745306447, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1473, "miss" : 215, "set" : 212, "size" : 131072, "unit" : "KB", "usage" : 131014}
+,
+	{"timestamp" : 1745306448, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1528, "miss" : 373, "set" : 373, "size" : 131072, "unit" : "KB", "usage" : 127977}
+,
+	{"timestamp" : 1745306449, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1536, "miss" : 462, "set" : 463, "size" : 131072, "unit" : "KB", "usage" : 129186}
+,
+	{"timestamp" : 1745306450, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1491, "miss" : 733, "set" : 732, "size" : 131072, "unit" : "KB", "usage" : 130619}
+,
+	{"timestamp" : 1745306451, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1955, "miss" : 398, "set" : 399, "size" : 131072, "unit" : "KB", "usage" : 127829}
+,
+	{"timestamp" : 1745306452, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2248, "miss" : 320, "set" : 318, "size" : 131072, "unit" : "KB", "usage" : 129171}
+,
+	{"timestamp" : 1745306453, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1450, "miss" : 433, "set" : 432, "size" : 131072, "unit" : "KB", "usage" : 130267}
+,
+	{"timestamp" : 1745306454, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1632, "miss" : 289, "set" : 289, "size" : 131072, "unit" : "KB", "usage" : 131067}
+,
+	{"timestamp" : 1745306455, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1377, "miss" : 560, "set" : 559, "size" : 131072, "unit" : "KB", "usage" : 128351}
+,
+	{"timestamp" : 1745306456, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1987, "miss" : 525, "set" : 524, "size" : 131072, "unit" : "KB", "usage" : 129822}
+,
+	{"timestamp" : 1745306457, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1545, "miss" : 394, "set" : 392, "size" : 131072, "unit" : "KB", "usage" : 130894}
+,
+	{"timestamp" : 1745306458, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1807, "miss" : 528, "set" : 526, "size" : 131072, "unit" : "KB", "usage" : 128143}
+,
+	{"timestamp" : 1745306459, "disk-hit" : 0, "disk-usage" : 0, "hit" : 1729, "miss" : 675, "set" : 679, "size" : 139264, "unit" : "KB", "usage" : 129679}
+,
+	{"timestamp" : 1745306460, "disk-hit" : 0, "disk-usage" : 0, "hit" : 2646, "miss" : 259, "set" : 254, "size" : 139264, "unit" : "KB", "usage" : 131064}
+,
+	{"timestamp" : 1745306461, "disk-hit" : 0, "disk-usage" : 0, "hit" : 433, "miss" : 8, "set" : 9, "size" : 110592, "unit" : "KB", "usage" : 102627}
+,
+	{"timestamp" : 1745306462, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 122880, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306463, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 126976, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306464, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 126976, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306465, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306466, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306467, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306468, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 131072, "unit" : "KB", "usage" : 0}
+,
+	{"timestamp" : 1745306469, "disk-hit" : 0, "disk-usage" : 0, "hit" : 0, "miss" : 0, "set" : 0, "size" : 155648, "unit" : "KB", "usage" : 0}
+]

@@ -1,0 +1,41 @@
+[machines.nuc-intel]
+hostname = "nuc-amd"
+work-dir = "/root/"
+user = "root"
+iface = "eth0"
+has-pdu = false
+
+[apps.app1]
+registry = {host = "nuc-intel"}
+front = {host = "nuc-intel", port = 8081, cache = "cache1.service", thread = 12}
+
+compose = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+post = [{host = "nuc-intel", nb = 12, cache = "cache1.service", db = "mysql"}]
+social = [{host = "nuc-intel", cache = "cache1.service", nb = 12, db = "file"}]
+short = [{host = "nuc-intel", cache = "cache1.service", nb = 12, db = "mysql"}]
+user = [{host = "nuc-intel", cache = "cache1.service", nb = 12, db = "mysql"}]
+timeline = [{host = "nuc-intel", cache = "cache1.service", nb = 12, db = "file"}]
+
+# Available for all services
+[dbs.mysql]
+host = "nuc-intel"
+port = 3309
+base = "../../basic_dbs/all_10_then_3_subs_filled.sql"
+kind = "mysql"
+
+# Only timeline and social_graph works with file dbs
+[dbs.file]
+host = "nuc-intel"
+base = "../../basic_dbs/all_10_then_3_subs_filled.zip"
+kind = "file"
+
+[caches.cache1]
+host = "nuc-intel"
+version = "cachelib"
+size = 128
+unit = "MB"
+cgroup_cache_file = 128 # minimum memory size set in the cgroup in order to have some space for in RAM file caching
+entities = {
+     service = { size = 128, ttl = 1000, disk-cap = 512 }
+}

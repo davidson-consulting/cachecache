@@ -54,7 +54,7 @@ namespace deployer {
             "apt install -y mysql-client libmysqlclient-dev libgc-dev emacs patchelf net-tools cgroup-tools\n"
             "apt install -y docker-compose git cmake g++ binutils automake libtool libmicrohttpd-dev libbson-dev libmongoc-dev\n"
             "apt install -y nlohmann-json3-dev libgc-dev libssh-dev libssl-dev libmysqlcppconn-dev libmysql++-dev zip\n"
-            "wget https://github.com/davidson-consulting/vjoule/releases/download/v1.3.0/vjoule-tools_1.3.0.deb\n"
+            // "wget DEPENDENCY HIDDEN FOR ANONIMITY REASONS"
             "dpkg -i vjoule-tools_1.3.0.deb\n"
             "rm vjoule-tools_1.3.0.deb\n"
             "mkdir " + m-> getHomeDir () + "/traces/\n";
@@ -90,7 +90,7 @@ namespace deployer {
         LOG_INFO ("Install rd_utils on : ", m-> getName ());
         auto script = "mkdir -p " + m-> getHomeDir () + "\n"
             "cd " + m-> getHomeDir () + "\n"
-            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone --depth=1 git@github.com:davidson-consulting/rd_utils.git\n"
+            // "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone --depth=1 DEPENDENCY HIDDEN FOR ANONIMITY REASONS\n"
             "cd rd_utils\n"
             "mkdir .build\n"
             "cd .build\n"
@@ -109,7 +109,7 @@ namespace deployer {
         LOG_INFO ("Install socialNet on : ", m-> getName ());
         auto script = "mkdir -p " + m-> getHomeDir () + "\n"
             "cd " + m-> getHomeDir () + "\n"
-            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git socialNet\n"
+            // "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone --depth=1 DEPENDENCY HIDDEN FOR ANONIMITY REASONS\n"
             "cd socialNet/\n"
             "git checkout webapp\n"
             "cd socialNet/app\n"
@@ -134,7 +134,7 @@ namespace deployer {
         LOG_INFO ("Install cache (", version, ") on : ", m-> getName ());
         auto script = "mkdir -p " + m-> getHomeDir () + "\n"
             "cd " + m-> getHomeDir () + "\n"
-            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
+            // "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone --depth=1 DEPENDENCY HIDDEN FOR ANONIMITY REASONS\n"
             "cd cachecache/\n"
             "git checkout " + version + "\n"
             ;
@@ -197,7 +197,7 @@ namespace deployer {
             "curl -sL \"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823\" | sudo apt-key add\n"
             "sudo apt-get update\n"
             "sudo apt-get install -y sbt openjdk-18-jdk\n"
-            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone git@github.com:davidson-consulting/cachecache.git\n"
+            // "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git clone --depth=1 DEPENDENCY HIDDEN FOR ANONIMITY REASONS\n"
             "cd cachecache/\n"
             "git checkout webapp\n"
             "mkdir " + m-> getHomeDir () + "/gatling\n"
