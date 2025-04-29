@@ -8,7 +8,8 @@ This repository contains the source code used for the experiments of the paper
 the Cloud". It has been anonymized for the double-blind process, and therefore
 unfortunately (since it depends on licensed code that would reveal our identity)
 is not compilable, but the sources present the implementation used in our
-experiments.
+experiments. Full source and dependencies will be made open source in case of
+paper acceptance.
 
 ## market
 
