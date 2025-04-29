@@ -1,5 +1,6 @@
 #include "plot.hh"
 #include <iostream>
+#include "../../analyser/utils.hh"
 
 namespace tex {
 
@@ -12,6 +13,16 @@ namespace tex {
 
     Plot& Plot::name (const std::string & name) {
         this-> _name = name;
+        return *this;
+    }
+
+    Plot& Plot::factor (uint32_t factor) {
+        this-> _factor = factor;
+        return *this;
+    }
+
+    Plot& Plot::smooth (uint32_t factor) {
+        this-> _smooth = factor;
         return *this;
     }
 
@@ -55,9 +66,17 @@ namespace tex {
     void Plot::toStream (std::stringstream & ss) const {
         ss << "\t\t\\addplot " << this-> plotConfig () << " coordinates {" << std::endl;
         uint32_t i = 0;
-        for (auto & it : this-> _values) {
-            ss << "\t\t\t (" << this-> _minIndex + i << ", " << it << ")" << std::endl;
-            i += 1;
+        if (this-> _smooth == 0) {
+            for (auto & it : this-> _values) {
+                ss << "\t\t\t (" << this-> _minIndex + (i * this-> _factor) << ", " << it << ")" << std::endl;
+                i += 1;
+            }
+        } else {
+            auto res = analyser::smooth (this-> _values, this-> _smooth);
+            for (auto & it : res) {
+                ss << "\t\t\t (" << this-> _minIndex + (i * this-> _smooth) << ", " << it << ")" << std::endl;
+                i += 1;
+            }
         }
         ss << "\t\t};" << std::endl;
 

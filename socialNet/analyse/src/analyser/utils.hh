@@ -19,4 +19,6 @@ namespace analyser {
     double mean (const std::vector <double> & points);
     double variance (double mean, const std::vector <double> & points);
 
+    std::vector <double> smooth (const std::vector <double> & values, uint32_t strength);
+
 }

@@ -68,9 +68,9 @@ namespace deployer {
         for (auto & it : this-> _machines) {
             if (it.second-> hasFlag ("social") || it.second-> hasFlag ("cache")) {
                 LOG_INFO ("Starting vjoule on ", it.first);
+                it.second-> run ("free && sync && echo 3 > /proc/sys/vm/drop_caches && free")-> wait ();
                 it.second-> run ("systemctl stop vjoule_service")-> wait ();
                 it.second-> run ("systemctl start vjoule_service")-> wait ();
-                it.second-> run ("free && sync && echo 3 > /proc/sys/vm/drop_caches && free")-> wait ();
             }
         }
     }

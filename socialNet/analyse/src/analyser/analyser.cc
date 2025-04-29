@@ -53,7 +53,14 @@ namespace analyser {
                         auto host = (*dc)[name]["host"].getStr ();
                         // auto hostname = cfg ["machines"][host]["hostname"].getStr ();
 
-                        this-> _caches [name].configure (this-> _minTimestamp, this-> _traceDir, host, name);
+                        std::set <std::string> entities;
+                        match ((*dc)[name]["entities"]) {
+                            of (config::Dict, et) {
+                                for (auto c : et-> getKeys ()) { entities.emplace (c); }
+                            } fo;
+                        }
+
+                        this-> _caches [name].configure (this-> _minTimestamp, this-> _traceDir, host, name, entities);
                     }
                 } fo;
             }

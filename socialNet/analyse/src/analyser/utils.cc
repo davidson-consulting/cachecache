@@ -134,4 +134,26 @@ namespace analyser {
     }
 
 
+    std::vector <double> smooth (const std::vector <double> & values, uint32_t strength) {
+        std::vector <double> results;
+        for (uint32_t i = 0 ; i < values.size () ; i += strength) {
+            double result = values [i];
+            uint32_t nb = 1;
+            for (uint32_t j = 0 ; j < strength ; j++) {
+                if ((int32_t) i - (int32_t) j > 0) {
+                    result += values [i - j];
+                    nb += 1;
+                }
+                if (i + j < values.size ()) {
+                    result += values [i + j];
+                    nb += 1;
+                }
+            }
+
+            results.push_back (result / nb);
+        }
+
+        return results;
+    }
+
 }

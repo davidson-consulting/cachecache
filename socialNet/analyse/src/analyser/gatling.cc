@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstring>
 #include <rd_utils/utils/print.hh>
+#include <rd_utils/utils/str.hh>
 #include <math.h>
 
 #include "utils.hh"
@@ -188,6 +189,23 @@ namespace analyser {
         table.addRow ({"95th", std::to_string ((uint64_t) percs.p95)});
         table.addRow ({"99th", std::to_string ((uint64_t) percs.p99)});
 
+
+        rd_utils::utils::Table t ({"name", "min", "max", "mean", "std", "p5", "p25", "p50", "p75", "p80", "p90", "p95", "p99"});
+        t.addRow ({name, std::to_string ((uint64_t) percs.min),
+                std::to_string ((uint64_t) percs.max),
+                std::to_string ((uint64_t) distrib.mean),
+                std::to_string ((uint64_t) ::sqrt (distrib.variance)),
+                std::to_string ((uint64_t) percs.p5),
+                std::to_string ((uint64_t) percs.p25),
+                std::to_string ((uint64_t) percs.p50),
+                std::to_string ((uint64_t) percs.p75),
+                std::to_string ((uint64_t) percs.p80),
+                std::to_string ((uint64_t) percs.p90),
+                std::to_string ((uint64_t) percs.p95),
+                std::to_string ((uint64_t) percs.p99)});
+
+        std::cout << t.toString () << std::endl;
+
         auto figure = tex::AxisFigure ("gatling_distrib_" + name)
             .caption ("Response time distribution - req = " + name)
             .ylabel ("Percentage of requests")
@@ -335,6 +353,7 @@ namespace analyser {
 
         percs.min = min;
         percs.max = max;
+        percs.p5 = analyser::percentile (0.05, points);
         percs.p25 = analyser::percentile (0.25, points);
         percs.p50 = analyser::percentile (0.50, points);
         percs.p75 = analyser::percentile (0.75, points);
@@ -392,6 +411,7 @@ namespace analyser {
             result.min = points [0];
             result.max = points [points.size () - 1];
 
+            result.p5 = analyser::percentile (0.05, points);
             result.p25 = analyser::percentile (0.25, points);
             result.p50 = analyser::percentile (0.50, points);
             result.p75 = analyser::percentile (0.75, points);

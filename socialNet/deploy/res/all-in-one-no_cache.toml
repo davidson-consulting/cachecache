@@ -1,28 +1,38 @@
 [machines.nuc-intel]
-hostname = "nuc-intel"
-work-dir = "/tmp/tests1"
+hostname = "emile-HP-EliteBook-8"
+work-dir = "/root/tests/"
 user = "root"
-iface = "eth0"
-has-pdu = true
+iface = "wlp0s20f3"
+has-pdu = false
 
 [apps.app1]
 registry = {host = "nuc-intel"}
-db = {host = "nuc-intel", name = "socialNet", port = 3309, base = "./basic_dbs/zip_subs_20k.sql" }
-front = {host = "nuc-intel", port = 8081, threads = 1}#, cache = "cache1.front"}
+front = {host = "nuc-intel", port = 8081, thread = 12}
 
-compose = [{host = "nuc-intel", nb = 1}]
-text = [{host = "nuc-intel", nb = 1}]
-post = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
-social = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
-short = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
-user = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
-timeline = [{host = "nuc-intel", nb = 1}]#, cache = "cache1.service"}]
+compose = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+post = [{host = "nuc-intel", nb = 12, db = "mysql"}]
+social = [{host = "nuc-intel", nb = 12, db = "file"}]
+short = [{host = "nuc-intel", nb = 12, db = "mysql"}]
+user = [{host = "nuc-intel", nb = 12, db = "mysql"}]
+timeline = [{host = "nuc-intel", nb = 12, db = "file"}]
 
-# [caches.cache1]
+# Available for all services
+[dbs.mysql]
+host = "nuc-intel"
+port = 3309
+base = "./basic_dbs/all_10_then_3_subs.sql"
+kind = "mysql"
+
+# Example of mongo db
+# [dbs.mysql]
 # host = "nuc-intel"
-# size = 256
-# unit = "MB"
-# entities = {
-#      service = { size = 64, ttl = 100 },
-#      front = { size = 18 }
-# }
+# port = 6660
+# base = "./basic_dbs/all_10_then_3_subs.sql"
+# kind = "mongo"
+
+# Only timeline and social_graph works with file dbs
+[dbs.file]
+host = "nuc-intel"
+base = "./basic_dbs/all_10_then_3_subs.zip"
+kind = "file"

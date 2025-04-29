@@ -310,7 +310,7 @@ namespace socialNet::timeline {
       concurrency::timer t;
       auto resp = socialService-> request (msg).wait ();
       if (resp && resp-> getOr ("code", -1) == ResponseCode::OK) {
-        std::cout << t.time_since_start () << " " << *resp << std::endl;
+
         match ((*resp) ["content"]) {
           of (config::Array, arr) {
             for (uint32_t i = 0 ; i < arr-> getLen () ; i++) {

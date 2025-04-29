@@ -29,6 +29,10 @@ namespace tex {
 
                 std::string _name = "";
 
+                uint32_t _factor = 1;
+
+                uint32_t _smooth = 0;
+
         public:
 
                 /**
@@ -53,6 +57,8 @@ namespace tex {
                  */
 
                 Plot& minIndex (uint32_t min);
+                Plot& factor (uint32_t factor);
+                Plot& smooth (uint32_t factor);
                 Plot& lineWidth (double w);
                 Plot& name (const std::string & name);
                 Plot& color (const std::string & color);

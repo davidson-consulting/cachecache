@@ -12,8 +12,10 @@ namespace analyser {
             uint32_t hit;
             uint32_t miss;
             uint32_t set;
+            uint32_t disk_hit;
             rd_utils::utils::MemorySize usage;
             rd_utils::utils::MemorySize size;
+            rd_utils::utils::MemorySize disk_usage;
         };
 
         struct MarketTrace {
@@ -39,6 +41,8 @@ namespace analyser {
         // The trace of the entitites
         std::map <std::string, std::vector <EntityTrace> > _entities;
 
+        std::set <std::string> _entityHasDisk;
+
         std::set <std::string> _entityInMarket;
 
     public:
@@ -48,7 +52,7 @@ namespace analyser {
         /**
          * Configure and load the traces of the cache
          */
-        void configure (uint64_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name);
+        void configure (uint64_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name, const std::set <std::string> & entities);
 
         /**
          * Export the traces to a beamer doc

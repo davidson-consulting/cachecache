@@ -1,6 +1,7 @@
 #include "cache.hh"
 
 #include <nlohmann/json.hpp>
+#include "utils.hh"
 using json = nlohmann::json;
 
 
@@ -11,14 +12,19 @@ namespace analyser {
 
     Cache::Cache () {}
 
-    void Cache::configure (uint64_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name) {
+    void Cache::configure (uint64_t minTimestamp, const std::string & traceDir, const std::string & hostName, const std::string & name, const std::set<std::string> & entities) {
         this-> _hostName = hostName;
         this-> _name = name;
         this-> _minTimestamp = minTimestamp;
 
-        this-> loadMarketTrace (utils::join_path (utils::join_path (traceDir, this-> _hostName), this-> _name + "_traces.json"));
+        try {
+            this-> loadMarketTrace (utils::join_path (utils::join_path (traceDir, this-> _hostName), this-> _name + "_traces.json"));
+        } catch (...) {
+            LOG_INFO ("No market trace");
+        }
 
-        for (auto & it : this-> _entityInMarket) {
+        this-> _entityInMarket = entities;
+        for (auto & it : entities) {
             this-> loadEntityTrace (it, utils::join_path (utils::join_path (traceDir, this-> _hostName), this-> _name + "." + it + "_traces.json"));
         }
     }
@@ -60,8 +66,24 @@ namespace analyser {
             uint32_t set = t ["set"];
             uint64_t size = t ["size"];
             uint64_t usage = t ["usage"];
+            uint32_t disk_hit = 0;
+            uint64_t disk_usage = 0;
+            bool has_disk = false;
 
-            this-> _entities [name].push_back (EntityTrace {.hit = hit, .miss = miss, .set = set, .usage = MemorySize::unit (usage, unit), .size = MemorySize::unit (size, unit)});
+            try {
+                disk_hit = t ["disk-hit"];
+                has_disk = true;
+            } catch (...) {}
+
+            try {
+                disk_usage = t ["disk-usage"];
+                has_disk = true;
+            } catch (...) {}
+
+            this-> _entities [name].push_back (EntityTrace {.hit = hit, .miss = miss, .set = set, .disk_hit = disk_hit, .usage = MemorySize::unit (usage, unit), .size = MemorySize::unit (size, unit), .disk_usage = MemorySize::unit (disk_usage, unit)});
+            if (has_disk) {
+                this-> _entityHasDisk.emplace (name);
+            }
         }
     }
 
@@ -100,6 +122,7 @@ namespace analyser {
         for (auto & name : this-> _entityInMarket) {
             entities.emplace (name, std::make_shared <tex::Plot> ());
             entities [name]-> legend (name);
+            entities [name]-> smooth (5);
 
             for (auto & usage : this-> _trace) {
                 if (usage.entitySize.find (name) != usage.entitySize.end ()) {
@@ -125,8 +148,13 @@ namespace analyser {
     }
 
     void Cache::createEntityFigures (const std::string & name, std::shared_ptr <tex::Beamer> doc) {
+        std::vector <double> globalRatio;
+
         auto usage = std::make_shared <tex::Plot> ();
         usage-> legend ("usage");
+
+        auto disk_usage = std::make_shared <tex::Plot> ();
+        disk_usage-> legend ("disk-usage").color ("red!30");
 
         auto size = std::make_shared <tex::Plot> ();
         size-> legend ("size");
@@ -134,19 +162,41 @@ namespace analyser {
         auto hit = std::make_shared <tex::Plot> ();
         hit-> legend ("hit").color ("green!50");
 
+        auto disk_hit = std::make_shared <tex::Plot> ();
+        disk_hit-> legend ("disk-hit").color ("orange!80");
+
         auto miss = std::make_shared <tex::Plot> ();
         miss-> legend ("miss").color ("red!50");
 
         auto set = std::make_shared <tex::Plot> ();
         set-> legend ("set");
 
+        auto ratio = std::make_shared <tex::Plot> ();
+        ratio-> legend ("ratio");
 
+        uint64_t j = 0;
         for (auto & it : this-> _entities [name]) {
             usage-> append (it.usage.megabytes ());
             size-> append (it.size.megabytes ());
             hit-> append (it.hit);
             miss-> append (it.miss);
             set-> append (it.set);
+            j += 1;
+
+            if ((it.hit + it.miss) > 0) {
+                globalRatio.push_back ((((float) it.hit / (float) (it.hit + it.miss)) * 100.0f));
+            } else {
+                globalRatio.push_back (0);
+            }
+
+            disk_hit-> append (it.disk_hit);
+            disk_usage-> append (it.disk_usage.megabytes ());
+        }
+
+        globalRatio = smooth (globalRatio, 5);
+        ratio-> factor (5);
+        for (uint64_t i = 0 ; i < globalRatio.size () ; i++) {
+            ratio-> append (globalRatio [i]);
         }
 
         auto hitFigure = tex::AxisFigure ("hit_" + this-> _name + "." + name)
@@ -157,14 +207,32 @@ namespace analyser {
 
         hitFigure.addPlot (hit).addPlot (miss).addPlot (set);
 
+        if (this-> _entityHasDisk.find (name) != this-> _entityHasDisk.end ()) {
+            hitFigure.addPlot (disk_hit);
+        }
+
         auto sizeFigure = tex::AxisFigure ("size_" + this-> _name + "." + name)
             .caption ("Size and usage of entity " + this-> _name + "." + name)
             .ylabel ("Memory size in MB")
             .xlabel ("seconds")
             ;
 
+        if (this-> _entityHasDisk.find (name) != this-> _entityHasDisk.end ()) {
+            sizeFigure.addPlot (disk_usage);
+        }
+
         sizeFigure.addPlot (usage).addPlot (size);
+
+        auto ratioFigure = tex::AxisFigure ("ratio_" + this-> _name + "." + name)
+            .caption ("Hit Ratio " + this-> _name + "." + name)
+            .ylabel ("Hit ratio in percentage")
+            .xlabel ("seconds")
+            ;
+
+        ratioFigure.addPlot (ratio);
+
         doc-> addFigure ("cache", std::make_shared <tex::AxisFigure> (hitFigure));
+        doc-> addFigure ("cache", std::make_shared <tex::AxisFigure> (ratioFigure));
         doc-> addFigure ("cache", std::make_shared <tex::AxisFigure> (sizeFigure));
     }
 

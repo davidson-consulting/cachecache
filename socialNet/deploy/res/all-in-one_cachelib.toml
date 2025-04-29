@@ -7,7 +7,7 @@ has-pdu = false
 
 [apps.app1]
 registry = {host = "nuc-intel"}
-front = {host = "nuc-intel", port = 8081, cache = "cache1.front", thread = 12}
+front = {host = "nuc-intel", port = 8081, cache = "cache1.service", thread = 12}
 
 compose = [{host = "nuc-intel", nb = 12}]
 text = [{host = "nuc-intel", nb = 12}]
@@ -44,6 +44,5 @@ size = 0
 unit = "MB"
 cgroup_cache_file = 128 # minimum memory size set in the cgroup in order to have some space for in RAM file caching
 entities = {
-     service = { size = 64, ttl = 1000, disk-cap = 512 },
-     front = { size = 16, ttl = 1000, disk-cap = 512 }
+     service = { size = 64, ttl = 1000, disk-cap = 512 }
 }

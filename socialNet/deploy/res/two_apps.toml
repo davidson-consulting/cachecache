@@ -1,0 +1,72 @@
+[machines.nuc-intel]
+hostname = "emile-HP-EliteBook-8"
+work-dir = "/root/tests/"
+user = "root"
+iface = "wlp0s20f3"
+has-pdu = false
+
+## APP 1
+
+[apps.app1]
+registry = {host = "nuc-intel"}
+front = {host = "nuc-intel", port = 8081, cache = "cache1.front1", thread = 12}
+
+compose = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+post = [{host = "nuc-intel", nb = 12, cache = "cache1.service1", db = "mysql1"}]
+social = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "file1"}]
+short = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "mysql1"}]
+user = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "mysql1"}]
+timeline = [{host = "nuc-intel", cache = "cache1.service1", nb = 12, db = "file1"}]
+
+[dbs.mysql1]
+host = "nuc-intel"
+port = 3309
+base = "./basic_dbs/all_10_then_3_subs.sql"
+kind = "mysql"
+
+[dbs.file1]
+host = "nuc-intel"
+base = "./basic_dbs/all_10_then_3_subs.zip"
+kind = "file"
+
+## APP2
+
+[apps.app2]
+registry = {host = "nuc-intel"}
+front = {host = "nuc-intel", port = 8083, cache = "cache1.front2", thread = 12}
+
+compose = [{host = "nuc-intel", nb = 12}]
+text = [{host = "nuc-intel", nb = 12}]
+post = [{host = "nuc-intel", nb = 12, cache = "cache1.service2", db = "mysql2"}]
+social = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "file2"}]
+short = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "mysql2"}]
+user = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "mysql2"}]
+timeline = [{host = "nuc-intel", cache = "cache1.service2", nb = 12, db = "file2"}]
+
+[dbs.mysql2]
+host = "nuc-intel"
+port = 3310
+base = "./basic_dbs/all_10_then_3_subs.sql"
+kind = "mysql"
+
+[dbs.file2]
+host = "nuc-intel"
+base = "./basic_dbs/all_10_then_3_subs.zip"
+kind = "file"
+
+## CACHE
+
+[caches.cache1]
+host = "nuc-intel"
+version = "disk"
+size = 1024
+unit = "MB"
+cgroup_cache_file = 128 # minimum memory size set in the cgroup in order to have some space for in RAM file caching
+entities = {
+     service1 = { size = 64, ttl = 100, disk-cap = 512 },
+     front1 = { size = 16, ttl = 100, disk-cap = 512 },
+
+     service2 = { size = 64, ttl = 100, disk-cap = 512 },
+     front2 = { size = 16, ttl = 100, disk-cap = 512 }
+}

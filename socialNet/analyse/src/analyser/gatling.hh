@@ -34,16 +34,17 @@ namespace analyser {
     };
 
     struct Percentile {
-        uint64_t min;
-        double p25;
-        double p50;
-        double p75;
-        double p80;
-        double p85;
-        double p90;
-        double p95;
-        double p99;
-        uint64_t max;
+            uint64_t min;
+            double p5;
+            double p25;
+            double p50;
+            double p75;
+            double p80;
+            double p85;
+            double p90;
+            double p95;
+            double p99;
+            uint64_t max;
     };
 
     class Gatling {

@@ -44,10 +44,11 @@ namespace analyser {
 
             auto cpu = (double) (std::stoul (splits [2], nullptr, 0)) / 1e7; // 10_000_000; to have a percentage
             auto mem_anon = std::stoul (splits [3], nullptr, 0);
-            auto mem_file = 0; //std::stoul (splits [4], nullptr, 0);
+            auto mem_file = std::stoul (splits [4], nullptr, 0);
 
             this-> _groups.emplace (name);
             this-> _usage.back () [name] = UsageTrace {.cpu = cpu, .mem_anon = MemorySize::B (mem_anon), .mem_file = MemorySize::B (mem_file)};
+
             this-> _globalUsage.back ().cpu += cpu;
             this-> _globalUsage.back ().mem_anon += MemorySize::B (mem_anon);
             this-> _globalUsage.back ().mem_file += MemorySize::B (mem_file);
@@ -125,14 +126,17 @@ namespace analyser {
 
     void Machine::createEnergyFigure (std::shared_ptr <tex::Beamer> doc) {
         auto pduPlot = std::make_shared <tex::Plot> ();
+        auto pduN0Plot = std::make_shared <tex::Plot> ();
         auto cpuPlot = std::make_shared <tex::Plot> ();
         auto ramPlot = std::make_shared <tex::Plot> ();
 
         pduPlot-> legend ("PDU");
         cpuPlot-> legend ("CPU");
         ramPlot-> legend ("RAM");
+        pduN0Plot-> legend ("pdu if CPU > 0").color ("red");
 
         std::vector <double> pdu;
+        double sumpdu;
         std::vector <double> cpu;
         std::vector <double> ram;
 
@@ -140,6 +144,13 @@ namespace analyser {
             pduPlot-> append (it.pdu);
             cpuPlot-> append (it.cpu);
             ramPlot-> append (it.ram);
+
+            if (it.cpu > 10) {
+                sumpdu += it.pdu;
+                pduN0Plot-> append (it.pdu);
+            } else {
+                pduN0Plot-> append (0);
+            }
 
             pdu.push_back (it.pdu);
             cpu.push_back (it.cpu);
@@ -151,6 +162,7 @@ namespace analyser {
             .ylabel ("Watts")
             .xlabel ("seconds")
             .addPlot (pduPlot)
+            .addPlot (pduN0Plot)
             .addPlot (cpuPlot)
             .addPlot (ramPlot)
             ;
@@ -181,9 +193,11 @@ namespace analyser {
                 std::to_string ((uint64_t) ::sqrt (analyser::variance (meanRAM, ram)))});
 
         table.addRow ({"sum (J)",
-                std::to_string ((uint64_t) analyser::sum (pdu)),
+                std::to_string ((uint64_t) sumpdu),
                 std::to_string ((uint64_t) analyser::sum (cpu)),
                 std::to_string ((uint64_t) analyser::sum (ram))});
+
+        std::cout << "Energy PDU " << sumpdu << std::endl;
 
         table.resize (0.75);
 
@@ -216,10 +230,10 @@ namespace analyser {
 
         for (auto & sum : this-> _globalUsage) {
             cpu ["__GLOBAL__"]-> append (sum.cpu);
-            ram ["__GLOBAL__"]-> append ((sum.mem_anon + sum.mem_file).megabytes ());
+            ram ["__GLOBAL__"]-> append ((sum.mem_anon).megabytes ());
             cpus.push_back (sum.cpu);
 
-            auto kb = (sum.mem_anon + sum.mem_file).megabytes ();
+            auto kb = (sum.mem_anon).megabytes ();
             rams.push_back (kb);
         }
 
@@ -236,7 +250,7 @@ namespace analyser {
             for (auto & usage : this-> _usage) {
                 if (usage.find (name) != usage.end ()) {
                     cpu [uniqName]-> append (usage [name].cpu);
-                    ram [uniqName]-> append ((usage [name].mem_anon + usage [name].mem_file).megabytes ());
+                    ram [uniqName]-> append ((usage [name].mem_anon).megabytes ());
                 } else {
                     cpu [uniqName]-> append (0);
                     ram [uniqName]-> append (0);

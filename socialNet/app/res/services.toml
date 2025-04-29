@@ -14,34 +14,34 @@ addr = "localhost"
 port = 0
 
 [services.user]
-nb = 1
+nb = 12
 db = "mysql"
 cache = "fst"
 
 [services.timeline]
-nb = 1
+nb = 12
 db = "file"
 cache = "fst"
 
 [services.short]
-nb = 1
+nb = 12
 db = "mysql"
 
 [services.social]
-nb = 1
+nb = 12
 db = "file"
 cache = "fst"
 
 [services.post]
-nb = 1
+nb = 12
 db = "mysql"
 cache = "fst"
 
 [services.compose]
-nb = 1
+nb = 12
 
 [services.text]
-nb = 1
+nb = 12
 
 [db.mysql]
 name = "socialNet"
@@ -51,18 +51,10 @@ pass = ""
 port = 3309
 kind = "mysql"
 
-[db.mongo]
-name = "socialNet"
-addr = "192.168.1.21"
-user = "root"
-pass = "example"
-port = 6661
-kind = "mongo"
-
 [db.file]
 kind = "file"
-directory = "/tmp/"
+#directory = "/tmp/db/"
 
-# [cache.fst]
-# addr="192.168.1.12"
-# port = 53173
+[cache.fst]
+addr="192.168.1.21"
+port = 57467
