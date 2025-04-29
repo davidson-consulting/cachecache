@@ -1,0 +1,30 @@
+\begin{figure}[h]
+    \centering
+    \begin{adjustbox}{max width=1.0\linewidth, keepaspectratio}
+        \begin{tikzpicture}
+            \begin{axis}[ylabel = Memory size in MB, 
+xlabel = seconds, 
+legend style = {nodes={scale=0.9, transform shape}, at={(0.03,1.2)}, anchor=north west, draw=black, fill=white, align=left, legend columns=3},
+mark size = 0pt,
+ cycle list name = exotic,
+  axis lines* = left]
+		\addplot  coordinates {
+		};
+\addlegendentry{pool};
+		\addplot  coordinates {
+		};
+\addlegendentry{service1};
+		\addplot  coordinates {
+		};
+\addlegendentry{service2};
+		\addplot  coordinates {
+		};
+\addlegendentry{service3};
+		\addplot  coordinates {
+		};
+\addlegendentry{service4};
+           \end{axis}
+      \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Market repartition of cache1}
+\end{figure}

@@ -1,0 +1,155 @@
+\begin{minipage}{0.75\linewidth}
+\begin{figure}[h]
+    \centering
+    \begin{adjustbox}{max width=1.0\linewidth, keepaspectratio}
+        \begin{tikzpicture}
+            \begin{axis}[ylabel = Percentage of requests, 
+xlabel = ms, 
+legend style = {nodes={scale=0.9, transform shape}, at={(0.03,1.2)}, anchor=north west, draw=black, fill=white, align=left, legend columns=3},
+area style, mark size = 0pt,
+ cycle list name = exotic,
+  axis lines* = left]
+		\addplot +[ybar interval] coordinates {
+			 (4, 1.21407)
+			 (93.48, 0.21791)
+			 (182.96, 0.46695)
+			 (272.44, 0.601847)
+			 (361.92, 0.861264)
+			 (451.4, 1.28671)
+			 (540.88, 1.48386)
+			 (630.36, 3.01961)
+			 (719.84, 11.9436)
+			 (809.32, 29.2415)
+			 (898.8, 7.19103)
+			 (988.28, 15.482)
+			 (1077.76, 9.83709)
+			 (1167.24, 3.80824)
+			 (1256.72, 4.46197)
+			 (1346.2, 2.13759)
+			 (1435.68, 1.54612)
+			 (1525.16, 1.27633)
+			 (1614.64, 0.674484)
+			 (1704.12, 0.65373)
+			 (1793.6, 0.40469)
+			 (1883.08, 0.290547)
+			 (1972.56, 0.197157)
+			 (2062.04, 0.197157)
+			 (2151.52, 0.0933901)
+			 (2241, 0.134897)
+			 (2330.48, 0.114143)
+			 (2419.96, 0.0933901)
+			 (2509.44, 0.0933901)
+			 (2598.92, 0.0415067)
+			 (2688.4, 0.0415067)
+			 (2777.88, 0.06226)
+			 (2867.36, 0.0518834)
+			 (2956.84, 0.0207533)
+			 (3046.32, 0.03113)
+			 (3135.8, 0.0518834)
+			 (3225.28, 0.0415067)
+			 (3314.76, 0.0518834)
+			 (3404.24, 0.0726367)
+			 (3493.72, 0.0518834)
+			 (3583.2, 0.0518834)
+			 (3672.68, 0.03113)
+			 (3762.16, 0.06226)
+			 (3851.64, 0.0518834)
+			 (3941.12, 0.0103767)
+			 (4030.6, 0.03113)
+			 (4120.08, 0.0207533)
+			 (4209.56, 0.0207533)
+			 (4299.04, 0.03113)
+			 (4388.52, 0.0207533)
+			 (4478, 0.0103767)
+			 (4567.48, 0.03113)
+			 (4656.96, 0)
+			 (4746.44, 0.0103767)
+			 (4835.92, 0.03113)
+			 (4925.4, 0.0207533)
+			 (5014.88, 0)
+			 (5104.36, 0)
+			 (5193.84, 0)
+			 (5283.32, 0)
+			 (5372.8, 0)
+			 (5462.28, 0)
+			 (5551.76, 0)
+			 (5641.24, 0)
+			 (5730.72, 0)
+			 (5820.2, 0)
+			 (5909.68, 0)
+			 (5999.16, 0)
+			 (6088.64, 0)
+			 (6178.12, 0)
+			 (6267.6, 0)
+			 (6357.08, 0)
+			 (6446.56, 0)
+			 (6536.04, 0)
+			 (6625.52, 0)
+			 (6715, 0)
+			 (6804.48, 0)
+			 (6893.96, 0)
+			 (6983.44, 0)
+			 (7072.92, 0)
+			 (7162.4, 0)
+			 (7251.88, 0)
+			 (7341.36, 0)
+			 (7430.84, 0)
+			 (7520.32, 0)
+			 (7609.8, 0)
+			 (7699.28, 0)
+			 (7788.76, 0)
+			 (7878.24, 0)
+			 (7967.72, 0)
+			 (8057.2, 0)
+			 (8146.68, 0)
+			 (8236.16, 0.0103767)
+			 (8325.64, 0)
+			 (8415.12, 0)
+			 (8504.6, 0)
+			 (8594.08, 0)
+			 (8683.56, 0)
+			 (8773.04, 0)
+			 (8862.52, 0)
+		};
+\addlegendentry{distribution};
+           \end{axis}
+      \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Response time distribution - req = ReadUser-3}
+\end{figure}
+\end{minipage}\hfill\begin{minipage}{0.18\linewidth}
+\begin{table}[h]
+\begin{tabular}{|cc|}
+\hline
+\textbf{} & \textbf{ms}\\ \hline
+ \Xhline{0.005\arrayrulewidth}
+min & 4\\
+ \Xhline{0.005\arrayrulewidth}
+max & 8952\\
+ \Xhline{0.005\arrayrulewidth}
+mean & 990\\
+ \Xhline{0.005\arrayrulewidth}
+std & 409\\
+\hline
+\hline
+ \Xhline{0.005\arrayrulewidth}
+25th & 821\\
+ \Xhline{0.005\arrayrulewidth}
+50th & 895\\
+ \Xhline{0.005\arrayrulewidth}
+75th & 1092\\
+ \Xhline{0.005\arrayrulewidth}
+80th & 1135\\
+ \Xhline{0.005\arrayrulewidth}
+85th & 1219\\
+ \Xhline{0.005\arrayrulewidth}
+90th & 1313\\
+ \Xhline{0.005\arrayrulewidth}
+95th & 1535\\
+ \Xhline{0.005\arrayrulewidth}
+99th & 2589\\
+\hline
+\end{tabular}
+\caption{Response time}
+\end{table}
+\end{minipage}\hfill
