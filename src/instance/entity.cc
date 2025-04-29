@@ -59,8 +59,9 @@ namespace kv_store::instance {
   }
 
   MemorySize CacheEntity::getCurrentDiskUsage () const {
-    if (this-> _entity == nullptr) return MemorySize::B (0);
-    return this-> _entity-> getDiskColl ().getMemoryUsage ();
+    // if (this-> _entity == nullptr)
+    return MemorySize::B (0);
+    // return this-> _entity-> getDiskColl ().getMemoryUsage ();
   }
 
   MemorySize CacheEntity::getMaxSize () const {

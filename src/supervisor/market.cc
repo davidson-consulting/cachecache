@@ -192,7 +192,10 @@ namespace kv_store::supervisor {
        *    - 1) The cache is increasing its memory usage
        */
       if (overTrig) {
-        MemorySize increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 + this->_decreasingSpeed)), __SLAB_SIZE__));  // increase by 1.x
+	float speed = this-> _decreasingSpeed;
+	if (usage.bytes () <= requested.bytes ()) { speed *= 3; }
+	
+        MemorySize increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 + speed)), __SLAB_SIZE__));  // increase by 1.x
         MemorySize current = MemorySize::max (min, MemorySize::min (market, MemorySize::min (requested, increase))); // memory to set in base selling that does not go over requested
         LOG_INFO ("Cache increase : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 
@@ -210,7 +213,10 @@ namespace kv_store::supervisor {
        *    - 2) The cache is decreasing its memory usage
        */
       else if (underTrig) {
-        MemorySize increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 - this->_decreasingSpeed)), __SLAB_SIZE__));
+	float speed = this-> _decreasingSpeed;
+	if (usage.bytes () <= requested.bytes ()) { speed /= 3; }
+	
+        MemorySize increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::B ((float) size.bytes () * (float) (1.0 - speed)), __SLAB_SIZE__));
         MemorySize current = MemorySize::max (min, MemorySize::min (market, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache decrease : ", id, " ", increase.kilobytes (), " ", requested.kilobytes (), " ", current.kilobytes (), " ", size.kilobytes ());
 
@@ -228,7 +234,7 @@ namespace kv_store::supervisor {
        *    - 3) The cache use is steady (no big increase/decrease in the pase N seconds), or it just didn't trigger any change
        */
       else {
-        auto increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::min (max, usage), __SLAB_SIZE__));
+        auto increase = MemorySize::max (min, MemorySize::roundUp (MemorySize::min (max, usage + __SLAB_SIZE__), __SLAB_SIZE__));
         auto current = MemorySize::max (min, MemorySize::min (market, MemorySize::min (requested, increase)));
         LOG_INFO ("Cache steady : ", id, " ", increase.kilobytes (), " ", current.kilobytes ());
 

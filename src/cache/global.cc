@@ -8,12 +8,12 @@ namespace kv_store {
 
     HybridKVStore::HybridKVStore (uint32_t maxRamSlabs, uint32_t maxDiskSlab, uint32_t slabTTL)
         :  _ramColl (maxRamSlabs, slabTTL)
-        , _diskColl (maxDiskSlab)
+        // , _diskColl (maxDiskSlab)
         , _currentTime (0)
     {
         this-> _hasRam = (this-> _ramColl.getNbSlabs () != 0);
         LOG_INFO ("KV Store configured with ", this-> _ramColl.getNbSlabs (), " slabs in RAM");
-        LOG_INFO ("KV Store configured with ", this-> _diskColl.getMaxSlabs (), " maximum slabs on disk");
+        // LOG_INFO ("KV Store configured with ", this-> _diskColl.getMaxSlabs (), " maximum slabs on disk");
     }
 
     /*!
@@ -34,9 +34,9 @@ namespace kv_store {
                 }
             }
         } else { // cannot have ram if there is no buffer
-            WITH_LOCK (this-> _diskMutex) {
-                this-> _diskColl.insert (k, v);
-            }
+            // WITH_LOCK (this-> _diskMutex) {
+            //     this-> _diskColl.insert (k, v);
+            // }
         }
     }
 
@@ -56,20 +56,20 @@ namespace kv_store {
             }
         }
 
-        WITH_LOCK (this-> _diskMutex) {
-            v = this-> _diskColl.find (k);
-        }
+        // WITH_LOCK (this-> _diskMutex) {
+        //     v = this-> _diskColl.find (k);
+        // }
 
-        if (v != nullptr) {
-            onDisk = true;
-            if (this-> _hasRam) {
-                WITH_LOCK (this-> _promoteMutex) {
-                    this-> _promotions.emplace (k.asString (), v-> asString ());
-                }
-            }
+        // if (v != nullptr) {
+        //     onDisk = true;
+        //     if (this-> _hasRam) {
+        //         WITH_LOCK (this-> _promoteMutex) {
+        //             this-> _promotions.emplace (k.asString (), v-> asString ());
+        //         }
+        //     }
 
-            return v;
-        }
+        //     return v;
+        // }
 
         return nullptr;
     }
@@ -79,9 +79,9 @@ namespace kv_store {
             this-> _ramColl.remove (k);
         }
 
-        WITH_LOCK (this-> _diskMutex) {
-            this-> _diskColl.remove (k);
-        }
+        // WITH_LOCK (this-> _diskMutex) {
+        //     this-> _diskColl.remove (k);
+        // }
     }
 
     /*!
@@ -147,9 +147,9 @@ namespace kv_store {
                     }
                 }
 
-                WITH_LOCK (this-> _diskMutex) {
-                    this-> _diskColl.remove (k);
-                }
+                // WITH_LOCK (this-> _diskMutex) {
+                //     this-> _diskColl.remove (k);
+                // }
             }
         }
     }
@@ -162,17 +162,17 @@ namespace kv_store {
      * ====================================================================================================
      */
 
-    disk::MetaDiskCollection & HybridKVStore::getDiskColl () {
-        return this-> _diskColl;
-    }
+    // disk::MetaDiskCollection & HybridKVStore::getDiskColl () {
+    //     return this-> _diskColl;
+    // }
 
     memory::MetaRamCollection & HybridKVStore::getRamColl () {
         return this-> _ramColl;
     }
 
-    const disk::MetaDiskCollection & HybridKVStore::getDiskColl () const {
-        return this-> _diskColl;
-    }
+    // const disk::MetaDiskCollection & HybridKVStore::getDiskColl () const {
+    //     return this-> _diskColl;
+    // }
 
     const memory::MetaRamCollection & HybridKVStore::getRamColl () const {
         return this-> _ramColl;
@@ -188,7 +188,7 @@ namespace kv_store {
 
     std::ostream & operator<< (std::ostream & s, const kv_store::HybridKVStore & coll) {
         s << "RAM : {" << coll._ramColl << "}" << std::endl;
-        s << "Disk : {" << coll._diskColl << "}";
+        // s << "Disk : {" << coll._diskColl << "}";
 
         return s;
     }

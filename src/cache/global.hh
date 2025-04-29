@@ -20,8 +20,8 @@ namespace kv_store {
                 // The collection
                 memory::MetaRamCollection _ramColl;
 
-                // The collection on the disk
-                disk::MetaDiskCollection _diskColl;
+                // // The collection on the disk
+                // disk::MetaDiskCollection _diskColl;
 
                 // The routine time incrementation
                 uint64_t _currentTime;
@@ -98,20 +98,20 @@ namespace kv_store {
                  */
                 memory::MetaRamCollection& getRamColl ();
 
-                /**
-                 * @returns: the disk collection
-                 */
-                disk::MetaDiskCollection& getDiskColl ();
+                // /**
+                //  * @returns: the disk collection
+                //  */
+                // disk::MetaDiskCollection& getDiskColl ();
 
                 /**
                  * @returns: the disk collection
                  */
                 const memory::MetaRamCollection& getRamColl () const;
 
-                /**
-                 * @returns: the disk collection
-                 */
-                const disk::MetaDiskCollection& getDiskColl () const;
+                // /**
+                //  * @returns: the disk collection
+                //  */
+                // const disk::MetaDiskCollection& getDiskColl () const;
 
                 /*!
                  * ====================================================================================================
