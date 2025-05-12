@@ -119,6 +119,7 @@ namespace kv_store::instance {
   CacheService::CacheService (const std::string & name, actor::ActorSystem * sys, const std::shared_ptr <rd_utils::utils::config::ConfigNode> cfg, uint32_t nb) :
     actor::ActorBase (name, sys)
     , _regSize (MemorySize::B (0))
+    , _diskSize (MemorySize::B (0))
     , _traceRoutine (0)
   {
     LOG_INFO ("Spawning a new cache instance -> ", name);
@@ -155,7 +156,7 @@ namespace kv_store::instance {
       }
 
       this-> _entity = std::make_shared <CacheEntity> ();
-      this-> _entity-> configure (name, this-> _regSize, ttl);
+      this-> _entity-> configure (name, this-> _regSize, this-> _diskSize, ttl);
     } catch (std::runtime_error & e) {
       LOG_ERROR ("Cache entity configuration failed (", e.what (), "). Abort");
       throw std::runtime_error ("in entity configuration");
@@ -299,7 +300,14 @@ namespace kv_store::instance {
       if (conf.contains ("cache")) {
         if (conf ["cache"].contains ("size")) {
           auto unit = conf ["cache"].getOr ("unit", "MB");
-          size = MemorySize::nextPow2 (MemorySize::unit (conf ["cache"]["size"].getI (), unit));
+          size = MemorySize::roundUp (MemorySize::unit (conf ["cache"]["size"].getI (), unit), MemorySize::MB (4));
+        }
+
+        if (conf ["cache"].contains ("disk-cap")) {
+          auto unit = conf ["cache"].getOr ("unit", "MB");
+          this-> _diskSize = MemorySize::roundUp (MemorySize::unit (conf ["cache"]["disk-cap"].getI (), unit), MemorySize::MB (4));
+        } else {
+          this-> _diskSize = MemorySize::GB (10);
         }
       }
 
@@ -432,7 +440,9 @@ namespace kv_store::instance {
 
     std::string key = this-> readStr (session, keyLen);
     WITH_LOCK (this-> _m) {
-      if (this-> _entity-> find (key, session)) {
+      bool onDisk = false;
+      if (this-> _entity-> find (key, session, onDisk)) {
+        if (onDisk) this-> _disk_hit += 1;
         this-> _hit += 1;
       } else {
         this-> _miss += 1;
@@ -475,15 +485,18 @@ namespace kv_store::instance {
       WITH_LOCK (this-> _m) { // instances cannot register/quit during a market run
         config::Dict d;
         d.insert ("hit", this-> _hit);
+        d.insert ("disk-hit", this-> _disk_hit);
         d.insert ("miss", this-> _miss);
         d.insert ("set", this-> _set);
         d.insert ("usage", (int64_t) this-> _entity-> getCurrentMemoryUsage ().kilobytes ());
+        d.insert ("disk-usage", (int64_t) this-> _entity-> getCurrentDiskUsage ().kilobytes ());
         d.insert ("size", (int64_t) this-> _entity-> getSize ().kilobytes ());
         d.insert ("unit", "KB");
 
         this-> _traces-> append (time (NULL), d);
 
         this-> _hit = 0;
+        this-> _disk_hit = 0;
         this-> _miss = 0;
         this-> _set = 0;
       }

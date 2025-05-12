@@ -1,6 +1,7 @@
 #define LOG_LEVEL 10
 #include "entity.hh"
 #include "../cache/common/_.hh"
+#include "../cache/ram/meta/_.hh"
 
 using namespace rd_utils::utils;
 
@@ -19,9 +20,10 @@ namespace kv_store::instance {
    * ============================================================================================================
    */
 
-  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t slabTTL) {
+  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, rd_utils::utils::MemorySize diskSize, uint32_t slabTTL) {
     uint32_t nbSlabs = maxSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
-    this-> _entity = std::make_unique <HybridKVStore> (nbSlabs, slabTTL);
+    uint32_t maxDiskSlabs = diskSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
+    this-> _entity = std::move(HybridKVStore::TTLBased(nbSlabs, maxDiskSlabs, slabTTL));
   }
 
   /**
@@ -55,6 +57,12 @@ namespace kv_store::instance {
   MemorySize CacheEntity::getCurrentMemoryUsage () const {
     if (this-> _entity == nullptr) return MemorySize::B (0);
     return this-> _entity-> getRamMemoryUsage ();
+  }
+
+  MemorySize CacheEntity::getCurrentDiskUsage () const {
+    // if (this-> _entity == nullptr)
+    return MemorySize::B (0);
+    // return this-> _entity-> getDiskColl ().getMemoryUsage ();
   }
 
   MemorySize CacheEntity::getMaxSize () const {
@@ -96,12 +104,12 @@ namespace kv_store::instance {
     }
   }
 
-  bool CacheEntity::find (const std::string & key, rd_utils::net::TcpStream& session) {
+  bool CacheEntity::find (const std::string & key, rd_utils::net::TcpStream& session, bool & onDisk) {
     try {
       common::Key k;
       k.set (key);
 
-      auto value = this-> _entity-> find (k);
+      auto value = this-> _entity-> find (k, onDisk);
       if (value != nullptr) {
         session.sendU32 (value-> len ());
         session.sendRaw (value-> data (), value-> len ());

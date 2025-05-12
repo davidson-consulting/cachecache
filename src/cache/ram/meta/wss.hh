@@ -7,6 +7,7 @@
 #include <list>
 #include "../slab.hh"
 #include "meta.hh"
+#include "../cuckoofilter/wss_estimator.hh"
 
 #include <rd_utils/concurrency/mutex.hh>
 
@@ -14,17 +15,18 @@ namespace kv_store {
         class HybridKVStore;
 }
 
-namespace kv_store::memory {
-        struct SlabUsageInfo {
-                uint64_t nbHits;
-                uint64_t lastTouch;
-                bool markedVirtualEvict;
-        };
-
+namespace kv_store::memory { 
         /**
          * The meta ram collection stores the informations of the keys stored in the RAM
          */
         class WSSMetaRamCollection: public MetaRamCollection {
+                struct SlabUsageInfo {
+                        kv_store::memory::wss::WSSEstimator wss;
+                        uint64_t lastTouch;
+                        bool markedVirtualEvict;
+
+                        SlabUsageInfo(size_t max_nb_keys, uint64_t time): wss(max_nb_keys), lastTouch(time), markedVirtualEvict(false) {}
+                };
 
                 // The number of slabs that can be managed by the collection
                 uint32_t _maxNbSlabs;
@@ -112,7 +114,7 @@ namespace kv_store::memory {
                 rd_utils::utils::MemorySize getMemorySize () const;
 
                 /**
-                 * @returns: the memory size reserved by the meta collection
+                 * @returns: the sum of estimated WSS for each segments
                  */
                 rd_utils::utils::MemorySize getMemoryUsage () const;
 
@@ -149,7 +151,7 @@ namespace kv_store::memory {
                 void removeMetaData (uint64_t hash, uint32_t slabId);
 
                 /**
-                 * @returns: the slab the less used in memory
+                 * @returns: the slab the less used in memory, based on WSS estimation
                  */
                 std::shared_ptr <KVMapRAMSlab> getLessUsed ();
 

@@ -169,7 +169,7 @@ namespace kv_store::memory {
         LOG_INFO ("Evicting slab : ", slb-> getUniqId (), " ", this-> _loadedSlabs.size () - 1, "/", this-> _maxNbSlabs);
 
         auto hash = this-> removeSlab (slb-> getUniqId ());
-        store.getDiskColl ().createSlabFromRAM (*slb, hash);
+	//store.getDiskColl ().createSlabFromRAM (*slb, hash);
     }
 
     void TTLMetaRamCollection::markOldSlabs (uint64_t currentTime) {

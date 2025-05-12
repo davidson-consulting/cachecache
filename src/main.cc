@@ -3,6 +3,7 @@
 #include "cache/global.hh"
 #include "cache/common/_.hh"
 #include <string.h>
+#include <memory>
 
 using namespace kv_store;
 using namespace kv_store::common;
@@ -11,7 +12,7 @@ using namespace kv_store::common;
 
 
 void foo () {
-    disk::MetaDiskCollection store;
+    disk::MetaDiskCollection store (1024);
 
     srand (0); // time (NULL));
     std::string c ("Content_");
@@ -32,7 +33,7 @@ void foo () {
 
 auto main(int argc, char *argv[]) -> int {
     // foo ();
-    HybridKVStore store (6, 1);
+    std::unique_ptr<HybridKVStore> store = HybridKVStore::TTLBased(6, 1024, 1);
 
     srand (0); // time (NULL));
 
@@ -45,7 +46,7 @@ auto main(int argc, char *argv[]) -> int {
         Value v (c.length ());
         ::memcpy (v.data (), c.c_str (), v.len ());
 
-        store.insert (k, v);
+        store->insert (k, v);
         // auto fnd = store.find (k);
         // if (fnd != nullptr) {
         //     // std::cout << *fnd << std::endl;

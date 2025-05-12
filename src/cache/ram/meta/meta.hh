@@ -13,8 +13,7 @@ namespace kv_store {
         class HybridKVStore;
 }
 
-namespace kv_store::memory {
-
+namespace kv_store::memory { 
         /**
          * The meta ram collection stores the informations of the keys stored in the RAM
          */

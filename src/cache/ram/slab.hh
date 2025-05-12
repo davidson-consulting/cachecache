@@ -13,10 +13,10 @@
 #include "../common/value.hh"
 
 namespace kv_store::memory {
-
     class MetaRamCollection;
     class TTLMetaRamCollection;
     class WSSMetaRamCollection;
+
 
     class KVMapRAMSlab {
     private:

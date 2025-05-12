@@ -55,8 +55,9 @@ namespace kv_store::instance {
                  * @params:
                  *    - name: the uniq name of the cache
                  *    - maxSize: the maximum size the cache can take
+                 *    - diskSize: the size available on disk for a cache instance
                  */
-                void configure (const std::string & name, rd_utils::utils::MemorySize maxSize, uint32_t slabTTL);
+                void configure (const std::string & name, rd_utils::utils::MemorySize maxSize, rd_utils::utils::MemorySize diskSize, uint32_t slabTTL);
 
                 /**
                  * Resize the cache entity to take a new memory space
@@ -89,6 +90,11 @@ namespace kv_store::instance {
                 rd_utils::utils::MemorySize getCurrentMemoryUsage () const;
 
                 /**
+                 * @returns: the memory actually used by the cache on disk
+                 */
+                rd_utils::utils::MemorySize getCurrentDiskUsage () const;
+
+                /**
                  * Insert a new key value
                  * @params:
                  *    - key: the key to insert
@@ -104,7 +110,7 @@ namespace kv_store::instance {
                  * @returns:
                  *    - true iif found
                  */
-                bool find (const std::string & key, rd_utils::net::TcpStream& session);
+                bool find (const std::string & key, rd_utils::net::TcpStream& session, bool & onDisk);
 
                 /**
                  * Dispose all content of the cache, and free all handles

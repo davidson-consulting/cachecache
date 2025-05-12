@@ -14,18 +14,16 @@ namespace kv_store {
         class HybridKVStore;
 }
 
-namespace kv_store::memory {
-
-        struct SlabUsageInfo {
-                uint64_t nbHits;
-                uint64_t lastTouch;
-                bool markedVirtualEvict;
-        };
-
+namespace kv_store::memory { 
         /**
          * The meta ram collection stores the informations of the keys stored in the RAM
          */
         class TTLMetaRamCollection: public MetaRamCollection {
+                struct SlabUsageInfo {
+                        uint64_t nbHits;
+                        uint64_t lastTouch;
+                        bool markedVirtualEvict;
+                };
 
                 // The number of slabs that can be managed by the collection
                 uint32_t _maxNbSlabs;
@@ -42,6 +40,7 @@ namespace kv_store::memory {
 
                 // The usage of slabs
                 std::unordered_map <uint32_t, SlabUsageInfo>  _used;
+
 
         public:
 

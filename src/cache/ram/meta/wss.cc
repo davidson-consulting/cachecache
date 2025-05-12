@@ -9,6 +9,7 @@
 
 using namespace rd_utils::utils;
 using namespace kv_store::common;
+using namespace kv_store::memory::wss;
 
 namespace kv_store::memory {
 
@@ -67,7 +68,7 @@ namespace kv_store::memory {
             std::shared_ptr <KVMapRAMSlab> slab = std::make_shared <KVMapRAMSlab> ();
             slab-> insert (k, v);
 
-            this-> _used [slab-> getUniqId ()] = {.nbHits = 1, .lastTouch = this-> _currentTime};
+            this-> _used.try_emplace(slab->getUniqId(), 1000, this-> _currentTime);
             this-> _loadedSlabs.emplace (slab-> getUniqId (), slab);
             this-> insertMetaData (k.hash () % KVMAP_META_LIST_SIZE, slab-> getUniqId ());
             return true;
@@ -115,8 +116,13 @@ namespace kv_store::memory {
             auto & slab = this-> _loadedSlabs [scd.first];
             auto val = slab-> find (k);
             if (val != nullptr) {
-                auto old = this-> _used [slab-> getUniqId ()];
-                this-> _used [slab-> getUniqId ()] = {.nbHits = old.nbHits + 1, .lastTouch = this-> _currentTime};
+                auto used = this-> _used.find(slab-> getUniqId ());
+
+                if (used != this->_used.end()) {
+                    used->second.lastTouch = this-> _currentTime;
+                    used->second.wss.find(k);
+                }
+                                
                 return val;
             }
         }
@@ -169,7 +175,7 @@ namespace kv_store::memory {
         LOG_INFO ("Evicting slab : ", slb-> getUniqId (), " ", this-> _loadedSlabs.size () - 1, "/", this-> _maxNbSlabs);
 
         auto hash = this-> removeSlab (slb-> getUniqId ());
-        store.getDiskColl ().createSlabFromRAM (*slb, hash);
+        // store.getDiskColl ().createSlabFromRAM (*slb, hash);
     }
 
     void WSSMetaRamCollection::markOldSlabs (uint64_t currentTime) {
@@ -230,7 +236,7 @@ namespace kv_store::memory {
 
     std::shared_ptr <KVMapRAMSlab> WSSMetaRamCollection::getLessUsed () {
         std::shared_ptr <KVMapRAMSlab> result = nullptr;
-        uint64_t nb = 0xFFFFFFFFFFFFFFFF;
+        uint32_t smallest_wss = 0xFFFFFFFF;
         uint32_t id = 0;
         for (auto &it : this-> _used) {
             if (it.second.markedVirtualEvict) {
@@ -238,9 +244,9 @@ namespace kv_store::memory {
                 break;
             }
 
-            if (it.second.nbHits < nb) {
+            if (it.second.wss.wss() < smallest_wss) {
                 id = it.first;
-                nb = it.second.nbHits;
+                smallest_wss = it.second.wss.wss();
             }
         }
 
