@@ -149,14 +149,26 @@ namespace kv_store::instance {
       auto & conf = *cfg;
       std::string name = "cache";
       int64_t ttl = 20;
+      std::string kind_str = "ttl";
 
       if (conf.contains ("cache")) {
         name = conf ["cache"].getOr ("name", name);
         ttl = conf ["cache"].getOr ("ttl", ttl);
+        kind_str = conf ["cache"].getOr ("kind", kind_str);
       }
 
       this-> _entity = std::make_shared <CacheEntity> ();
-      this-> _entity-> configure (name, this-> _regSize, this-> _diskSize, ttl);
+  
+      KIND kind;
+      if (kind_str == "ttl") {
+        kind = KIND::TTL;
+      } else if (kind_str == "wss") {
+        kind == KIND::WSS;
+      } else {
+        throw std::runtime_error("Cache entity configuration failed. Provided kind is neither ttl or wss");
+      }
+
+      this-> _entity-> configure (name, this-> _regSize, this-> _diskSize, ttl, kind);
     } catch (std::runtime_error & e) {
       LOG_ERROR ("Cache entity configuration failed (", e.what (), "). Abort");
       throw std::runtime_error ("in entity configuration");

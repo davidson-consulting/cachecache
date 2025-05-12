@@ -20,10 +20,19 @@ namespace kv_store::instance {
    * ============================================================================================================
    */
 
-  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, rd_utils::utils::MemorySize diskSize, uint32_t slabTTL) {
+  void CacheEntity::configure (const std::string & name, rd_utils::utils::MemorySize maxSize, rd_utils::utils::MemorySize diskSize, uint32_t slabTTL, KIND kind) {
     uint32_t nbSlabs = maxSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
     uint32_t maxDiskSlabs = diskSize.bytes () / kv_store::common::KVMAP_SLAB_SIZE.bytes ();
-    this-> _entity = std::move(HybridKVStore::TTLBased(nbSlabs, maxDiskSlabs, slabTTL));
+    switch (kind) {
+      case KIND::TTL:
+        this-> _entity = std::move(HybridKVStore::TTLBased(nbSlabs, maxDiskSlabs, slabTTL));
+        break;
+      case KIND::WSS:
+        this-> _entity = std::move(HybridKVStore::WSSBased(nbSlabs, maxDiskSlabs, slabTTL));
+        break;
+      default: // default is TTL
+        this-> _entity = std::move(HybridKVStore::TTLBased(nbSlabs, maxDiskSlabs, slabTTL));
+    }
   }
 
   /**

@@ -3,6 +3,7 @@
 #include "global.hh"
 #include <rd_utils/utils/log.hh>
 #include "ram/meta/ttl.hh"
+#include "ram/meta/wss.hh"
 
 
 namespace kv_store {

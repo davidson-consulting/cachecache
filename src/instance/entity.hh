@@ -7,6 +7,10 @@
 #include "../cache/global.hh"
 
 namespace kv_store::instance {
+        enum KIND {
+                TTL,
+                WSS
+        };
 
         enum Limits : int64_t {
                 MAX_KEY = 2048,
@@ -56,8 +60,9 @@ namespace kv_store::instance {
                  *    - name: the uniq name of the cache
                  *    - maxSize: the maximum size the cache can take
                  *    - diskSize: the size available on disk for a cache instance
+                 *    - KIND
                  */
-                void configure (const std::string & name, rd_utils::utils::MemorySize maxSize, rd_utils::utils::MemorySize diskSize, uint32_t slabTTL);
+                void configure (const std::string & name, rd_utils::utils::MemorySize maxSize, rd_utils::utils::MemorySize diskSize, uint32_t slabTTL, KIND kind = KIND::TTL);
 
                 /**
                  * Resize the cache entity to take a new memory space

@@ -26,3 +26,4 @@ port = 0 # port of the tcp server
 size = 128 # 128 MB on ram
 disk-cap = 10240 # 10 GB on disk
 unit = "MB"
+kind = "wss" # ttl or wss, default value is ttl
