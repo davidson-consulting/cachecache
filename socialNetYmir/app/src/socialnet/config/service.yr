@@ -4,10 +4,11 @@ use std::net::{_, addr::_};
 use std::{conv::_, config::_};
 
 pub enum
-| TEXT      = "text"
-| USER      = "user"
-| SHORT_URL = "short"
-| POST      = "post"
+| TEXT         = "text"
+| USER         = "user"
+| SHORT_URL    = "short"
+| POST         = "post"
+| SOCIAL_GRAPH = "social"
  -> ServiceKind;
 
 pub record ServiceConfig {

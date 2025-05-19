@@ -50,6 +50,9 @@ pub fn servicesMain (cfg : &Config) {
                 ServiceKind::POST => {
                     system:.add (format ("post-{}", z), copy PostService (act, serviceCfg));
                 }
+                ServiceKind::SOCIAL_GRAPH => {
+                    system:.add (format ("social_graph-{}", z), copy SocialGraphService (act, serviceCfg));
+                }
             }
         }
     } catch {
