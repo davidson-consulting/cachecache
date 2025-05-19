@@ -6,7 +6,7 @@ use std::config::_;
 use std::syntax::_;
 use std::net::addr;
 
-use std::{algorithm::sorting, stream, format};
+use std::{algorithm::sorting, stream, format, format::_};
 
 use socialnet::registry::_;
 use socialnet::utils::_;
@@ -111,25 +111,28 @@ pub class TextService over ActorBase {
      * Transform user mentions, and urls into their corresponding tags and shortened versions
      * */
     fn constructText (mut self, rqt : &Config)-> &Config {
-        let text = if let Ok (Str (value-> s)) = rqt["text"]? {
-            s
-        } else return json#{"code" : ResponseCode::ERROR};
+        {
+            let text = rqt["text"].to!{[c8]} ();
+            let users = self._userPattern.apply (text);
+            let urls = self._urlPattern.apply (text);
 
-        let users = self._userPattern.apply (text);
-        let urls = self._urlPattern.apply (text);
+            let (mentions, tags) = self:.findUsers (users);
 
-        let (mentions, tags) = self:.findUsers (users);
+            let shorts = self:.findUrls (urls);
 
-        let shorts = self:.findUrls (urls);
+            let mut replacement : [mut (usize, usize, [c8])] = (mentions ~ shorts);
+            sort (alias replacement, |x, y| { x.0 < y.0 });
 
-        let mut replacement : [mut (usize, usize, [c8])] = (mentions ~ shorts);
-        sort (alias replacement, |x, y| { x.0 < y.0 });
+            let finalText = self.composeText (text, replacement);
 
-        let finalText = self.composeText (text, replacement);
+            return json#{"code" : ResponseCode::OK,
+                         "text" : finalText,
+                         "tags" : tags};
+        } catch {
+            _ => {}
+        }
 
-        json#{"code" : ResponseCode::OK,
-              "text" : finalText,
-              "tags" : tags}
+        json#{"code" : ResponseCode::ERROR}
     }
 
     /**
@@ -142,18 +145,21 @@ pub class TextService over ActorBase {
      *    - .2: the list of user tags
      * */
     fn findUsers (mut self, users : [(usize, [c8])])-> ([(usize, usize, [c8])], [u32]) {
+        let dmut reg = if let Ok (dmut reg) = alias self._registry { alias reg }
+        else {
+            return ([], []);
+        }
+
         let dmut resTags : [(usize, usize, [c8])] = [];
         let dmut tags : [u32 => ()] = copy [];
 
-        if let Ok (dmut reg) = alias self._registry {
+        {
             let dmut rqts : [usize => &ActorRqtFuture] = copy [];
             for u in users if u.1.len > 0 {
                 if let Ok (dmut actor) = alias registry::utils::find (alias reg, "user") {
                     let msg = json#{"code" : RequestCode::FIND_USER, "login" : u.1 [1 .. $]};
                     rqts [u.0] = actor:.request (msg);
                 }
-            } catch {
-                _ => {}
             }
 
             for u, dmut rqt in alias rqts {
@@ -166,10 +172,8 @@ pub class TextService over ActorBase {
                     resTags ~= [(u, name.len + 1, newName)];
                     tags [id] = ();
                 }
-            } catch {
-                _ => {}
             }
-        }
+        }?; // catch
 
         (resTags, copy [t for t, _ in tags])
     }
@@ -185,17 +189,19 @@ pub class TextService over ActorBase {
      *    - .2: the list of user tags
      * */
     fn findUrls (mut self, urls : [(usize, [c8])])-> [(usize, usize, [c8])] {
-        let dmut resTags : [(usize, usize, [c8])] = [];
+        let dmut reg = if let Ok (dmut reg) = alias self._registry { alias reg }
+        else {
+            return [];
+        }
 
-        if let Ok (dmut reg) = alias self._registry {
+        let dmut resTags : [(usize, usize, [c8])] = [];
+        {
             let dmut rqts : [usize => &ActorRqtFuture] = copy [];
             for u in urls {
                 if let Ok (dmut actor) = alias registry::utils::find (alias reg, "short_url") {
                     let msg = json#{"code" : RequestCode::FIND_URL, "url" : u.1};
                     rqts [u.0] = actor:.request (msg);
                 }
-            } catch {
-                _ => {}
             }
 
             for u, dmut rqt in alias rqts {
@@ -206,10 +212,8 @@ pub class TextService over ActorBase {
 
                     resTags ~= [(u, urls [u].1.len, newUrl)];
                 }
-            } catch {
-                _ => {}
             }
-        }
+        }?;// catch
 
         resTags
     }
