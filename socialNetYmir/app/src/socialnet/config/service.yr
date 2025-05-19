@@ -1,0 +1,43 @@
+in service;
+
+use std::net::{_, addr::_};
+use std::{conv::_, config::_};
+
+pub enum
+| TEXT      = "text"
+| USER      = "user"
+| SHORT_URL = "short"
+| POST      = "post"
+ -> ServiceKind;
+
+pub record ServiceConfig {
+
+    pub let mut kind = "";
+    pub let mut nbReplicate : u32 = 1;
+    pub let mut db = "";
+    pub let mut cache = "";
+
+    pub self empty () {}
+
+    pub self (kind : [c8], cfg : &Config)
+        with kind = kind
+        throws CastFailure
+    {
+        if let Ok (s) = cfg ["db"]? {
+            self.db = s.to!{[c8]} ();
+        }
+
+        if let Ok (s) = cfg ["cache"]? {
+            self.cache = s.to!{[c8]} ();
+        }
+
+        if let Ok (s) = cfg ["nb"]? {
+            self.nbReplicate = cast!u32 (s.to!{i64} ());
+        }
+    } catch {
+        inE => {
+            throw copy CastFailure ((&Config)::__typeinfo__, ServiceConfig::typeinfo, subError-> (inE)?);
+        }
+    }
+
+}

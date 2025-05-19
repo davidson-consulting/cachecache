@@ -1,0 +1,63 @@
+in utils;
+
+use std::net::{addr, addr::_};
+use std::{io, time::_, config::_};
+use std::concurrency::actor;
+
+use socialnet::utils::protocol;
+
+/**
+ * Register the microservice to a remote registry
+ * */
+pub fn connect (dmut registry : &actor::ActorRef, kind : [c8], id : [c8], ip : SockAddr)-> (usize)? {
+    {
+        let msg = json#{"code" : RequestCode::REGISTER_SERVICE,
+                        "kind" : kind,
+                        "id" : id,
+                        "ip" : std::format::format ("{}", ip.ip),
+                        "port" : ip.port};
+
+        let result = registry:.request (msg):.value ();
+        if let Ok (Int (value-> ResponseCode::OK)) = result ["code"]? {
+            return cast!usize (result ["uid"].to!{i64} ())?;
+        }
+    } catch { _ => {} }
+    none
+}
+
+/**
+ * Close the microservice in the remote registry
+ * */
+pub fn close (dmut registry : &actor::ActorRef, kind : [c8], id : [c8], ip : SockAddr) {
+    {
+        let msg = json#{"code" : RequestCode::CLOSE_SERVICE,
+                        "kind" : kind,
+                        "id" : id,
+                        "ip" : std::format::format ("{}", ip.ip),
+                        "port" : ip.port};
+
+        registry:.send (msg);
+    } catch { _ => {} }
+}
+
+
+/**
+ * Find a microservice in a remote registry of a given kind
+ * */
+pub fn find (dmut registry : &actor::ActorRef, kind : [c8])-> dmut (&ActorRef)? {
+    {
+        let msg = json#{"code" : RequestCode::FIND_SERVICE,
+                        "kind" : kind};
+
+        let result = registry:.request (msg):.value ();
+        if let Ok (Int (value-> ResponseCode::OK)) = result ["code"]? {
+            let id = result ["id"].to!{[c8]} ();
+            let ip = result ["ip"].to!{[c8]} ();
+            let port = cast!u16 (result ["port"].to!{i64} ());
+
+            return (alias registry.sys:.remote (id, SockAddr (ip.to!{&IpAddr} (), port)))?;
+        }
+    } catch { _ => {} }
+
+    none
+}

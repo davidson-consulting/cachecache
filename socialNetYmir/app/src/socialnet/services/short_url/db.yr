@@ -1,0 +1,172 @@
+in db;
+
+use socialnet::utils::mysql;
+use std::conv;
+
+pub def SHORT_LEN = 16u32;
+def LONG_LEN = 255u32;
+
+pub class ShortUrlDatabase {
+
+    let dmut _client : &MysqlClient;
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          CTOR          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub self (server : [c8], user : [c8], password : [c8], db : [c8], port : u16)
+        with _client = copy MysqlClient (server-> server,
+                                         user-> user,
+                                         password-> password,
+                                         db-> db,
+                                         port-> port)
+        throws AssertError
+    {
+        self:.createTables ();
+        log::info ("Database", "short_url", "database configured");
+    }
+
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          CONFIGURATION          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Create the table containing user information
+     * */
+    fn createTables (mut self)
+        throws AssertError
+    {
+        let dmut rqt = self._client:.prepare ("CREATE TABLE IF NOT EXISTS short_url (\n"
+                                              ~ "id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n"
+                                              ~ "sh VARCHAR(" ~ to!{[c8]} (SHORT_LEN) ~ ") NOT NULL,\n"
+                                              ~ "ln VARCHAR(" ~ to!{[c8]} (LONG_LEN) ~ ") NOT NULL\n)");
+        rqt:.finalize ();
+        rqt:.execute ();
+        rqt:.dispose ();
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          INSERTION          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Insert a new user in the database
+     * @params:
+     *    - login: the login of the user
+     *    - password: the password of the user
+     * @returns: the id of the inserted user
+     * */
+    pub fn insert (mut self, short : [c8], long : [c8])-> u32
+        throws AssertError
+    {
+        let dmut rqt = self._client:.prepare ("INSERT INTO short_url (sh, ln) values (?, ?)");
+        rqt:.setParam (0, short);
+        rqt:.setParam (1, long);
+
+        rqt:.finalize ();
+        rqt:.execute ();
+
+        let ret = rqt.getGeneratedId ();
+        rqt:.dispose ();
+        ret
+
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          FINDING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Find an url in the database based on its short version
+     * @params:
+     *   - short: the short url
+     * @returns: an url info if found
+     *    - .0: the id
+     *    - .1: the long url
+     * */
+    pub fn findByShort (mut self, short : [c8])-> ((u32, [c8]))?
+        throws AssertError
+    {
+        let dmut rqt = self._client:.prepare ("SELECT id, ln from short_url where sh=?");
+        rqt:.setParam (0, short);
+        rqt:.setResult!{u32} (0);
+        rqt:.setResult!{[c8]} (1, LONG_LEN);
+
+        rqt:.finalize ();
+        rqt:.execute ();
+        if rqt:.next () {
+            let res =(rqt.getResult!{u32} (0),
+                      rqt.getResult!{[c8]} (1))?;
+
+            rqt:.dispose ();
+            return res;
+        }
+
+        rqt:.dispose ();
+        none
+    }
+
+    /**
+     * Find an url in the database based on its long version
+     * @params:
+     *   - long : the long url
+     * @returns: an url info if found
+     *    - .0: the id
+     *    - .1: the short url
+     * */
+    pub fn findByLong (mut self, long : [c8])-> ((u32, [c8]))?
+        throws AssertError
+    {
+        let dmut rqt = self._client:.prepare ("SELECT id, sh from users where ln=?");
+        rqt:.setParam (0, long);
+        rqt:.setResult!{u32} (0);
+        rqt:.setResult!{[c8]} (1, SHORT_LEN);
+
+        rqt:.finalize ();
+        rqt:.execute ();
+        if rqt:.next () {
+            let res = (rqt.getResult!{u32} (0),
+                       rqt.getResult!{[c8]} (1))?;
+
+            rqt:.dispose ();
+            return res;
+        }
+
+        rqt:.dispose ();
+        none
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          DISPOSING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn dispose (mut self) {
+        self._client:.dispose ();
+    }
+
+    __dtor (mut self) {
+        self:.dispose ();
+    }
+
+}

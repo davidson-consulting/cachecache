@@ -1,0 +1,48 @@
+in system;
+
+use std::net::{_, addr::_};
+use std::{conv::_, config::_};
+
+pub record SystemConfig {
+
+    pub let mut port : u16 = 0;
+    pub let mut addr : &IpAddr = Ipv4::UNSPECIFIED;
+    pub let mut iface : [c8] = "lo";
+    pub let mut loopback : &IpAddr = Ipv4::LOCALHOST;
+    pub let mut nbThreads : u32 = 0;
+
+    pub self empty () {}
+
+    pub self (cfg : &Config)
+        throws CastFailure
+    {
+        if let Ok (i) = cfg ["port"]? {
+            self.port = cast!u16 (i.to!{i64} ());
+        }
+
+        if let Ok (i) = cfg ["threads"]? {
+            self.nbThreads = cast!u32 (i.to!{i64} ());
+        }
+
+        if let Ok (s) = cfg ["addr"]? {
+            self.addr = s.to!{[c8]} ().to!{&IpAddr} ();
+        }
+
+        if let Ok (s) = cfg ["iface"]? {
+            self.iface = s.to!{[c8]} ();
+            let faces = unsafe { std::env::getIpInterfaces () };
+            let ipv6 = self.addr of Ipv6Addr;
+
+            if let Ok (lst) = faces [self.iface] for z in lst {
+                if !ipv6 && z of Ipv4Addr { self.loopback = z; break; }
+                if ipv6 && z of Ipv6Addr { self.loopback = z; break; }
+            }
+        }
+    } catch {
+        inE => {
+            throw copy CastFailure ((&Config)::__typeinfo__, SystemConfig::typeinfo, subError-> (inE)?);
+        }
+    }
+
+
+}

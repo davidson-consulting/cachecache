@@ -1,0 +1,11 @@
+compiler = "/home/emile/ymir/bootstrap/gyc/gcc-install/bin/gyc"
+libraries = ["mysqlclient"]
+description = "A minimal Ymir app"
+version = "0.1.0"
+name = "socialNet"
+license = "proprietary"
+type = "executable"
+authors = ["Emile Cadorel <ecadorel@gmail.com>"]
+
+[registry]
+local = "/home/emile/.local/gyllir/socialNet"

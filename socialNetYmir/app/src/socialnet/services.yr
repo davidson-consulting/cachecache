@@ -1,0 +1,76 @@
+in services;
+
+pub mod ::text;
+pub mod ::user;
+pub mod ::short_url;
+pub mod ::post;
+pub mod ::social_graph;
+
+use std::{config::_, io, format};
+use std::{net::addr, concurrency::actor};
+use etc::c::process;
+
+use socialnet::{utils::_,
+                config::_,
+                registry::_,
+                services::_};
+
+lazy dmut __SYSTEM__ : [(&ActorSystem)?] = copy [none];
+
+fn killSystem (code : u32) {
+    if let Ok (dmut s) = alias __SYSTEM__ [0] {
+        log::warn ("Kill", "SERVICE", "actor system (signal code : ", code, ")");
+        s:.kill ();
+    }
+}
+
+pub fn servicesMain (cfg : &Config) {
+    let serviceCfg = config::SocialNetConfiguration (cfg);
+
+    signal (SignalCodes::SIGINT, &killSystem);
+    signal (SignalCodes::SIGTERM, &killSystem);
+    signal (SignalCodes::SIGKILL, &killSystem);
+
+    let systemAddr = SockAddr (serviceCfg.system.addr, serviceCfg.system.port);
+    log::info ("Create", "service", "actor system on ", systemAddr);
+    let dmut system = copy ActorSystem (systemAddr, nbThreads-> serviceCfg.system.nbThreads);
+
+    {
+        for act in serviceCfg.services for z in 0 .. act.nbReplicate {
+            match act.kind {
+                ServiceKind::TEXT => {
+                    system:.add (format ("text-{}", z), copy TextService (act, serviceCfg));
+                }
+                ServiceKind::USER => {
+                    system:.add (format ("user-{}", z), copy UserService (act, serviceCfg));
+                }
+                ServiceKind::SHORT_URL => {
+                    system:.add (format ("short_url-{}", z), copy ShortUrlService (act, serviceCfg));
+                }
+                ServiceKind::POST => {
+                    system:.add (format ("post-{}", z), copy PostService (act, serviceCfg));
+                }
+            }
+        }
+    } catch {
+        error => log::error ("Failed", "SERVICE", error);
+    }
+
+
+    log::info ("Starting", "SERVICE", "actor system");
+    {
+        system:.start ();
+    } catch {
+        inE => {
+            log::error ("Error", "SERVICE", "while sarting actor system : \n => \t", inE);
+            panic;
+        }
+    }
+
+    log::info ("Running", "SERVICE", "actor system is running on ", system.ip, ":", system.port);
+
+    __SYSTEM__ [0] = (alias system)?;
+    system:.join ();
+
+    log::info ("Exiting", "SERVICE", "services");
+}

@@ -1,0 +1,111 @@
+in args;
+
+use std::{config, config::_};
+use std::io;
+
+pub class SocialNetArgumentParser {
+
+    // The main argument parser
+    let dmut _mainParser : &ArgumentParser;
+
+    pub self ()
+        with _mainParser = copy ArgumentParser ()
+    {
+        self._mainParser:.help ("help", short-> "h", comments-> "print this help and exit");
+        self._mainParser:.sub ("registry", cmd-> &self.parseRegistry, comments-> "Launch a registry", hyphenated-> false);
+        self._mainParser:.sub ("services", cmd-> &self.parseServices, comments-> "Launch micro-services", hyphenated-> false);
+        self._mainParser:.sub ("front", cmd-> &self.parseFront, comments-> "Launch the frontend", hyphenated-> false);
+
+    }
+
+    /**
+     * Parse the command line and returns the created configuration
+     * @returns: the configuration
+     * @warning: exits if the configuration was malformed
+     * */
+    pub fn parse (self, args : [[c8]])-> &Config {
+        {
+            let ret = self._mainParser.parse (args);
+            let mut found = false;
+            for i in ["registry", "services", "front"] {
+                if (i in ret) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if !found {
+                eprintln (self._mainParser.getUsage (usage-> "socialNet"));
+                etc::c::process::_yrt_exit (-1);
+            }
+
+            ret
+        } catch {
+            e => {
+                eprintln (self._mainParser.explain (e, usage-> "socialNet"));
+                etc::c::process::_yrt_exit (-1);
+                panic;
+            }
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ==================================          SUB COMMANDS          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn parseRegistry (self, args : [[c8]])-> (&Config)? {
+        let dmut parser = (copy ArgumentParser)
+            :.position!{[c8]} ("config", comments-> "configuration file")
+            :.help ("help", short-> "h", comments-> "print this help and exit");
+
+        return {
+            parser.parse (args)
+        } catch {
+            err : &errors::HelpRequestError => {
+                eprintln (parser.explain (err, usage-> "socialNet registry"));
+                etc::c::process::_yrt_exit (-1);
+                panic;
+            }
+            e => throw e;
+        }?
+    }
+
+    pub fn parseFront (self, args : [[c8]])-> (&Config)? {
+        let dmut parser = (copy ArgumentParser)
+            :.position!{[c8]} ("config", comments-> "configuration file")
+            :.help ("help", short-> "h", comments-> "print this help and exit");
+
+        return {
+            parser.parse (args)
+        } catch {
+            err : &errors::HelpRequestError => {
+                eprintln (parser.explain (err, usage-> "socialNet front"));
+                etc::c::process::_yrt_exit (-1);
+                panic;
+            }
+            e => throw e;
+        }?
+    }
+
+    pub fn parseServices (self, args : [[c8]])-> (&Config)? {
+        let dmut parser = (copy ArgumentParser)
+            :.position!{[c8]} ("config", comments-> "configuration file")
+            :.help ("help", short-> "h", comments-> "print this help and exit");
+
+        return {
+            parser.parse (args)
+        } catch {
+            err : &errors::HelpRequestError => {
+                eprintln (parser.explain (err, usage-> "socialNet services"));
+                etc::c::process::_yrt_exit (-1);
+                panic;
+            }
+            e => throw e;
+        }?
+    }
+
+}

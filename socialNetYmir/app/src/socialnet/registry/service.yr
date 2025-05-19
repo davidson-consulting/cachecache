@@ -1,0 +1,189 @@
+in service;
+
+use std::concurrency::actor;
+use std::{config::_, net::{addr, addr::_}};
+
+use socialnet::utils::protocol;
+
+pub class RegistryActor over ActorBase {
+
+    // The list of services registered in the registry
+    let mut _services : [[c8] => mut (usize, [Service])] = copy [];
+
+    // The uniq id generator
+    let mut _uid : usize = 0;
+
+    pub self () {}
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          CONFIGURATION          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onStart (mut self) {
+        log::info ("Starting", "registry", "is ready");
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          REQUESTS          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onMessage (mut self, rqt : &Config) {
+        if let Ok (Int (value-> code)) = rqt ["code"]? {
+            match code {
+                RequestCode::CLOSE_SERVICE => {
+                    self:.closeService (rqt);
+                }
+            }
+        }
+    }
+
+    pub over onRequest (mut self, rqt : &Config)-> &Config {
+        if let Ok (Int (value-> code)) = rqt ["code"]? {
+            match code {
+                RequestCode::REGISTER_SERVICE => {
+                    return self:.registerService (rqt);
+                }
+                RequestCode::FIND_SERVICE => {
+                    return self:.findService (rqt);
+                }
+            }
+        }
+
+        json#{"code" : ResponseCode::ERROR}
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          EXITING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onQuit (mut self) {
+        let msg = json#{"code" : RequestCode::POISON_PILL};
+        for _, lst in self._services for service in lst.1 {
+            log::info ("Killing", "registry", "service instance '", service.id, "'");
+            {
+                let sockAddr = SockAddr (service.ip.to!{&IpAddr} (), service.port);
+                let dmut act = self:.system:.remote (service.id, sockAddr);
+                act:.send (msg);
+            } catch {
+                _ => {
+                    log::error ("Failed", "registry", "to send poison pill message to service '", service.id, "'")
+                }
+            }
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          PRIVATE          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Register a new service
+     * @params:
+     *    - rqt: the configuration of the service to register
+     * */
+    fn registerService (mut self, rqt : &Config)-> &Config {
+        {
+            let kind = rqt ["kind"].to!{[c8]} ();
+            let id = rqt ["id"].to!{[c8]} ();
+            let ip = rqt ["ip"].to!{[c8]} ();
+            let port = cast!u16 (rqt ["port"].to!{i64} ());
+
+            log::info ("Register", "registry", "service ", kind, " ", id, " ", ip, " ", port);
+            if let Ok ((x, z)) = self._services [kind] {
+                self._services [kind] = (x, (z ~ [Service (id, ip, port)]));
+            } else {
+                self._services [kind] = (0, copy [Service (id, ip, port)]);
+            }
+
+            let uid = self._uid;
+            self._uid += 1;
+
+            return json#{"code" : ResponseCode::OK,
+                         "uid" : uid};
+        } catch {
+            _ => {
+                return json#{"code" : ResponseCode::ERROR};
+            }
+        }
+    }
+
+    /**
+     * Find a service to answer a request
+     * @params:
+     *    - rqt: the configuration of the service to find
+     * */
+    fn findService (mut self, rqt : &Config)-> &Config {
+        {
+            let kind = rqt ["kind"].to!{[c8]} ();
+            let mut service : Service? = none;
+            if let Ok ((x, z)) = self._services [kind] {
+                service = (z [x])?;
+                let next = if x + 1 == z.len { 0us } else { x + 1 };
+                self._services [kind] = (next, z);
+            }
+
+            if let Ok (s) = service {
+                log::debug ("Found", "registry", "service ", kind, " ", s.id, " ", s.ip, " ", s.port);
+
+                return json#{"code" : ResponseCode::OK,
+                             "ip" : s.ip,
+                             "port" : s.port,
+                             "id" : s.id};
+            }
+        } catch { _ => {} }
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+
+    /**
+     * Close a service that was decomissioned
+     * @params:
+     *    - rqt: the configuration of the service to remove
+     * */
+    fn closeService (mut self, rqt : &Config) {
+        {
+            let kind = rqt ["kind"].to!{[c8]} ();
+            let id = rqt ["id"].to!{[c8]} ();
+            let ip = rqt ["ip"].to!{[c8]} ();
+            let port = cast!u16 (rqt ["port"].to!{i64} ());
+
+            log::info ("Close", "registry", "service ", kind, " ", id, " ", ip, " ", port);
+            if let Ok ((_, z)) = self._services [kind] {
+                let mut result : [Service] = [];
+                for s in z {
+                    if s.id != id || s.ip != ip || s.port != port {
+                        result ~= [s];
+                    }
+                }
+
+                if (result.len == 0us) {
+                    self._services:.remove (kind);
+                } else {
+                    self._services [kind] = (0, result);
+                }
+            }
+        } catch {
+            _ => {}
+        }
+    }
+
+
+    
+}

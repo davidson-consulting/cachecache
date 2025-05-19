@@ -1,0 +1,73 @@
+in db;
+
+use std::{fs::_, conv};
+
+pub class SocialGraphDatabase {
+
+    let _subs : Path;
+    let _folls : Path;
+
+    pub self ()
+        with _subs = Path (".subs")
+        , _folls = Path (".folls")
+        throws AssertError
+    {
+        sys::createDir (self._subs, recursive-> true);
+        sys::createDir (self._folls, recursive-> true);
+    } catch {
+        _ => throw copy AssertError ("Failed to configure db");
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          WRITING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          READING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn findSubs (mut self, uid : u32, page : u32, nb : u32)-> [u32] {
+        self:.readFile (uid, page, nb, self._subs)
+    }
+
+    pub fn findFollowers (mut self, uid : u32, page : u32, nb : u32)-> [u32] {
+        self:.readFile (uid, page, nb, self._folls)
+    }
+
+    fn readFile (mut self, uid : u32, page : u32, nb : u32, base : Path)-> [u32] {
+        let dmut result : [u32] = [];
+        {
+            let filename = base.push (to!{[c8]} (uid));
+            let dmut f = File::open (filename, read-> true);
+
+            {
+                f:.lock ();
+                let offset = page * nb;
+                let nbAll = f.len () / u32::size;
+                if offset > nbAll return [];
+
+                f:.seek (offset * u32::size);
+                let toRead = std::algorithm::comparison::min (nbAll - offset, nb);
+
+                result = f:.read!{[u32]} (cast!usize (toRead));
+            } exit {
+                f:.unlock ()?;
+            }
+
+            f:.close ();
+        } catch {
+            _ => {}
+        }
+
+        result
+    }
+
+}

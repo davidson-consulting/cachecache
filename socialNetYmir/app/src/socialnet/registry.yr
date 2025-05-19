@@ -1,0 +1,69 @@
+in registry;
+
+mod ::service;
+pub mod ::utils;
+
+use std::{config::_, io, fs::_};
+use std::{net::addr, concurrency::actor};
+use etc::c::process;
+
+use socialnet::{utils::_,
+                config::_,
+                registry::_};
+
+lazy dmut __SYSTEM__ : [(&ActorSystem)?] = copy [none];
+
+fn killSystem (code : u32) {
+    if let Ok (dmut s) = alias __SYSTEM__ [0] {
+        log::warn ("Kill", "REGISTRY", "actor system (signal code : ", code, ")");
+        s:.kill ();
+    }
+}
+
+
+pub fn registryMain (cfg : &Config) {
+    let regCfg = config::SocialNetConfiguration (cfg);
+
+    signal (SignalCodes::SIGINT, &killSystem);
+    signal (SignalCodes::SIGTERM, &killSystem);
+    signal (SignalCodes::SIGKILL, &killSystem);
+
+    let systemAddr = SockAddr (regCfg.system.addr, regCfg.system.port);
+    log::info ("Create", "REGISTRY", "actor system on ", systemAddr);
+    let dmut system = copy ActorSystem (systemAddr, nbThreads-> regCfg.system.nbThreads);
+
+    log::info ("Create", "REGISTRY", "actor");
+    {
+        system:.add ("registry", copy RegistryActor ());
+    } catch {
+        inE => {
+            log::error ("Error", "registry", "while creating registry actor : \n => \t", inE);
+            panic;
+        }
+    }
+
+    log::info ("Starting", "REGISTRY", "actor system");
+    {
+        system:.start ();
+    } catch {
+        inE => {
+            log::error ("Error", "REGISTRY", "while sarting actor system : \n => \t", inE);
+            panic;
+        }
+    }
+
+    if (regCfg.system.port == 0) { // write the port to a file to ease connection from microservices
+        let dmut file = File::create (Path (".reg_port"), write-> true);
+        file:.write (std::conv::to!{[c8]} (system.port) ~ "\n");
+        file:.close ();
+    } catch {
+        err => println (err);
+    };
+
+    log::info ("Running", "REGISTRY", "actor system is running on ", system.ip, ":", system.port);
+
+    __SYSTEM__ [0] = (alias system)?;
+    system:.join ();
+
+    log::info ("Exiting", "REGISTRY", "registry");
+}

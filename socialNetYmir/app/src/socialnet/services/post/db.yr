@@ -1,0 +1,190 @@
+in db;
+
+use socialnet::utils::mysql;
+use std::conv;
+
+def LOGIN_LEN = 16u32;
+def TEXT_LEN = 560u32;
+def MAX_TAGS = 16u32;
+
+pub class PostDatabase {
+
+    let dmut _client : &MysqlClient;
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          CTOR          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub self (server : [c8], user : [c8], password : [c8], db : [c8], port : u16)
+        with _client = copy MysqlClient (server-> server,
+                                         user-> user,
+                                         password-> password,
+                                         db-> db,
+                                         port-> port)
+        throws AssertError
+    {
+        self:.createTables ();
+        log::info ("Database", "post", "database configured");
+    }
+
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          CONFIGURATION          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Create the table containing post information
+     * */
+    fn createTables (mut self)
+        throws AssertError
+    {
+        let dmut rqt = self._client:.prepare ("CREATE TABLE IF NOT EXISTS posts (\n"
+                                              ~ "id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n"
+                                              ~ "user_id INT NOT NULL,\n"
+                                              ~ "user_login VARCHAR (" ~ to!{[c8]} (LOGIN_LEN) ~ ") NOT NULL,\n"
+                                              ~ "text VARCHAR (" ~ to!{[c8]} (TEXT_LEN) ~ ") NOT NULL\n)");
+        rqt:.finalize ();
+        rqt:.execute ();
+
+        rqt = self._client:.prepare ("CREATE TABLE IF NOT EXISTS tags (\n"
+                                     ~ "id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n"
+                                     ~ "user_id INT NOT NULL,\n"
+                                     ~ "post_id INT NOT NULL\n,"
+                                     ~ "FOREIGN KEY (post_id) REFERENCES post(id)\n)");
+
+        rqt:.finalize ();
+        rqt:.execute ();
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          INSERTION          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Insert a new post in the database
+     * @params:
+     *    - login: the login of the post
+     *    - password: the password of the post
+     * @returns: the id of the inserted post
+     * */
+    pub fn insert (mut self, userId : u32, userLogin : [c8], text : [c8], tags : [u32])-> u32
+        throws AssertError
+    {
+        let dmut rqt = self._client:.prepare ("INSERT INTO posts (user_id, user_login, text) values (?, ?, ?)");
+        rqt:.setParam (0, userId);
+        rqt:.setParam (1, userLogin);
+        rqt:.setParam (1, text);
+
+        rqt:.finalize ();
+        rqt:.execute ();
+
+        let postId = rqt.getGeneratedId ();
+        rqt:.dispose ();
+
+
+        let mut tagReqStr = "INSERT INTO tags (post_id, user_id) values ";
+        for _ in 0 .. tags.len {
+            tagReqStr ~= "(?, ?)";
+        }
+
+        let dmut tagReq = self._client:.prepare (tagReqStr);
+        for i in 0 .. tags.len {
+            tagReq:.setParam (cast!u32 (i * 2), tags [i]);
+            tagReq:.setParam (cast!u32 (i * 2 + 1), userId);
+        }
+
+        tagReq:.finalize ();
+        tagReq:.execute ();
+        tagReq:.dispose ();
+
+
+        return postId;
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          FINDING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Find a post in the database based on its login
+     * @params:
+     *   - login: the login of the post
+     * @returns: a post info if found
+     *    - .0: the user id
+     *    - .1: the user login
+     *    - .2: the post content
+     *    - .3: the tags
+     * */
+    pub fn find (mut self, id : u32)-> ((u32, [c8], [c8], [u32]))?
+        throws AssertError
+    {
+        let dmut rqt = self._client:.prepare ("SELECT user_id, user_login, text from posts where id=?");
+        rqt:.setParam (0, id);
+        rqt:.setResult!{u32} (0);
+        rqt:.setResult!{[c8]} (1, LOGIN_LEN);
+        rqt:.setResult!{[c8]} (2, TEXT_LEN);
+
+        let dmut tags : [u32] = [];
+
+        rqt:.finalize ();
+        rqt:.execute ();
+
+        let result : (u32, [c8], [c8]) = {
+            if rqt:.next () {
+                (rqt.getResult!{u32} (0),
+                 rqt.getResult!{[c8]} (1),
+                 rqt.getResult!{[c8]} (2))
+            } else {
+                return none;
+            }
+        } exit {
+            rqt:.dispose ();
+        }
+
+        let dmut tagReq = self._client:.prepare ("SELECT user_id from tags where post_id=?");
+        tagReq:.setParam (0, id);
+        tagReq:.setResult!{u32} (0);
+        tagReq:.finalize ();
+        tagReq:.execute ();
+
+        while tagReq:.next () {
+            tags ~= [tagReq.getResult!{u32} (0)];
+        }
+
+        tagReq:.dispose ();
+        (expand result, tags)?
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          DISPOSING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn dispose (mut self) {
+        self._client:.dispose ();
+    }
+
+    __dtor (mut self) {
+        self:.dispose ();
+    }
+
+}

@@ -1,0 +1,188 @@
+in mysql;
+
+pub mod ::statement;
+mod ::interface;
+
+use std::time::_;
+use std::{conv, format};
+
+use interface;
+use statement;
+
+pub def Statement : statement::Statement;
+
+pub class MysqlClient {
+
+    // The address of the server
+    let _server : [c8];
+
+    // The username
+    let _user : [c8];
+
+    // The database to open
+    let _db : [c8];
+
+    // The password
+    let _password : [c8];
+
+    // The port of the db
+    let _port : u16;
+
+    // The connection to mysql
+    let mut _conn : *void = null;
+
+    pub self (server : [c8], user : [c8], db : [c8], password : [c8] = "", port : u16 = 3306)
+        with _server = server
+        , _user = user
+        , _db = db
+        , _password = password
+        , _port = port
+    {}
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          CONNECTION          ===================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn connect (mut self, timeout : Duration = dur::seconds (2))
+        throws AssertError
+    {
+        self._conn = atomic {
+            mysql_init ()
+        };
+
+        let timeO = cast!u32 (timeout.allSeconds);
+        mysql_options (self._conn, MysqlFlags::MYSQL_OPT_CONNECT_TIMEOUT, cast!{*void} (&timeO));
+
+        let code = mysql_real_connect (self._conn,
+                                       server-> toStringZ (self._server),
+                                       user-> toStringZ (self._user),
+                                       password-> toStringZ (self._password),
+                                       db-> toStringZ (self._db),
+                                       port-> cast!u32 (self._port));
+        if code == 0 {
+            let msg = unsafe {
+                fromStringZ (mysql_error (self._conn))
+            };
+
+            mysql_close (self._conn);
+            self._conn = null;
+            let f = {
+                format ("Failed to connect to db {}/{}@{}:{} =>\n\t{}", self._db, self._user, self._server, self._port, msg)
+            } catch {
+                _ => { "Failed to connect db" }
+            };
+
+            throw copy AssertError (f);
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          CONFIGURATION          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Toggle autocommit of mysql insertions
+     * */
+    pub fn autocommit (mut self, set : bool)
+        throws AssertError
+    {
+        if self._conn == null {
+            self:.connect ();
+        }
+
+        if set {
+            mysql_autocommit (self._conn, 1);
+        }
+        else {
+            mysql_autocommit (self._conn, 1);
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          STATEMENTS          ===================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Prepare a mysql statement
+     * */
+    pub fn prepare (mut self, query : [c8])-> dmut &statement::Statement
+        throws AssertError
+    {
+        if self._conn == null {
+            self:.connect ();
+        }
+
+        let stmt = mysql_stmt_init (self._conn);
+        if (stmt == null) {
+            self:.dispose ();
+            throw copy AssertError ("Failed to init statement");
+        }
+
+        if mysql_stmt_prepare (stmt, toStringZ (query), cast!u64 (query.len)) != 0 {
+            mysql_stmt_close (stmt);
+            throw copy AssertError ("Failed to prepare statement");
+        }
+
+        let nbParam = mysql_stmt_param_count (stmt);
+        let param_metadata = mysql_stmt_result_metadata (stmt);
+
+        let nbResult = if (param_metadata != null) {
+            let n = mysql_num_fields (param_metadata);
+            mysql_free_result (param_metadata);
+            n
+        } else { 0u32 };
+
+
+        copy Statement (stmt, alias self, nbParam, nbResult)
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          GETTERS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * @returns: the mysql error message
+     * */
+    pub fn getErrorMsg (mut self)-> [c8] {
+        if (self._conn == null) return "";
+
+        let msg = mysql_error (self._conn);
+        return unsafe { fromStringZ (msg) };
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          DISPOSING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn dispose (mut self) {
+        if self._conn != null {
+            mysql_close (self._conn);
+            self._conn = null;
+        }
+    }
+
+    __dtor (mut self) {
+        self:.dispose ();
+    }
+
+}

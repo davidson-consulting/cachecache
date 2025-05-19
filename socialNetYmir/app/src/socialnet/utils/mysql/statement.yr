@@ -1,0 +1,341 @@
+in statement;
+
+use interface;
+
+use std::{conv, format, traits};
+
+
+pub class Statement {
+
+    let mut _stmt : *void = null;
+    let mut _nbParams : u32 = 0;
+    let mut _nbRes : u32 = 0;
+    let dmut _context : &MysqlClient;
+
+    let dmut _paramBinds : [MYSQL_BIND] = [];
+    let dmut _resultBinds : [MYSQL_BIND] = [];
+    let dmut _length : [u64] = [];
+    let dmut _isNull : [bool] = [];
+    let dmut _errors : [bool] = [];
+
+    pub self (stmt : *void, dmut context : &MysqlClient, nbParams : u32, nbRes : u32)
+        with _stmt = stmt
+        , _context = alias context
+        , _nbParams = nbParams
+        , _nbRes = nbRes
+    {
+        self._paramBinds = copy [MYSQL_BIND () ; self._nbParams];
+        self._resultBinds = copy [MYSQL_BIND () ; self._nbRes];
+        self._length = copy [0u64 ; self._nbParams + self._nbRes];
+        self._isNull = copy [false ; self._nbParams + self._nbRes];
+        self._errors = copy [false ; self._nbParams + self._nbRes];
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          SETTING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Prepare a string parameter in the statement
+     * @params:
+     *    - i: the index of the parameter
+     *    - value: the value to set
+     * */
+    pub fn setParam (mut self, i : u32, value : [c8])
+        throws AssertError
+    {
+        if i >= self._paramBinds.len {
+            throw copy AssertError ("Out of bound");
+        }
+
+        self._paramBinds [i].buffer_type = MysqlFieldTypes::STRING;
+        self._paramBinds [i].buffer = cast!{*void} (toStringZ (value));
+        self._paramBinds [i].buffer_length = cast!u64 (value.len);
+        self._paramBinds [i].is_null = &(self._isNull [i]);
+        self._paramBinds [i].length = &(self._length [i]);
+        self._paramBinds [i].error = &(self._errors [i]);
+
+        self._isNull [i] = false;
+        self._length [i] = cast!u64 (value.len);
+    }
+
+    /**
+     * Prepare a int parameter in the statement
+     * @params:
+     *    - i: the index of the parameter
+     *    - value: the value to set
+     * */
+    pub fn if (isIntegral!{T} && T::size >= 4) setParam {T} (mut self, i : u32, value : T)
+        throws AssertError
+    {
+        if i >= self._paramBinds.len {
+            throw copy AssertError ("Out of bound");
+        }
+
+        self._paramBinds [i].buffer_type = cte if T::size == 8 {
+            MysqlFieldTypes::LONGLONG
+        } else {
+            MysqlFieldTypes::LONG
+        };
+
+        self._paramBinds [i].buffer = cast!{*void} ((copy [value]).ptr);
+        self._paramBinds [i].is_null = &(self._isNull [i]);
+        self._paramBinds [i].length = &(self._length [i]);
+        self._paramBinds [i].error = &(self._errors [i]);
+
+        self._isNull [i] = false;
+        self._length [i] = 1;
+    }
+
+    /**
+     * Prepare the type of a result to a string
+     * @params:
+     *    - i: the index of the result element to prepare
+     *    - length: the maximum length of the result string
+     * */
+    pub fn setResult {T of [c8]} (mut self, i : u32, length : u64)
+        throws AssertError
+    {
+        if i >= self._resultBinds.len {
+            throw copy AssertError ("Out of bound");
+        }
+
+        self._resultBinds [i].buffer_type = MysqlFieldTypes::STRING;
+        self._resultBinds [i].buffer = cast!{*void} ((copy ['\u{0}' ; length]).ptr);
+        self._resultBinds [i].buffer_length = length;
+
+        self._resultBinds [i].is_null = &(self._isNull [i + self._nbParams]);
+        self._resultBinds [i].length = &(self._length [i + self._nbParams]);
+        self._resultBinds [i].error = &(self._errors [i + self._nbParams]);
+    }
+
+    /**
+     * Prepare the type of a result to an integer
+     * @params:
+     *    - i: the index of the result element to prepare
+     * */
+    pub fn if (isIntegral!{T} && T::size >= 4) setResult {T} (mut self, i : u32)
+        throws AssertError
+    {
+        if i >= self._resultBinds.len {
+            throw copy AssertError ("Out of bound");
+        }
+
+        self._resultBinds [i].buffer_type = cte if T::size == 8 {
+            MysqlFieldTypes::LONGLONG
+        } else {
+            MysqlFieldTypes::LONG
+        };
+
+        self._resultBinds [i].buffer = cast!{*void} ((copy [T::init]).ptr);
+
+        self._resultBinds [i].is_null = &(self._isNull [i + self._nbParams]);
+        self._resultBinds [i].length = &(self._length [i + self._nbParams]);
+        self._resultBinds[i].error = &(self._errors [i + self._nbParams]);
+    }
+
+    /**
+     * Finalize the preparation of the request before execution
+     * */
+    pub fn finalize (mut self)
+        throws AssertError
+    {
+        if self._stmt == null {
+            throw copy AssertError ("Empty request");
+        }
+
+        if self._nbRes != 0 {
+            if (mysql_stmt_bind_result (self._stmt, self._resultBinds.ptr) != 0) {
+                mysql_stmt_close (self._stmt);
+                self._stmt = null;
+
+                let msg = self._context:.getErrorMsg ();
+                let error = {
+                    format ("Failed to bind results => \n\t{}", msg)
+                } catch {
+                    _ => { "Failed to bind results" }
+                };
+
+                throw copy AssertError (error);
+            }
+        }
+
+        if self._nbParams != 0 {
+            if (mysql_stmt_bind_param (self._stmt, self._resultBinds.ptr) != 0) {
+                mysql_stmt_close (self._stmt);
+                self._stmt = null;
+
+                let msg = self._context:.getErrorMsg ();
+                let error = {
+                    format ("Failed to bind params => \n\t{}", msg)
+                } catch {
+                    _ => { "Failed to bind params" }
+                };
+
+                throw copy AssertError (error);
+            }
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          GETTERS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Get the result value
+     * @warning: should have been prepared to a string value before request execution
+     * @params:
+     *    - i: the index of the result element to get
+     * */
+    pub fn getResult {T of [c8]} (self, i : u32)-> [c8]
+        throws AssertError
+    {
+        if i >= self._resultBinds.len {
+            throw copy AssertError ("Out of bound");
+        }
+
+        if self._resultBinds [i].buffer_type != MysqlFieldTypes::STRING {
+            throw copy AssertError ("Wrong type");
+        }
+
+        if self._errors [i + self._nbParams] {
+            throw copy AssertError ("No result");
+        }
+
+        let result = unsafe { fromStringZ (cast!{*c8} (self._resultBinds [i].buffer)) };
+        result
+    }
+
+    /**
+     * Get the result value
+     * @warning: should have been prepared to an int value before request execution
+     * @params:
+     *    - i: the index of the result element to get
+     * */
+    pub fn if (isIntegral!{T} && T::size >= 4) getResult {T} (self, i : u32)-> T
+        throws AssertError
+    {
+        if i >= cast!u32 (self._resultBinds.len) {
+            throw copy AssertError ("Out of bound");
+        }
+
+        cte if T::size == 4 {
+            if self._resultBinds [i].buffer_type != MysqlFieldTypes::LONG {
+                throw copy AssertError ("Wrong type");
+            }
+        }
+
+        cte if T::size == 8 {
+            if self._resultBinds [i].buffer_type != MysqlFieldTypes::LONGLONG {
+                throw copy AssertError ("Wrong type");
+            }
+        }
+
+        if self._errors [i + self._nbParams] {
+            throw copy AssertError ("No result");
+        }
+
+        let result = unsafe { *(cast!{*T} (self._resultBinds [i].buffer)) };
+        result
+    }
+
+    /**
+     * @returns: the id of the insertion (for insertion requests)
+     * */
+    pub fn getGeneratedId (self)-> u32 {
+        if (self._stmt == null) return 0;
+        return mysql_stmt_insert_id (self._stmt);
+    }
+
+    @field
+    pub fn nbParameters (self)-> u32 {
+        self._nbParams
+    }
+
+    @field
+    pub fn nbResults (self)-> u32 {
+        self._nbRes
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          EXECUTION          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Execute the request
+     * */
+    pub fn execute (mut self)
+        throws AssertError
+    {
+        if self._stmt == null {
+            throw copy AssertError ("Empty request");
+        }
+
+        if mysql_stmt_execute (self._stmt) != 0 {
+            mysql_stmt_close (self._stmt);
+            let msg = self._context:.getErrorMsg ();
+            self._stmt = null;
+
+            let error = {
+                format ("Failed to execute requests => \n\t{}", msg)
+            } catch {
+                _ => { "Failed to execute request" }
+            };
+
+            throw copy AssertError (error);
+        }
+    }
+
+    /**
+     * Execute the request
+     * */
+    pub fn next (mut self) -> bool
+        throws AssertError
+    {
+        if self._stmt == null {
+            throw copy AssertError ("Empty request");
+        }
+
+        mysql_stmt_fetch (self._stmt) == 0
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          DISPOSING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn dispose (mut self) {
+        if (self._stmt != null) {
+            mysql_stmt_close (self._stmt);
+            self._stmt = null;
+        }
+
+        self._paramBinds = [];
+        self._resultBinds = [];
+        self._length = [];
+        self._isNull = [];
+        self._errors = [];
+        self._nbRes = 0;
+        self._nbParams = 0;
+    }
+
+    __dtor (mut self) {
+        self:.dispose ();
+    }
+
+}

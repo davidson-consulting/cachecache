@@ -1,0 +1,67 @@
+in database;
+
+use std::net::{_, addr::_};
+use std::{conv::_, config::_};
+
+pub enum
+| FILE = 1
+| MYSQL = 2
+| NONE = 3
+ -> DatabaseKind;
+
+pub record DatabaseConfig {
+
+    pub let mut name = "";
+    pub let mut kind = DatabaseKind::NONE;
+
+    pub let mut dbName = "socialNet"; // for mysql
+    pub let mut addr : &IpAddr = Ipv4::LOCALHOST;
+    pub let mut user = "root";
+    pub let mut password = "";
+    pub let mut port = 3306u16;
+
+    pub self empty () {}
+
+    pub self (name : [c8], cfg : &Config)
+        with name = name
+        throws CastFailure
+    {
+        if let Ok (s) = cfg ["kind"]? match s.to!{[c8]} () {
+            "file" => {
+                self.kind = DatabaseKind::FILE;
+            }
+            "mysql" => {
+                self.kind = DatabaseKind::MYSQL;
+            }
+            k => {
+                throw copy AssertError ("Unknown database kind : " ~ k);
+            }
+        }
+
+        if self.kind == DatabaseKind::MYSQL {
+            if let Ok (s) = cfg ["addr"]? {
+                self.addr = s.to!{[c8]} ().to!{&IpAddr} ();
+            }
+
+            if let Ok (s) = cfg ["user"]? {
+                self.user = s.to!{[c8]} ();
+            }
+
+            if let Ok (s) = cfg ["pass"]? {
+                self.password = s.to!{[c8]} ();
+            }
+
+            if let Ok (s) = cfg ["name"]? {
+                self.dbName = s.to!{[c8]} ();
+            }
+
+            if let Ok (s) = cfg ["port"]? {
+                self.port = cast!u16 (s.to!{i64} ());
+            }
+        }
+    } catch {
+        inE => {
+            throw copy CastFailure ((&Config)::__typeinfo__, DatabaseConfig::typeinfo, subError-> (inE)?);
+        }
+    }
+}

@@ -1,0 +1,164 @@
+in config;
+
+use std::{config::_, io};
+
+pub mod ::service;
+pub mod ::registry;
+pub mod ::system;
+pub mod ::database;
+pub mod ::auth;
+pub mod ::cache;
+
+pub mod ::args;
+
+use socialnet::config::_;
+use socialnet::utils::log;
+
+pub record SocialNetConfiguration {
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =====================================          FIELDS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub let mut auth : AuthConfig            = AuthConfig::empty ();
+    pub let mut registry : RegistryConfig    = RegistryConfig::empty ();
+    pub let mut system : SystemConfig        = SystemConfig::empty ();
+    pub let mut services : [ServiceConfig]   = [];
+    pub let mut databases : [DatabaseConfig] = [];
+    pub let mut caches : [CacheConfig]       = [];
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          CTOR          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub self (cfg : &Config) {
+        self.auth      = self.readAuth (cfg);
+        self.system    = self.readSystem (cfg);
+        self.registry  = self.readRegistry (cfg);
+        self.services  = self.readServices (cfg);
+        self.databases = self.readDatabases (cfg);
+        self.caches    = self.readCaches (cfg);
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          PARSING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Read a system configuration from the config dictionnary
+     * */
+    fn readSystem (self, cfg : &Config)-> system::SystemConfig {
+        if let Ok (sys) = cfg ["sys"]? {
+            return system::SystemConfig (sys);
+        } catch {
+            inE => {
+                log::warn ("Error", "cfg", "while parsing 'sys' configuration : \n => \t", inE);
+            }
+        }
+
+        system::SystemConfig::empty ()
+    }
+
+    /**
+     * Read a registry configuration from the config dictionnary
+     * */
+    fn readRegistry (self, cfg : &Config)-> RegistryConfig {
+        if let Ok (reg) = cfg ["reg"]? {
+            return RegistryConfig (reg);
+        } catch {
+            inE => {
+                log::warn ("Error", "cfg", "while parsing 'reg' configuration : \n => \t", inE);
+            }
+        }
+
+        RegistryConfig::empty ()
+    }
+
+    /**
+     * Read an authentification configuration from the config dictionnary
+     * */
+    fn readAuth (self, cfg : &Config)-> AuthConfig {
+        if let Ok (auth) = cfg ["auth"]? {
+            return AuthConfig (auth);
+        } catch {
+            inE => {
+                log::warn ("Error", "cfg", "while parsing 'auth' configuration : \n => \t", inE);
+            }
+        }
+
+        AuthConfig::empty ()
+    }
+
+    /**
+     * Read the list of microservices to deploy from the config dictionnary
+     * */
+    fn readServices (self, cfg : &Config)-> [ServiceConfig] {
+        if let Ok (ser : &Dict) = cfg ["services"]? {
+            let dmut services : [ServiceConfig] = [];
+            for kind, s in ser[] {
+                services ~= [ServiceConfig (kind, s)];
+            }
+
+            return services;
+        } catch {
+            inE => {
+                log::warn ("Error", "cfg", "while parsing 'services' configuration : \n => \t", inE);
+            }
+        }
+
+        []
+    }
+
+    /**
+     * Read the databases to connect to from the config dictionnary
+     * */
+    fn readDatabases (self, cfg : &Config)-> [DatabaseConfig] {
+        if let Ok (d : &Dict) = cfg ["db"]? {
+            let dmut dbs : [DatabaseConfig] = [];
+            for name, s in d[] {
+                dbs ~= [DatabaseConfig (name, s)];
+            }
+
+            return dbs;
+        } catch {
+            inE => {
+                log::warn ("Error", "cfg", "while parsing 'db' configuration : \n => \t", inE);
+            }
+        }
+
+        []
+    }
+
+    /**
+     * Read the cache instances to connect to from the config dictionnary
+     * */
+    fn readCaches (self, cfg : &Config)-> [CacheConfig] {
+        if let Ok (c : &Dict) = cfg ["caches"]? {
+            let dmut chs : [CacheConfig] = [];
+            for name, s in c[] {
+                chs ~= [CacheConfig (name, s)];
+            }
+
+            return chs;
+        } catch {
+            inE => {
+                log::warn ("Error", "cfg", "while parsing 'cache' configuration : \n => \t", inE);
+            }
+        }
+
+        []
+    }
+
+}

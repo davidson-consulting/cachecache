@@ -1,0 +1,242 @@
+in text;
+
+use std::io;
+use std::concurrency::actor;
+use std::config::_;
+use std::syntax::_;
+use std::net::addr;
+
+use std::{algorithm::sorting, stream, format};
+
+use socialnet::registry::_;
+use socialnet::utils::_;
+use socialnet::config::_;
+
+pub class TextService over ActorBase {
+
+    let _config : SocialNetConfiguration;
+    let _serviceConfig : ServiceConfig;
+
+    // The registry of the service
+    let dmut _registry : (&ActorRef)? = none;
+    let mut _uid = 0us;
+    let mut _needClose = false;
+
+    let dmut _userPattern : &Regex;
+    let dmut _urlPattern  : &Regex;
+
+    pub self (serviceConfig : ServiceConfig, systemConfig : SocialNetConfiguration)
+        with _config = systemConfig
+        , _serviceConfig = serviceConfig
+        , _urlPattern = ({
+            copy Regex ("(http|https)://([a-zA-Z0-9_!~*'().&=+$%-/]+)")
+        } catch {
+            _ => panic;
+        })
+        , _userPattern = ({
+            copy Regex ("@[a-zA-Z0-9_]+")
+        } catch {
+            _ => panic;
+        })
+    {}
+
+    pub over onStart (mut self) {
+        let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
+        log::info ("Starting", "text", "service connect registry ", regAddr);
+        let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
+
+        if let Ok (uid) = registry::utils::connect (alias actor, "text", self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", "text", "service");
+            self._needClose = true;
+            self._uid = uid;
+            self._registry = (alias actor)?;
+        } else {
+            log::error ("Failed", "text", "registry connection. Aborting ", self._name);
+            self:.kill ();
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          MESSAGING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onMessage (mut self, rqt : &Config) {
+        if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
+            log::info ("Received", "text", "poison pill in ", self._name);
+            self._needClose = false; // message comes from registry, no need to inform it from service exit
+            self:.kill ();
+        }
+    }
+
+
+    pub over onRequest (mut self, rqt : &Config)-> &Config {
+        if let Ok (Int (value-> RequestCode::CTOR_MESSAGE)) = rqt ["code"]? {
+            return self:.constructText (rqt);
+        }
+
+        json#{"code" : ResponseCode::MALFORMED}
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          EXIT          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onQuit (mut self) {
+        log::warn ("Killing", "text", "service ", self._name);
+        if let Ok (dmut reg) = alias self._registry && self._needClose {
+            registry::utils::close (alias reg, "text", self._name, SockAddr (self._config.system.loopback, self:.system.port));
+        }
+
+        self._userPattern:.dispose ();
+        self._urlPattern:.dispose ();
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===============================          TEXT CONSTRUCTION          ================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Transform user mentions, and urls into their corresponding tags and shortened versions
+     * */
+    fn constructText (mut self, rqt : &Config)-> &Config {
+        let text = if let Ok (Str (value-> s)) = rqt["text"]? {
+            s
+        } else return json#{"code" : ResponseCode::ERROR};
+
+        let users = self._userPattern.apply (text);
+        let urls = self._urlPattern.apply (text);
+
+        let (mentions, tags) = self:.findUsers (users);
+
+        let shorts = self:.findUrls (urls);
+
+        let mut replacement : [mut (usize, usize, [c8])] = (mentions ~ shorts);
+        sort (alias replacement, |x, y| { x.0 < y.0 });
+
+        let finalText = self.composeText (text, replacement);
+
+        json#{"code" : ResponseCode::OK,
+              "text" : finalText,
+              "tags" : tags}
+    }
+
+    /**
+     * Find the users in user database
+     * @params:
+     *    - user: the user mentions
+     * @returns:
+     *    - .0: success
+     *    - .1: associate index in user mentions, to its transformed version
+     *    - .2: the list of user tags
+     * */
+    fn findUsers (mut self, users : [(usize, [c8])])-> ([(usize, usize, [c8])], [u32]) {
+        let dmut resTags : [(usize, usize, [c8])] = [];
+        let dmut tags : [u32 => ()] = copy [];
+
+        if let Ok (dmut reg) = alias self._registry {
+            let dmut rqts : [usize => &ActorRqtFuture] = copy [];
+            for u in users if u.1.len > 0 {
+                if let Ok (dmut actor) = alias registry::utils::find (alias reg, "user") {
+                    let msg = json#{"code" : RequestCode::FIND_USER, "login" : u.1 [1 .. $]};
+                    rqts [u.0] = actor:.request (msg);
+                }
+            } catch {
+                _ => {}
+            }
+
+            for u, dmut rqt in alias rqts {
+                let msg = rqt:.value ();
+                if let Ok (Int (value-> ResponseCode::OK)) = msg ["code"]? {
+                    let id = cast!u32 (msg ["id"].to!{u64} ());
+                    let name = users [u].1 [1 .. $];
+                    let newName = format ("<a href=\"{{FRONT}}/user/{}\">@{}</a>", id, name);
+
+                    resTags ~= [(u, name.len + 1, newName)];
+                    tags [id] = ();
+                }
+            } catch {
+                _ => {}
+            }
+        }
+
+        (resTags, copy [t for t, _ in tags])
+    }
+
+
+    /**
+     * Find the users in user database
+     * @params:
+     *    - user: the user mentions
+     * @returns:
+     *    - .0: success
+     *    - .1: associate index in user mentions, to its transformed version
+     *    - .2: the list of user tags
+     * */
+    fn findUrls (mut self, urls : [(usize, [c8])])-> [(usize, usize, [c8])] {
+        let dmut resTags : [(usize, usize, [c8])] = [];
+
+        if let Ok (dmut reg) = alias self._registry {
+            let dmut rqts : [usize => &ActorRqtFuture] = copy [];
+            for u in urls {
+                if let Ok (dmut actor) = alias registry::utils::find (alias reg, "short_url") {
+                    let msg = json#{"code" : RequestCode::FIND_URL, "url" : u.1};
+                    rqts [u.0] = actor:.request (msg);
+                }
+            } catch {
+                _ => {}
+            }
+
+            for u, dmut rqt in alias rqts {
+                let msg = rqt:.value ();
+                if let Ok (Int (value-> ResponseCode::OK)) = msg ["code"]? {
+                    let url = cast!u32 (msg ["content"].to!{u64} ());
+                    let newUrl = std::format::format ("<a href=\"{{FRONT}}/api/url/{}\">{}</a>", url, url);
+
+                    resTags ~= [(u, urls [u].1.len, newUrl)];
+                }
+            } catch {
+                _ => {}
+            }
+        }
+
+        resTags
+    }
+
+    /**
+     * Compose the text by replacing the elements
+     * @params:
+     *    - text: the text to rewrite
+     *    - replacement: the list of elements to replace
+     * @assume: replacement is sorted by [i].0
+     * */
+    fn composeText (self, text : [c8], replacement : [(usize, usize, [c8])])-> [c8] {
+        let mut start = 0us;
+        let dmut result = copy StringStream ();
+
+        for elem in replacement {
+            if start != elem.0 {
+                result:.write (text [start .. elem.0]);
+            }
+
+            result:.write (elem.2);
+            start = elem.0 + elem.1;
+        }
+
+        result:.write (text [start .. $]);
+        result[]
+    }
+
+
+}

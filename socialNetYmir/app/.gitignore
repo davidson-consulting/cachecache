@@ -1,0 +1,11 @@
+
+.*
+.deps/
+!.gitignore
+__doc/
+.target/
+socialNet.a
+socialNet.so
+socialNet
+socialNet.test
+.reg_port

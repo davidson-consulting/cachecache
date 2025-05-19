@@ -1,0 +1,46 @@
+in main;
+
+mod .socialnet;
+
+use socialnet::{_, config::args, utils::mysql};
+use std::{config::_, fs::_, io};
+
+fn parseConfigFile (c : [c8])-> &Config {
+    let dmut f = File::open (Path (c));
+    let cfg = toml::parse (f:.readAll ());
+
+    f:.close ();
+    cfg
+} catch {
+    FsError () => {
+        log::error ("Error", "main", "failed to read configuration file ", c);
+        etc::c::process::_yrt_exit (-1);
+        panic;
+    }
+    err => {
+        log::error ("Error", "main", err);
+        etc::c::process::_yrt_exit (-1);
+        panic;
+    }
+}
+
+fn main (args : [[c8]]) {
+    let dmut parser = copy SocialNetArgumentParser ();
+    let cfg = parser.parse (args);
+
+    if let Ok (Str (value-> c)) = cfg ["registry"]["config"]? {
+        registryMain (parseConfigFile (c));
+    }
+
+    else if let Ok (Str (value-> c)) = cfg ["services"]["config"]? {
+        servicesMain (parseConfigFile (c));
+    }
+
+    else if let Ok (Str (value-> c)) = cfg ["front"]["config"]? {
+        frontMain (parseConfigFile (c));
+    }
+
+    else {
+        panic;
+    }
+}

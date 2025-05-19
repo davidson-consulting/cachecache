@@ -1,0 +1,236 @@
+in user;
+
+mod ::db;
+
+use std::io;
+use std::concurrency::actor;
+use std::config::_;
+use std::syntax::_;
+use std::net::addr;
+
+use std::{stream, format, conv};
+
+use socialnet::registry::_;
+use socialnet::utils::_;
+use socialnet::config::_;
+
+pub class UserService over ActorBase {
+
+    let _config : SocialNetConfiguration;
+    let _serviceConfig : ServiceConfig;
+
+    // The registry of the service
+    let dmut _registry : (&ActorRef)? = none;
+    let mut _uid = 0us;
+    let mut _needClose = false;
+
+    let dmut _db : (&db::UserDatabase)? = none;
+
+    pub self (serviceConfig : ServiceConfig, systemConfig : SocialNetConfiguration)
+        with _config = systemConfig
+        , _serviceConfig = serviceConfig
+    {}
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          CONFIGURATION          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onStart (mut self) {
+        if self:.connectDatabase () {
+            self:.connectRegistry ();
+        }
+    }
+
+    fn connectDatabase (mut self)-> bool {
+        log::info ("Starting", "user", "service connect database ", self._serviceConfig.db);
+        for d in self._config.databases {
+            if d.name == self._serviceConfig.db {
+                self._db = (copy db::UserDatabase (server-> d.addr.to!{[c8]} (),
+                                                   user-> d.user,
+                                                   password-> d.password,
+                                                   db-> d.dbName,
+                                                   port-> d.port))?;
+            }
+        }
+
+        if let Err (msg) = self._db {
+            log::error ("Failed", "user", "failed to configure user database => ", msg);
+            self:.kill ();
+            return false;
+        }
+        else if let Err () = self._db {
+            log::error ("Failed", "user", "failed to configure user database");
+            self:.kill ();
+            return false;
+        }
+
+        true
+    }
+
+    fn connectRegistry (mut self) {
+        let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
+        log::info ("Starting", "user", "service connect registry ", regAddr);
+        let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
+
+        if let Ok (uid) = registry::utils::connect (alias actor, "user", self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", "user", "service");
+            self._needClose = true;
+            self._uid = uid;
+            self._registry = (alias actor)?;
+        } else {
+            log::error ("Failed", "user", "registry connection. Aborting ", self._name);
+            self:.kill ();
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          EXIT          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onQuit (mut self) {
+        log::warn ("Killing", "user", "service ", self._name);
+        if let Ok (dmut reg) = alias self._registry && self._needClose {
+            registry::utils::close (alias reg, "user", self._name, SockAddr (self._config.system.loopback, self:.system.port));
+        }
+
+        if let Ok (dmut db) = alias self._db {
+            db:.dispose ();
+            self._db = none;
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          MESSAGING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onMessage (mut self, rqt : &Config) {
+        if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
+            log::info ("Received", "user", "poison pill in ", self._name);
+            self._needClose = false; // message comes from registry, no need to inform it from service exit
+            self:.kill ();
+        }
+    }
+
+    pub over onRequest (mut self, rqt : &Config)-> &Config {
+        match rqt ["code"]? {
+            Ok (Int (value-> RequestCode::REGISTER_USER)) => {
+                self:.registerUser (rqt)
+            }
+            Ok (Int (value-> RequestCode::LOGIN_USER)) => {
+                self:.login (rqt)
+            }
+            Ok (Int (value-> RequestCode::FIND_USER)) => {
+                self:.find (rqt)
+            }
+            _ => {
+                json#{"code" : ResponseCode::MALFORMED}
+            }
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          NEW USER          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn registerUser (mut self, rqt : &Config)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let login = rqt ["login"].to!{[c8]} ();
+            let password = rqt ["password"].to!{[c8]} ();
+            if let Ok () = db:.findByLogin (login) { return json#{"code" : ResponseCode::FORBIDDEN}; }
+
+            let id = db:.insertUser (login, password);
+            return json#{"code" : ResponseCode::OK, "id" : id};
+        } catch {
+            _ => {}
+        }
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          FIND          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn find (mut self, rqt : &Config)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            if let Ok (Str (value-> l)) = rqt ["login"]? {
+                if let Ok ((id, _)) = db:.findByLogin (l) {
+                    return json#{"code" : ResponseCode::OK, "id" : id};
+                } else {
+                    return json#{"code" : ResponseCode::NOT_FOUND};
+                }
+
+            } else if let Ok (Int (value-> i)) = rqt ["id"]? {
+                if let Ok ((login, _)) = db:.findById (cast!u32 (i)) {
+                    return json#{"code" : ResponseCode::OK, "login" : login};
+                } else {
+                    return json#{"code" : ResponseCode::NOT_FOUND};
+                }
+            }
+        } catch {
+            _ => {}
+        }
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          CONNECT          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn login (mut self, rqt : &Config)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let login = rqt ["login"].to!{[c8]} ();
+            let password = rqt ["password"].to!{[c8]}();
+            if let Ok ((id, pass)) = db:.findByLogin (login) && pass == password {
+                return json#{"code" : ResponseCode::OK, "id" : id};
+            } else {
+                return json#{"code" : ResponseCode::FORBIDDEN};
+            }
+        } catch {
+            _ => {}
+        }
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+}

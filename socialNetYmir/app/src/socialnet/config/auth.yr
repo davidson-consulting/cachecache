@@ -1,0 +1,29 @@
+in auth;
+
+use std::net::{_, addr::_};
+use std::{conv::_, config::_};
+
+pub record AuthConfig {
+
+    pub let mut secret = "password";
+    pub let mut issuer = "auth0";
+
+    pub self empty () {}
+
+    pub self (cfg : &Config)
+        throws CastFailure
+    {
+        if let Ok (s) = cfg ["secret"]? {
+            self.secret = s.to!{[c8]} ();
+        }
+
+        if let Ok (s) = cfg ["issuer"]? {
+            self.issuer = s.to!{[c8]} ();
+        }
+    } catch {
+        inE => {
+            throw copy CastFailure ((&Config)::__typeinfo__, AuthConfig::typeinfo, subError-> (inE)?);
+        }
+    }
+
+}

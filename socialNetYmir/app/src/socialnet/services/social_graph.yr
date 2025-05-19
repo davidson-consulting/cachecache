@@ -1,0 +1,126 @@
+in social_graph;
+
+mod ::db;
+
+use std::io;
+use std::concurrency::actor;
+use std::config::_;
+use std::syntax::_;
+use std::net::addr;
+
+use std::{stream, format, conv};
+
+use socialnet::registry::_;
+use socialnet::utils::_;
+use socialnet::config::_;
+
+pub class SocialGraphService over ActorBase {
+
+    let _config : SocialNetConfiguration;
+    let _serviceConfig : ServiceConfig;
+
+    // The registry of the service
+    let dmut _registry : (&ActorRef)? = none;
+    let mut _uid = 0us;
+    let mut _needClose = false;
+
+    let dmut _db : (&db::SocialGraphDatabase)? = none;
+
+    pub self (serviceConfig : ServiceConfig, systemConfig : SocialNetConfiguration)
+        with _config = systemConfig
+        , _serviceConfig = serviceConfig
+    {}
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          CONFIGURATION          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onStart (mut self) {
+        if self:.connectDatabase () {
+            self:.connectRegistry ();
+        }
+    }
+
+    fn connectDatabase (mut self)-> bool {
+        log::info ("Starting", "social_graph", "service connect database ", self._serviceConfig.db);
+        for d in self._config.databases {
+            if d.name == self._serviceConfig.db {
+            }
+        }
+
+        if let Err (msg) = self._db {
+            log::error ("Failed", "social_graph", "failed to configure social_graph database => ", msg);
+            self:.kill ();
+            return false;
+        }
+        else if let Err () = self._db {
+            log::error ("Failed", "social_graph", "failed to configure social_graph database");
+            self:.kill ();
+            return false;
+        }
+
+        true
+    }
+
+    fn connectRegistry (mut self) {
+        let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
+        log::info ("Starting", "social_graph", "service connect registry ", regAddr);
+        let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
+
+        if let Ok (uid) = registry::utils::connect (alias actor, "social_graph", self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", "social_graph", "service");
+            self._needClose = true;
+            self._uid = uid;
+            self._registry = (alias actor)?;
+        } else {
+            log::error ("Failed", "social_graph", "registry connection. Aborting ", self._name);
+            self:.kill ();
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          EXIT          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onQuit (mut self) {
+        log::warn ("Killing", "social_graph", "service ", self._name);
+        if let Ok (dmut reg) = alias self._registry && self._needClose {
+            registry::utils::close (alias reg, "social_graph", self._name, SockAddr (self._config.system.loopback, self:.system.port));
+        }
+
+        self._db = none;
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          MESSAGING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onMessage (mut self, rqt : &Config) {
+        if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
+            log::info ("Received", "social_graph", "poison pill in ", self._name);
+            self._needClose = false; // message comes from registry, no need to inform it from service exit
+            self:.kill ();
+        }
+    }
+
+    pub over onRequest (mut self, rqt : &Config)-> &Config {
+        match rqt ["code"]? {
+            _ => {
+                json#{"code" : ResponseCode::MALFORMED}
+            }
+        }
+    }
+
+}

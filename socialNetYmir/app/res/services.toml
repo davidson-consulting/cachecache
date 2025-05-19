@@ -1,0 +1,52 @@
+[auth]
+secret = "password"
+issuer = "auth0"
+
+[sys]
+port = 0
+iface = "lo"
+log-lvl = "debug"
+threads = 100
+
+[registry]
+name = "registry"
+addr = "localhost"
+port = 0
+
+[services.user]
+nb = 1
+db = "mysql"
+
+[services.timeline]
+nb = 1
+db = "file"
+
+[services.short]
+nb = 1
+db = "mysql"
+
+[services.social]
+nb = 1
+db = "file"
+
+[services.post]
+nb = 1
+db = "mysql"
+
+[services.compose]
+nb = 1
+
+[services.text]
+nb = 1
+
+[db.mysql]
+name = "socialNet"
+addr = "192.168.199.17"
+user = "root"
+pass = ""
+port = 3309
+kind = "mysql"
+
+[db.file]
+kind = "file"
+#directory = "/tmp/db/"

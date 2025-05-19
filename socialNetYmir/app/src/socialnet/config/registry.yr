@@ -1,0 +1,54 @@
+in registry;
+
+use std::fs::_;
+use std::net::{_, addr::_};
+use std::{conv::_, config::_};
+
+pub record RegistryConfig {
+
+    pub let mut name : [c8] = "registry";
+    pub let mut addr : &IpAddr = Ipv4::LOCALHOST;
+    pub let mut port : u16 = 0;
+
+    pub self empty () {
+        {
+            let dmut file = File::open (Path (".reg_port"));
+            let strPort = file:.readUntil ("\n")[0 .. $ - 1];
+            self.port = strPort.to!{u16} ();
+            file:.close ();
+        } catch {
+            error => std::io::println (error);
+        }
+
+    }
+
+    pub self (cfg : &Config)
+        throws CastFailure
+    {
+        if let Ok (i) = cfg ["port"]? {
+            self.port = cast!u16 (i.to!{i64} ());
+        }
+
+        if (self.port == 0) {
+            let dmut file = File::open (Path (".reg_port"));
+            let strPort = file:.readUntil ("\n")[0 .. $ - 1];
+            self.port = strPort.to!{u16} ();
+            file:.close ();
+        } catch {
+            error => std::io::println (error);
+        }
+
+        if let Ok (s) = cfg ["addr"]? {
+            self.addr = s.to!{[c8]} ().to!{&IpAddr} ();
+        }
+
+        if let Ok (s) = cfg ["name"]? {
+            self.name = s.to!{[c8]} ();
+        }
+    } catch {
+        inE => {
+            throw copy CastFailure ((&Config)::__typeinfo__, RegistryConfig::typeinfo, subError-> (inE)?);
+        }
+    }
+
+}

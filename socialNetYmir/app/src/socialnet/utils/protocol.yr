@@ -1,0 +1,43 @@
+in protocol;
+
+use std::net::addr;
+
+pub enum : u32
+| POISON_PILL      = 100
+| REGISTER_SERVICE = 101
+| FIND_SERVICE     = 102
+| CLOSE_SERVICE    = 103
+| CTOR_MESSAGE     = 200
+| FIND_USER        = 300
+| REGISTER_USER    = 301
+| LOGIN_USER       = 302
+| FIND_URL         = 400
+| CREATE_URL       = 401
+| INSERT_POST      = 500
+| FIND_POST        = 501
+| UPDATE_TIMELINE  = 600
+| FIND_HTIMELINE   = 601
+| FIND_UTIMELINE   = 602
+ -> RequestCode;
+
+
+pub enum : u32
+| OK        = 200
+| MALFORMED = 400
+| NOT_FOUND = 404
+| FORBIDDEN = 403
+| ERROR     = 500
+ -> ResponseCode;
+
+
+pub record Service {
+    pub let ip : [c8];
+    pub let port : u16;
+    pub let id : [c8];
+
+    pub self (id : [c8], ip : [c8], port : u16)
+        with id = id
+        , ip = ip
+        , port = port
+    {}
+}

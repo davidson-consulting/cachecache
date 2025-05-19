@@ -1,0 +1,7 @@
+in front;
+
+use std::{config::_, io};
+
+pub fn frontMain (cfg : &Config) {
+    println ("Front : ", cfg);
+}
