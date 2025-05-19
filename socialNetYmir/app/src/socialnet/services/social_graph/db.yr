@@ -26,6 +26,133 @@ pub class SocialGraphDatabase {
      * ====================================================================================================
      */
 
+    pub fn insertSub (mut self, uid : u32, toWhom : u32) {
+        self:.writeFile (uid, toWhom, self._subs);
+        self:.writeFile (toWhom, uid, self._folls);
+    }
+
+    fn writeFile (mut self, uid : u32, what : u32, base : Path) {
+        {
+            let filename = base.push (to!{[c8]} (uid));
+            let dmut f = File::open (filename, append-> true);
+
+            {
+                f:.lock ();
+                f:.seek (f.len ());
+                f:.write (copy [what]);
+            } exit {
+                f:.unlock ()?;
+                f:.close ();
+            }
+        } catch {
+            _ => {}
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          FINDING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn findSub (mut self, uid : u32, toWhom : u32)-> bool {
+        self:.readInFile (uid, toWhom, self._subs)
+    }
+
+    pub fn findFollower (mut self, uid : u32, sub : u32)-> bool {
+        self:.readInFile (uid, sub, self._folls)
+    }
+
+    fn readInFile (mut self, uid : u32, sub : u32, base : Path)-> bool {
+        {
+            let filename = base.push (to!{[c8]} (uid));
+            let dmut f = File::open (filename, read-> true);
+
+            {
+                f:.lock ();
+                loop {
+                    let read = f:.read!{[u32]} (255);
+                    for z in read if z == sub {
+                        return true;
+                    }
+
+                    if read.len != 255 { break; }
+                }
+            } exit {
+                f:.unlock ()?;
+                f:.close ();
+            }
+
+        } catch {
+            _ => {}
+        }
+
+        false
+    } 
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          REMOVING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn removeSub (mut self, uid : u32, toWhom : u32) {
+        if self:.removeInFile (uid, toWhom, self._subs) {
+            self:.removeInFile (toWhom, uid, self._folls);
+        }
+    }
+
+    fn removeInFile (mut self, uid : u32, what : u32, base : Path)-> bool {
+        {
+            let filename = base.push (to!{[c8]} (uid));
+            let filename_cp = base.push (to!{[c8]} (uid) ~ "_copy");
+            let dmut f = File::open (filename, read-> true);
+            let dmut cp = File::open (filename_cp, write-> true);
+            let mut found = false;
+
+            {
+                f:.lock ();
+                cp:.lock ();
+                let dmut buffer = copy [0u32 ; 255];
+                let mut nb = 0us;
+                loop {
+                    let read = f:.read!{[u32]} (255);
+                    nb = 0;
+                    for z in read {
+                        if z == what {
+                            found = true;
+                        } else {
+                            buffer [nb] = z;
+                            nb += 1;
+                        }
+                    }
+
+                    if nb != 0 {
+                        cp:.write!{[u32]} (buffer);
+                    }
+                    if read.len != 255 { break; }
+                }
+            } exit {
+                f:.unlock ()?;
+                cp:.unlock ()?;
+                cp:.close ();
+                f:.close ();
+            }
+
+            // replace the files
+            fs::sys::copyFile (filename_cp, filename);
+            return found;
+        } catch {
+            _ => {}
+        }
+
+        false
+    }
+
     /*!
      * ====================================================================================================
      * ====================================================================================================
@@ -60,14 +187,48 @@ pub class SocialGraphDatabase {
                 result = f:.read!{[u32]} (cast!usize (toRead));
             } exit {
                 f:.unlock ()?;
+                f:.close ();
             }
-
-            f:.close ();
         } catch {
             _ => {}
         }
 
         result
     }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          LENGTHS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn countSubs (mut self, uid : u32)-> u32 {
+        self:.countFile (uid, self._subs)
+    }
+
+    pub fn countFollowers (mut self, uid : u32)-> u32 {
+        self:.countFile (uid, self._folls)
+    }
+
+    fn countFile (mut self, uid : u32, base : Path)-> u32 {
+        {
+            let filename = base.push (to!{[c8]} (uid));
+            let dmut f = File::open (filename, read-> true);
+
+            {
+                return f.len () / u32::size;
+            } exit {
+                f:.close ();
+            }
+
+        } catch {
+            _ => {}
+        }
+
+        0us
+    }
+
 
 }

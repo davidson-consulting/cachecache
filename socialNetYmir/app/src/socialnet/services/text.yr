@@ -128,9 +128,7 @@ pub class TextService over ActorBase {
             return json#{"code" : ResponseCode::OK,
                          "text" : finalText,
                          "tags" : tags};
-        } catch {
-            _ => {}
-        }
+        }?; // catch
 
         json#{"code" : ResponseCode::ERROR}
     }

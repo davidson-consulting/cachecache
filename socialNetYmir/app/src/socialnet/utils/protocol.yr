@@ -18,6 +18,13 @@ pub enum : u32
 | UPDATE_TIMELINE  = 600
 | FIND_HTIMELINE   = 601
 | FIND_UTIMELINE   = 602
+| INSERT_SUB       = 700
+| REMOVE_SUB       = 701
+| IS_SUB           = 702
+| COUNT_SUBS       = 703
+| COUNT_FOLLOWERS  = 704
+| FIND_SUBS        = 705
+| FIND_FOLLOWERS   = 706
  -> RequestCode;
 
 

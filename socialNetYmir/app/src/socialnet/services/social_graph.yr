@@ -47,10 +47,7 @@ pub class SocialGraphService over ActorBase {
 
     fn connectDatabase (mut self)-> bool {
         log::info ("Starting", "social_graph", "service connect database ", self._serviceConfig.db);
-        for d in self._config.databases {
-            if d.name == self._serviceConfig.db {
-            }
-        }
+        self._db = (copy db::SocialGraphDatabase ())?;
 
         if let Err (msg) = self._db {
             log::error ("Failed", "social_graph", "failed to configure social_graph database => ", msg);
@@ -117,10 +114,167 @@ pub class SocialGraphService over ActorBase {
 
     pub over onRequest (mut self, rqt : &Config)-> &Config {
         match rqt ["code"]? {
+            Ok (Int (value-> RequestCode::INSERT_SUB)) => {
+                self:.insert (rqt)
+            }
+            Ok (Int (value-> RequestCode::IS_SUB)) => {
+                self:.isSub (rqt)
+            }
+            Ok (Int (value-> RequestCode::REMOVE_SUB)) => {
+                self:.remove (rqt)
+            }
+            Ok (Int (value-> RequestCode::COUNT_SUBS)) => {
+                self:.count (rqt, subs-> true)
+            }
+            Ok (Int (value-> RequestCode::COUNT_FOLLOWERS)) => {
+                self:.count (rqt, subs-> false)
+            }
+            Ok (Int (value-> RequestCode::FIND_SUBS)) => {
+                self:.find (rqt, subs-> true)
+            }
+            Ok (Int (value-> RequestCode::FIND_FOLLOWERS)) => {
+                self:.find (rqt, subs-> false)
+            }
             _ => {
                 json#{"code" : ResponseCode::MALFORMED}
             }
         }
     }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          INSERTION          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn insert (mut self, rqt : &Config)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let uid = rqt ["userId"].to!{u32} ();
+            let toWhom = rqt ["toWhom"].to!{u32} ();
+            db:.insertSub (uid, toWhom);
+
+            return json#{"code" : ResponseCode::OK};
+        }?; // catch
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          REMOVING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn remove (mut self, rqt : &Config)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let uid = rqt ["userId"].to!{u32} ();
+            let toWhom = rqt ["toWhom"].to!{u32} ();
+            db:.removeSub (uid, toWhom);
+
+            return json#{"code" : ResponseCode::OK};
+        }?; // catch
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          FINDING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn isSub (mut self, rqt : &Config)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let uid = rqt ["userId"].to!{u32} ();
+            let toWhom = rqt ["toWhom"].to!{u32} ();
+            db:.findSub (uid, toWhom);
+
+            return json#{"code" : ResponseCode::OK};
+        }?; // catch
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          COUNTING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn count (mut self, rqt : &Config, subs : bool)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let uid = rqt ["userId"].to!{u32} ();
+            let nb = if subs {
+                db:.countSubs (uid)
+            } else {
+                db:.countFollowers (uid)
+            };
+
+            return json#{"code" : ResponseCode::OK, "nb" : nb};
+        }?; // catch
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          FINDING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn find (mut self, rqt : &Config, subs : bool)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let uid = rqt ["userId"].to!{u32} ();
+            let page = rqt ["page"].to!{u32} ();
+            let nb = rqt ["nb"].to!{u32} ();
+
+            let lst = if subs {
+                db:.findSubs (uid, page, nb)
+            } else {
+                db:.findFollowers (uid, page, nb)
+            };
+
+            return json#{"code" : ResponseCode::OK, "list" : lst};
+        }?; // catch
+
+        return json#{"code" : ResponseCode::ERROR};
+    }
+
 
 }
