@@ -1,7 +1,95 @@
 in front;
 
-use std::{config::_, io};
+mod ::follow;
+
+use std::{config::_, io, fs::path};
+use std::{net::_, concurrency::actor};
+
+use etc::c::process;
+
+use socialnet::{utils::_,
+                config::_,
+                registry::_,
+                services::_,
+                front::_};
+
+lazy dmut __SYSTEM__ : [(&ActorSystem)?] = copy [none];
+lazy dmut __HTTP__ : [(&HttpServer)?] = copy [none];
+
+fn killSystem (code : u32) {
+    if let Ok (dmut s) = alias __SYSTEM__ [0] {
+        log::warn ("Kill", "FRONT", "actor system (signal code : ", code, ")");
+        s:.kill ();
+    }
+
+    if let Ok (dmut h) = alias __HTTP__ [0] {
+        log::warn ("Kill", "FRONT", "http server (signal code : ", code, ")");
+        h:.kill ();
+    }
+}
+
+fn joinAll () {
+    if let Ok (dmut s) = alias __SYSTEM__ [0] {
+        s:.join ();
+    }
+
+    if let Ok (dmut h) = alias __HTTP__ [0] {
+        h:.join ();
+    }
+}
+
+fn configureRoutes (dmut server : &HttpServer, dmut system : &ActorSystem, cfg : SocialNetConfiguration) {
+    let dmut follower = copy FollowerFront (alias system, cfg);
+
+    server:.route (Path ("/followers-len"), &(follower:.onFollowLen), method-> HttpRequestKind::GET);
+}
+
 
 pub fn frontMain (cfg : &Config) {
-    println ("Front : ", cfg);
+    let serviceCfg = config::SocialNetConfiguration (cfg);
+
+    signal (SignalCodes::SIGINT, &killSystem);
+    signal (SignalCodes::SIGTERM, &killSystem);
+    signal (SignalCodes::SIGKILL, &killSystem);
+
+    let systemAddr = SockAddr (serviceCfg.system.addr, serviceCfg.system.port);
+    log::info ("Create", "FRONT", "actor system on ", systemAddr);
+    let dmut system = copy ActorSystem (systemAddr, nbThreads-> serviceCfg.system.nbThreads);
+
+    let httpAddr = SockAddr (serviceCfg.front.addr, serviceCfg.front.port);
+    let dmut server = copy HttpServer (httpAddr, nbThreads-> serviceCfg.front.nbThreads);
+
+    log::info ("Starting", "FRONT", "actor system");
+    {
+        system:.start ();
+    } catch {
+        inE => {
+            log::error ("Error", "FRONT", "while sarting actor system : \n => \t", inE);
+            killSystem (0);
+            joinAll ();
+            panic;
+        }
+    }
+    log::info ("Running", "FRONT", "actor system is running on ", system.ip, ":", system.port);
+
+    configureRoutes (alias server, alias system, serviceCfg);
+
+    log::info ("Starting", "FRONT", "http server");
+    {
+        server:.start ();
+    } catch {
+        inE => {
+            log::error ("Error", "FRONT", "while sarting http server : \n => \t", inE);
+            killSystem (0);
+            joinAll ();
+            panic;
+        }
+    }
+    log::info ("Running", "FRONT", "http server is running on ", server.ip, ":", server.port);
+
+    __HTTP__ [0] = (alias server)?;
+    __SYSTEM__ [0] = (alias system)?;
+    joinAll ();
+
+    log::info ("Exiting", "FRONT", "services");
 }

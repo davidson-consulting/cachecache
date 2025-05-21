@@ -1,5 +1,5 @@
-compiler = "/home/emile/ymir/bootstrap/gyc/gcc-install/bin/gyc"
-libraries = ["mysqlclient"]
+compiler = "gyc"
+libraries = ["mysqlclient", "jwt"]
 description = "A minimal Ymir app"
 version = "0.1.0"
 name = "socialNet"

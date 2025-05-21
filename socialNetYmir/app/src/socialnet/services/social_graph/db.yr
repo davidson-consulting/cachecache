@@ -39,7 +39,7 @@ pub class SocialGraphDatabase {
             {
                 f:.lock ();
                 f:.seek (f.len ());
-                f:.write (copy [what]);
+                f:.writeRaw (copy [what]);
             } exit {
                 f:.unlock ()?;
                 f:.close ();
@@ -72,8 +72,9 @@ pub class SocialGraphDatabase {
 
             {
                 f:.lock ();
+                let dmut buffer = copy [0u32 ; 255];
                 loop {
-                    let read = f:.read!{[u32]} (255);
+                    let read = f:.readRaw (alias buffer);
                     for z in read if z == sub {
                         return true;
                     }
@@ -118,9 +119,10 @@ pub class SocialGraphDatabase {
                 f:.lock ();
                 cp:.lock ();
                 let dmut buffer = copy [0u32 ; 255];
+                let dmut rdBuffer = copy [0u32 ; 255];
                 let mut nb = 0us;
                 loop {
-                    let read = f:.read!{[u32]} (255);
+                    let read = f:.readRaw (alias rdBuffer);
                     nb = 0;
                     for z in read {
                         if z == what {
@@ -132,7 +134,7 @@ pub class SocialGraphDatabase {
                     }
 
                     if nb != 0 {
-                        cp:.write!{[u32]} (buffer);
+                        cp:.writeRaw (buffer [0 .. nb]);
                     }
                     if read.len != 255 { break; }
                 }
@@ -184,7 +186,8 @@ pub class SocialGraphDatabase {
                 f:.seek (offset * u32::size);
                 let toRead = std::algorithm::comparison::min (nbAll - offset, nb);
 
-                result = f:.read!{[u32]} (cast!usize (toRead));
+                let dmut buffer = copy [0u32 ; toRead];
+                result = f:.readRaw (alias buffer);
             } exit {
                 f:.unlock ()?;
                 f:.close ();

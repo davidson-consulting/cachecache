@@ -1,0 +1,34 @@
+in front;
+
+use std::net::{_, addr::_};
+use std::{conv::_, config::_};
+
+pub record FrontConfig {
+
+    pub let mut port : u16 = 0;
+    pub let mut addr : &IpAddr = Ipv4::LOCALHOST;
+    pub let mut nbThreads : u32 = 0;
+
+    pub self empty () {}
+
+    pub self (cfg : &Config)
+        throws CastFailure
+    {
+        if let Ok (i) = cfg ["port"]? {
+            self.port = cast!u16 (i.to!{i64} ());
+        }
+
+        if let Ok (s) = cfg ["addr"]? {
+            self.addr = s.to!{[c8]} ().to!{&IpAddr} ();
+        }
+
+        if let Ok (s) = cfg ["threads"]? {
+            self.nbThreads = cast!u32 (s.to!{i64} ());
+        }
+    } catch {
+        inE => {
+            throw copy CastFailure ((&Config)::__typeinfo__, FrontConfig::typeinfo, subError-> (inE)?);
+        }
+    }
+
+}

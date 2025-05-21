@@ -32,7 +32,7 @@ pub fn servicesMain (cfg : &Config) {
     signal (SignalCodes::SIGKILL, &killSystem);
 
     let systemAddr = SockAddr (serviceCfg.system.addr, serviceCfg.system.port);
-    log::info ("Create", "service", "actor system on ", systemAddr);
+    log::info ("Create", "SERVICE", "actor system on ", systemAddr);
     let dmut system = copy ActorSystem (systemAddr, nbThreads-> serviceCfg.system.nbThreads);
 
     {

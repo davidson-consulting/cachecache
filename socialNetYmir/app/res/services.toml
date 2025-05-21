@@ -41,7 +41,7 @@ nb = 1
 
 [db.mysql]
 name = "socialNet"
-addr = "192.168.199.17"
+addr = "192.168.1.12"
 user = "root"
 pass = ""
 port = 3309

@@ -8,6 +8,7 @@ pub mod ::system;
 pub mod ::database;
 pub mod ::auth;
 pub mod ::cache;
+pub mod ::front;
 
 pub mod ::args;
 
@@ -27,6 +28,7 @@ pub record SocialNetConfiguration {
     pub let mut auth : AuthConfig            = AuthConfig::empty ();
     pub let mut registry : RegistryConfig    = RegistryConfig::empty ();
     pub let mut system : SystemConfig        = SystemConfig::empty ();
+    pub let mut front : FrontConfig          = FrontConfig::empty ();
     pub let mut services : [ServiceConfig]   = [];
     pub let mut databases : [DatabaseConfig] = [];
     pub let mut caches : [CacheConfig]       = [];
@@ -46,6 +48,7 @@ pub record SocialNetConfiguration {
         self.services  = self.readServices (cfg);
         self.databases = self.readDatabases (cfg);
         self.caches    = self.readCaches (cfg);
+        self.front     = self.readFront (cfg);
     }
 
     /*!
@@ -69,6 +72,21 @@ pub record SocialNetConfiguration {
         }
 
         system::SystemConfig::empty ()
+    }
+
+    /**
+     * Read the configuration for the front http server
+     * */
+    fn readFront (self, cfg : &Config)-> FrontConfig {
+        if let Ok (sys) = cfg ["http"]? {
+            return FrontConfig (sys);
+        } catch {
+            inE => {
+                log::warn ("Error", "cfg", "while parsing 'http' configuration : \n => \t", inE);
+            }
+        }
+
+        FrontConfig::empty ()
     }
 
     /**

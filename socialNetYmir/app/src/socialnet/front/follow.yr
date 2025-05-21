@@ -1,0 +1,51 @@
+in follow;
+
+use std::net::_;
+use std::{conv, conv::_, config::_};
+use socialnet::{utils::_, config::_};
+use std::concurrency::actor;
+
+pub class FollowerFront {
+
+    let dmut _registry : &ActorRef;
+    let dmut _system : &ActorSystem;
+
+    pub self (dmut system : &ActorSystem, cfg : SocialNetConfiguration)
+        with _system = alias system
+        , _registry = system:.remote (cfg.registry.name, SockAddr (cfg.registry.addr, cfg.registry.port))
+    {
+        let regAddr = SockAddr (cfg.registry.addr, cfg.registry.port);
+        log::info ("Starting", "follower", "connect registry ", regAddr);
+    }
+
+    pub fn onFollowLen (mut self, req : HttpRequest)-> HttpResponse {
+        if let Ok (userId) = req.parameters ["user_id"] {
+            log::debug ("Try", "follow", "get followers len : ", userId.to!{u32} ());
+
+            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                let msg = json#{"code" : RequestCode::COUNT_FOLLOWERS,
+                                "userId" : userId.to!{u32} ()};
+
+                let result = foll:.request (msg):.value ();
+                std::io::println (result);
+                match (result ["code"]?, result ["nb"]?) {
+                    (Ok (Int (value-> ResponseCode::OK)), Ok (Int (value-> v))) => return HttpResponse (200, body-> to!{[c8]} (v));
+                }
+
+                return HttpResponse (403);
+            } else {
+                return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        CastFailure () => {
+            HttpResponse (400)
+        }
+        ActorError () => {
+            HttpResponse (500)
+        }
+    }
+
+}

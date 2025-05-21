@@ -1,0 +1,122 @@
+in jwt;
+
+use std::{conv, config::_, io};
+
+extern (C) fn jwt_new (_ : *(*void));
+extern (C) fn jwt_add_grant (_ : *void, key : *c8, value : *c8);
+extern (C) fn jwt_get_grant (_ : *void, key : *c8)-> *c8;
+extern (C) fn jwt_set_alg (_ : *void, alg : u32, key : *c8, len : u32);
+extern (C) fn jwt_encode_str (_ : *void)-> *c8;
+extern (C) fn jwt_decode (_ : *(*void), content : *c8, key : *c8, len : u32)-> i32;
+extern (C) fn jwt_free (_ : *void);
+extern (C) fn free (_ : *c8);
+
+extern (C) fn jwt_add_header (_ : *void, key : *c8, value : *c8);
+extern (C) fn jwt_get_header (_ : *void, key : *c8)-> *c8;
+
+enum : u32
+| NONE   = 0
+| HS256  = 1
+| HS384  = 2
+| HS512  = 3
+| RS256  = 4
+| RS384  = 5
+| RS512  = 6
+| ES256  = 7
+| ES384  = 8
+| ES512  = 9
+| PS256  = 10
+| PS384  = 11
+| PS512  = 12
+| TERM   = 13
+ -> JwtAlg;
+
+/**
+ * Encode a json configuration into a jwt token
+ * @params:
+ *    - config: the configuration to encode
+ *    - key: the key of the encoding
+ *    - issuer: the issuer of the token
+ *    - alg: the algorithm used
+ * @returns: the jwt token
+ * */
+pub fn encode (config : &Config, key : [c8], issuer : [c8], alg : JwtAlg = JwtAlg::HS256)-> [c8] {
+    let content = json::dump (config);
+    issuer;
+
+    let dmut jwt : *void = null;
+    jwt_new (&jwt);
+    {
+        jwt_add_grant (jwt, "content".ptr, toStringZ (content));
+        let k32 = if key.len < 32 {
+            key ~ copy ['0' ; 32 - key.len]
+        } else {
+            key
+        };
+
+        jwt_set_alg (jwt, alg, toStringZ (k32), cast!u32 (k32.len));
+        jwt_add_header (jwt, "issuer".ptr, toStringZ (issuer));
+
+        let out = jwt_encode_str (jwt);
+        if (out == null) return "";
+
+        let result = unsafe { fromStringZ (out) };
+        free (out);
+        result
+    } exit {
+        jwt_free (jwt);
+    }
+}
+
+/**
+ * Decode a jwt into a json configuration
+ * @params:
+ *    - token: the jwt token
+ *    - key: the key of the encoding
+ *    - issuer: the issuer of the token
+ * @returns: the decoded configuration
+ * */
+pub fn decode (token : [c8], key : [c8], issuer : [c8])-> &Config
+    throws AssertError
+{
+    issuer;
+    let dmut jwt : *void = null;
+    let k32 = if key.len < 32 {
+        key ~ copy ['0' ; 32 - key.len]
+    } else {
+        key
+    };
+
+    let out = jwt_decode (&jwt, toStringZ (token), toStringZ (k32), cast!u32 (k32.len));
+    if (out != 0) {
+        throw copy AssertError ("Invalid jwt token");
+    }
+
+    {
+        let inI = jwt_get_header (jwt, "issuer".ptr);
+        if (inI == null) {
+            throw copy AssertError ("Invalid jwt token");
+        }
+
+        let inIssuer = unsafe { fromStringZ (inI) };
+        if inIssuer != issuer {
+            throw copy AssertError ("Wrong issuer");
+        }
+
+        let content = jwt_get_grant (jwt, toStringZ ("content"));
+        if (content == null) {
+            throw copy AssertError ("Invalid jwt token");
+        }
+
+        let result = unsafe { fromStringZ (content) };
+        let cfg = {
+            json::parse (result)
+        } catch {
+            _ => throw copy AssertError ("Invalid jwt token");
+        };
+
+        return cfg;
+    } exit {
+        jwt_free (jwt);
+    }
+}
