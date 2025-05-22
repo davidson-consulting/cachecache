@@ -46,16 +46,16 @@ pub class SocialGraphService over ActorBase {
     }
 
     fn connectDatabase (mut self)-> bool {
-        log::info ("Starting", "social_graph", "service connect database ", self._serviceConfig.db);
+        log::info ("Starting", ServiceKind::SOCIAL_GRAPH, "service connect database ", self._serviceConfig.db);
         self._db = (copy db::SocialGraphDatabase ())?;
 
         if let Err (msg) = self._db {
-            log::error ("Failed", "social_graph", "failed to configure social_graph database => ", msg);
+            log::error ("Failed", ServiceKind::SOCIAL_GRAPH, "failed to configure social_graph database => ", msg);
             self:.kill ();
             return false;
         }
         else if let Err () = self._db {
-            log::error ("Failed", "social_graph", "failed to configure social_graph database");
+            log::error ("Failed", ServiceKind::SOCIAL_GRAPH, "failed to configure social_graph database");
             self:.kill ();
             return false;
         }
@@ -65,16 +65,16 @@ pub class SocialGraphService over ActorBase {
 
     fn connectRegistry (mut self) {
         let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
-        log::info ("Starting", "social_graph", "service connect registry ", regAddr);
+        log::info ("Starting", ServiceKind::SOCIAL_GRAPH, "service connect registry ", regAddr);
         let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
 
-        if let Ok (uid) = registry::utils::connect (alias actor, "social_graph", self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
-            log::info ("Connected", "social_graph", "service");
+        if let Ok (uid) = registry::utils::connect (alias actor, ServiceKind::SOCIAL_GRAPH, self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", ServiceKind::SOCIAL_GRAPH, "service");
             self._needClose = true;
             self._uid = uid;
             self._registry = (alias actor)?;
         } else {
-            log::error ("Failed", "social_graph", "registry connection. Aborting ", self._name);
+            log::error ("Failed", ServiceKind::SOCIAL_GRAPH, "registry connection. Aborting ", self._name);
             self:.kill ();
         }
     }
@@ -88,9 +88,9 @@ pub class SocialGraphService over ActorBase {
      */
 
     pub over onQuit (mut self) {
-        log::warn ("Killing", "social_graph", "service ", self._name);
+        log::warn ("Killing", ServiceKind::SOCIAL_GRAPH, "service ", self._name);
         if let Ok (dmut reg) = alias self._registry && self._needClose {
-            registry::utils::close (alias reg, "social_graph", self._name, SockAddr (self._config.system.loopback, self:.system.port));
+            registry::utils::close (alias reg, ServiceKind::SOCIAL_GRAPH, self._name, SockAddr (self._config.system.loopback, self:.system.port));
         }
 
         self._db = none;
@@ -106,7 +106,7 @@ pub class SocialGraphService over ActorBase {
 
     pub over onMessage (mut self, rqt : &Config) {
         if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
-            log::info ("Received", "social_graph", "poison pill in ", self._name);
+            log::info ("Received", ServiceKind::SOCIAL_GRAPH, "poison pill in ", self._name);
             self._needClose = false; // message comes from registry, no need to inform it from service exit
             self:.kill ();
         }
@@ -161,7 +161,10 @@ pub class SocialGraphService over ActorBase {
             let token = rqt ["token"].to!{[c8]} ();
 
             if user::utils::checkConnected (token, uid, self._config) {
-                db:.insertSub (uid, toWhom);
+                if !db:.findSub (uid, toWhom) {
+                    db:.insertSub (uid, toWhom);
+                }
+
                 return json#{"code" : ResponseCode::OK};
             }
 

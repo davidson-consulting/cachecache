@@ -1,6 +1,7 @@
 in front;
 
 mod ::follow;
+mod ::user;
 
 use std::{config::_, io, fs::path};
 use std::{net::_, concurrency::actor};
@@ -38,8 +39,16 @@ fn joinAll () {
     }
 }
 
+fn on404 (rqt : HttpRequest)-> HttpResponse {
+    println ("Wrong request : ", rqt);
+    HttpResponse (404)
+}
+
 fn configureRoutes (dmut server : &HttpServer, dmut system : &ActorSystem, cfg : SocialNetConfiguration) {
     let dmut follower = copy FollowerFront (alias system, cfg);
+    let dmut user = copy UserFront (alias system, cfg);
+
+    server:.setOn404 (&on404);
 
     // Social Graph
     server:.route (Path ("/followers-len"), &(follower:.onFollowLen), method-> HttpRequestKind::GET);
@@ -50,6 +59,8 @@ fn configureRoutes (dmut server : &HttpServer, dmut system : &ActorSystem, cfg :
     server:.route (Path ("/followers"), &(follower:.onFollowers), method-> HttpRequestKind::GET);
     server:.route (Path ("/subscriptions"), &(follower:.onSubs), method-> HttpRequestKind::GET);
 
+    // User
+    server:.route (Path ("/login"), &(user:.onLogin), method-> HttpRequestKind::POST);
 }
 
 

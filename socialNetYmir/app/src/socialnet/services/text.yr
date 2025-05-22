@@ -42,16 +42,16 @@ pub class TextService over ActorBase {
 
     pub over onStart (mut self) {
         let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
-        log::info ("Starting", "text", "service connect registry ", regAddr);
+        log::info ("Starting", ServiceKind::TEXT, "service connect registry ", regAddr);
         let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
 
-        if let Ok (uid) = registry::utils::connect (alias actor, "text", self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
-            log::info ("Connected", "text", "service");
+        if let Ok (uid) = registry::utils::connect (alias actor, ServiceKind::TEXT, self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", ServiceKind::TEXT, "service");
             self._needClose = true;
             self._uid = uid;
             self._registry = (alias actor)?;
         } else {
-            log::error ("Failed", "text", "registry connection. Aborting ", self._name);
+            log::error ("Failed", ServiceKind::TEXT, "registry connection. Aborting ", self._name);
             self:.kill ();
         }
     }
@@ -66,7 +66,7 @@ pub class TextService over ActorBase {
 
     pub over onMessage (mut self, rqt : &Config) {
         if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
-            log::info ("Received", "text", "poison pill in ", self._name);
+            log::info ("Received", ServiceKind::TEXT, "poison pill in ", self._name);
             self._needClose = false; // message comes from registry, no need to inform it from service exit
             self:.kill ();
         }
@@ -90,9 +90,9 @@ pub class TextService over ActorBase {
      */
 
     pub over onQuit (mut self) {
-        log::warn ("Killing", "text", "service ", self._name);
+        log::warn ("Killing", ServiceKind::TEXT, "service ", self._name);
         if let Ok (dmut reg) = alias self._registry && self._needClose {
-            registry::utils::close (alias reg, "text", self._name, SockAddr (self._config.system.loopback, self:.system.port));
+            registry::utils::close (alias reg, ServiceKind::TEXT, self._name, SockAddr (self._config.system.loopback, self:.system.port));
         }
 
         self._userPattern:.dispose ();
@@ -112,7 +112,7 @@ pub class TextService over ActorBase {
      * */
     fn constructText (mut self, rqt : &Config)-> &Config {
         {
-            let text = rqt["text"].to!{[c8]} ();
+            let text = rqt[ServiceKind::TEXT].to!{[c8]} ();
             let users = self._userPattern.apply (text);
             let urls = self._urlPattern.apply (text);
 

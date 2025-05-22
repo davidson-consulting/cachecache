@@ -47,7 +47,7 @@ pub class UserService over ActorBase {
     }
 
     fn connectDatabase (mut self)-> bool {
-        log::info ("Starting", "user", "service connect database ", self._serviceConfig.db);
+        log::info ("Starting", ServiceKind::USER, "service connect database ", self._serviceConfig.db);
         for d in self._config.databases {
             if d.name == self._serviceConfig.db {
                 self._db = (copy db::UserDatabase (server-> d.addr.to!{[c8]} (),
@@ -59,12 +59,12 @@ pub class UserService over ActorBase {
         }
 
         if let Err (msg) = self._db {
-            log::error ("Failed", "user", "failed to configure user database => ", msg);
+            log::error ("Failed", ServiceKind::USER, "failed to configure user database => ", msg);
             self:.kill ();
             return false;
         }
         else if let Err () = self._db {
-            log::error ("Failed", "user", "failed to configure user database");
+            log::error ("Failed", ServiceKind::USER, "failed to configure user database");
             self:.kill ();
             return false;
         }
@@ -74,16 +74,16 @@ pub class UserService over ActorBase {
 
     fn connectRegistry (mut self) {
         let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
-        log::info ("Starting", "user", "service connect registry ", regAddr);
+        log::info ("Starting", ServiceKind::USER, "service connect registry ", regAddr);
         let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
 
-        if let Ok (uid) = registry::utils::connect (alias actor, "user", self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
-            log::info ("Connected", "user", "service");
+        if let Ok (uid) = registry::utils::connect (alias actor, ServiceKind::USER, self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", ServiceKind::USER, "service");
             self._needClose = true;
             self._uid = uid;
             self._registry = (alias actor)?;
         } else {
-            log::error ("Failed", "user", "registry connection. Aborting ", self._name);
+            log::error ("Failed", ServiceKind::USER, "registry connection. Aborting ", self._name);
             self:.kill ();
         }
     }
@@ -97,9 +97,9 @@ pub class UserService over ActorBase {
      */
 
     pub over onQuit (mut self) {
-        log::warn ("Killing", "user", "service ", self._name);
+        log::warn ("Killing", ServiceKind::USER, "service ", self._name);
         if let Ok (dmut reg) = alias self._registry && self._needClose {
-            registry::utils::close (alias reg, "user", self._name, SockAddr (self._config.system.loopback, self:.system.port));
+            registry::utils::close (alias reg, ServiceKind::USER, self._name, SockAddr (self._config.system.loopback, self:.system.port));
         }
 
         if let Ok (dmut db) = alias self._db {
@@ -118,7 +118,7 @@ pub class UserService over ActorBase {
 
     pub over onMessage (mut self, rqt : &Config) {
         if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
-            log::info ("Received", "user", "poison pill in ", self._name);
+            log::info ("Received", ServiceKind::USER, "poison pill in ", self._name);
             self._needClose = false; // message comes from registry, no need to inform it from service exit
             self:.kill ();
         }
@@ -222,11 +222,18 @@ pub class UserService over ActorBase {
         {
             let login = rqt ["login"].to!{[c8]} ();
             let password = rqt ["password"].to!{[c8]}();
-            if let Ok ((id, pass)) = db:.findByLogin (login) && pass == password {
-                return json#{"code" : ResponseCode::OK, "id" : id};
-            } else {
-                return json#{"code" : ResponseCode::FORBIDDEN};
+
+            let res = db:.findByLogin (login);
+
+            if let Ok ((id, pass)) = res && pass == password {
+                return json#{"code" : ResponseCode::OK,
+                             "userId" : id,
+                             "token" : utils::connect (id, self._config)};
             }
+
+
+
+            return json#{"code" : ResponseCode::FORBIDDEN};
         } catch {
             _ => {}
         }

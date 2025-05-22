@@ -1,6 +1,7 @@
 in db;
 
-use std::{fs::_, conv};
+use std::{fs::_, conv, io};
+use socialnet::utils::log;
 
 pub class SocialGraphDatabase {
 
@@ -34,7 +35,12 @@ pub class SocialGraphDatabase {
     fn writeFile (mut self, uid : u32, what : u32, base : Path) {
         {
             let filename = base.push (to!{[c8]} (uid));
-            let dmut f = File::open (filename, append-> true);
+            let dmut f = if fs::sys::isFile (filename) {
+                File::open (filename, write-> true)
+            } else {
+                File::create (filename, write-> true)
+            };
+
 
             {
                 f:.lock ();
@@ -45,7 +51,7 @@ pub class SocialGraphDatabase {
                 f:.close ();
             }
         } catch {
-            _ => {}
+            err => { log::error ("Failed", "social", "write ", err); }
         }
     }
 
@@ -110,9 +116,11 @@ pub class SocialGraphDatabase {
     fn removeInFile (mut self, uid : u32, what : u32, base : Path)-> bool {
         {
             let filename = base.push (to!{[c8]} (uid));
+            if !fs::sys::isFile (filename) return false; // no need to make a copy, no subscription or no followers
+
             let filename_cp = base.push (to!{[c8]} (uid) ~ "_copy");
             let dmut f = File::open (filename, read-> true);
-            let dmut cp = File::open (filename_cp, write-> true);
+            let dmut cp = File::create (filename_cp, write-> true);
             let mut found = false;
 
             {
@@ -123,6 +131,7 @@ pub class SocialGraphDatabase {
                 let mut nb = 0us;
                 loop {
                     let read = f:.readRaw (alias rdBuffer);
+
                     nb = 0;
                     for z in read {
                         if z == what {

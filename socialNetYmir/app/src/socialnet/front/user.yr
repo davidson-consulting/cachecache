@@ -1,0 +1,69 @@
+in user;
+
+use std::net::_;
+use std::{conv, conv::_, config::_};
+use socialnet::{utils::_, config::_};
+use std::concurrency::actor;
+
+pub class UserFront {
+
+    let dmut _registry : &ActorRef;
+    let dmut _system : &ActorSystem;
+
+    pub self (dmut system : &ActorSystem, cfg : SocialNetConfiguration)
+        with _system = alias system
+        , _registry = system:.remote (cfg.registry.name, SockAddr (cfg.registry.addr, cfg.registry.port))
+    {
+        let regAddr = SockAddr (cfg.registry.addr, cfg.registry.port);
+        log::info ("Starting", "user", "connect registry ", regAddr);
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          CONNECTION          ===================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : POST /login
+     * { "login" : X, "password" : Y }
+     * */
+    pub fn onLogin (mut self, req : HttpRequest)-> HttpResponse {
+        let js = json::parse (req.body);
+
+        match (js ["login"], js ["password"])? {
+            Ok ((login, password)) => {
+                log::debug ("Try", "user", "login : ", login, "/", password);
+
+                if let Ok (dmut u) = alias registry::utils::find (alias self._registry, ServiceKind::USER) {
+                    let msg = json#{"code" : RequestCode::LOGIN_USER,
+                                    "login" : login,
+                                    "password" : password};
+
+                    let result = u:.request (msg):.value ();
+                    match (result ["code"]?, result ["token"]?, result ["userId"]?) {
+                        (Ok (Int (value-> ResponseCode::OK)), Ok (Str (value-> v)), Ok (Int (value-> uid))) => {
+                            return HttpResponse (200,
+                                                 body-> json::dump (json#{"token" : v, "user_id" : uid}));
+                        }
+                    }
+
+                    return HttpResponse (403);
+                } else {
+                    return HttpResponse (500);
+                }
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => {  HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+
+
+
+}

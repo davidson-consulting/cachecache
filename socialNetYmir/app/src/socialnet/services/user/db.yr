@@ -106,14 +106,17 @@ pub class UserDatabase {
     {
         let dmut rqt = self._client:.prepare ("SELECT id, password from users where login=?");
         rqt:.setParam (0, login);
-        rqt:.setResult!{u32} (0);
+        rqt:.setResult!{i32} (0);
         rqt:.setResult!{[c8]} (1, PASSWORD_LEN);
 
         rqt:.finalize ();
         rqt:.execute ();
         if rqt:.next () {
-            let res = (rqt.getResult!{u32} (0),
-                       rqt.getResult!{[c8]} (1))?;
+            let res = {
+                let id = rqt.getResult!{u32} (0);
+                let pass = rqt.getResult!{[c8]} (1);
+                (id, pass)
+            }?;
 
             rqt:.dispose ();
             return res;
@@ -142,8 +145,11 @@ pub class UserDatabase {
         rqt:.finalize ();
         rqt:.execute ();
         if rqt:.next () {
-            let res = (rqt.getResult!{[c8]} (0),
-                       rqt.getResult!{[c8]} (1))?;
+            let res = {
+                let login = rqt.getResult!{[c8]} (0);
+                let pass = rqt.getResult!{[c8]} (1);
+                (login, pass)
+            }?;
 
             rqt:.dispose ();
             return res;

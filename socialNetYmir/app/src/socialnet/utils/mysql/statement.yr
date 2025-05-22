@@ -55,12 +55,13 @@ pub class Statement {
         self._paramBinds [i].buffer_type = MysqlFieldTypes::STRING;
         self._paramBinds [i].buffer = cast!{*void} (toStringZ (value));
         self._paramBinds [i].buffer_length = cast!u64 (value.len);
-        self._paramBinds [i].is_null = &(self._isNull [i]);
-        self._paramBinds [i].length = &(self._length [i]);
-        self._paramBinds [i].error = &(self._errors [i]);
 
         self._isNull [i] = false;
         self._length [i] = cast!u64 (value.len);
+
+        self._paramBinds [i].is_null = &(self._isNull [i]);
+        self._paramBinds [i].length = &(self._length [i]);
+        self._paramBinds [i].error = &(self._errors [i]);
     }
 
     /**
@@ -105,7 +106,7 @@ pub class Statement {
         }
 
         self._resultBinds [i].buffer_type = MysqlFieldTypes::STRING;
-        self._resultBinds [i].buffer = cast!{*void} ((copy ['\u{0}' ; length]).ptr);
+        self._resultBinds [i].buffer = cast!{*void} ((copy [0u8 ; length]).ptr);
         self._resultBinds [i].buffer_length = length;
 
         self._resultBinds [i].is_null = &(self._isNull [i + self._nbParams]);
@@ -131,7 +132,7 @@ pub class Statement {
             MysqlFieldTypes::LONG
         };
 
-        self._resultBinds [i].buffer = cast!{*void} ((copy [T::init]).ptr);
+        self._resultBinds [i].buffer = cast!{*void} ((copy [0u8 ; T::size]).ptr);
 
         self._resultBinds [i].is_null = &(self._isNull [i + self._nbParams]);
         self._resultBinds [i].length = &(self._length [i + self._nbParams]);
@@ -165,7 +166,7 @@ pub class Statement {
         }
 
         if self._nbParams != 0 {
-            if (mysql_stmt_bind_param (self._stmt, self._resultBinds.ptr) != 0) {
+            if (mysql_stmt_bind_param (self._stmt, self._paramBinds.ptr) != 0) {
                 mysql_stmt_close (self._stmt);
                 self._stmt = null;
 

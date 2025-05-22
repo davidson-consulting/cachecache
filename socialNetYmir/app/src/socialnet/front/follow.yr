@@ -27,13 +27,13 @@ pub class FollowerFront {
      */
 
     /**
-     * Route : /followers-len?user_id=X
+     * Route : GET /followers-len?user_id=X
      * */
     pub fn onFollowLen (mut self, req : HttpRequest)-> HttpResponse {
         if let Ok (userId) = req.parameters ["user_id"] {
             log::debug ("Try", "follow", "get followers len : ", userId);
 
-            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::SOCIAL_GRAPH) {
                 let msg = json#{"code" : RequestCode::COUNT_FOLLOWERS,
                                 "userId" : userId.to!{u32} ()};
 
@@ -55,13 +55,13 @@ pub class FollowerFront {
     }
 
     /**
-     * Route : /subscriptions-len?user_id=X
+     * Route : GET /subscriptions-len?user_id=X
      * */
     pub fn onSubsLen (mut self, req : HttpRequest)-> HttpResponse {
         if let Ok (userId) = req.parameters ["user_id"] {
             log::debug ("Try", "follow", "get followers len : ", userId);
 
-            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::SOCIAL_GRAPH) {
                 let msg = json#{"code" : RequestCode::COUNT_SUBS,
                                 "userId" : userId.to!{u32} ()};
 
@@ -92,7 +92,8 @@ pub class FollowerFront {
      */
 
     /**
-     * Route : /follow?user_id=X&to_whom=Y&token=Z
+     * Route : POST /follow
+     * { "user_id" : X, "to_whom" : Y, "token" : Z }
      * */
     pub fn onFollow (mut self, req : HttpRequest)-> HttpResponse {
         let js = json::parse (req.body);
@@ -101,7 +102,7 @@ pub class FollowerFront {
             Ok ((userId, toWhom, token)) => {
                 log::debug ("Try", "follow", "subscribe : ", userId, " to ", toWhom);
 
-                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::SOCIAL_GRAPH) {
                     let msg = json#{"code" : RequestCode::INSERT_SUB,
                                     "userId" : userId.to!{u32} (),
                                     "toWhom" : toWhom.to!{u32} (),
@@ -124,7 +125,8 @@ pub class FollowerFront {
     }
 
     /**
-     * Route : /unfollow?user_id=X&to_whom=Y&token=Z
+     * Route : POST /follow
+     * { "user_id" : X, "to_whom" : Y, "token" : Z }
      * */
     pub fn onUnFollow (mut self, req : HttpRequest)-> HttpResponse {
         let js = json::parse (req.body);
@@ -133,7 +135,7 @@ pub class FollowerFront {
             Ok ((userId, toWhom, token)) => {
                 log::debug ("Try", "follow", "subscribe : ", userId, " to ", toWhom);
 
-                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::SOCIAL_GRAPH) {
                     let msg = json#{"code" : RequestCode::REMOVE_SUB,
                                     "userId" : userId.to!{u32} (),
                                     "toWhom" : toWhom.to!{u32} (),
@@ -164,14 +166,14 @@ pub class FollowerFront {
      */
 
     /**
-     * Route : /is-following?user_id=X&to_whom=Y
+     * Route : GET /is-following?user_id=X&to_whom=Y
      * */
     pub fn onIsFollow (mut self, req : HttpRequest)-> HttpResponse {
         match (req.parameters ["user_id"], req.parameters ["to_whom"]) {
             (Ok (userId), Ok (toWhom)) => {
                 log::debug ("Try", "follow", "check is following ", userId, " ", toWhom);
 
-                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::SOCIAL_GRAPH) {
                     let msg = json#{"code" : RequestCode::IS_SUB,
                                     "userId" : userId.to!{u32} (),
                                     "toWhom" : toWhom.to!{u32} ()};
@@ -202,14 +204,14 @@ pub class FollowerFront {
      */
 
     /**
-     * Route : /followers?user_id=X&page=Y&nb=Z
+     * Route : GET /followers?user_id=X&page=Y&nb=Z
      * */
     pub fn onFollowers (mut self, req : HttpRequest)-> HttpResponse {
         match (req.parameters ["user_id"], req.parameters ["page"], req.parameters ["nb"]) {
             (Ok (userId), Ok (page), Ok (nb)) => {
                 log::debug ("Try", "follow", "get follower list ", userId, " ", page, " ", nb);
 
-                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::SOCIAL_GRAPH) {
                     let msg = json#{"code" : RequestCode::FIND_FOLLOWERS,
                                     "userId" : userId.to!{u32} (),
                                     "page" : page.to!{u32} (),
@@ -233,14 +235,14 @@ pub class FollowerFront {
     }
 
     /**
-     * Route : /subscriptions?user_id=X&page=Y&nb=Z
+     * Route : GET /subscriptions?user_id=X&page=Y&nb=Z
      * */
     pub fn onSubs (mut self, req : HttpRequest)-> HttpResponse {
         match (req.parameters ["user_id"], req.parameters ["page"], req.parameters ["nb"]) {
             (Ok (userId), Ok (page), Ok (nb)) => {
                 log::debug ("Try", "follow", "get follower list ", userId, " ", page, " ", nb);
 
-                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::SOCIAL_GRAPH) {
                     let msg = json#{"code" : RequestCode::FIND_SUBS,
                                     "userId" : userId.to!{u32} (),
                                     "page" : page.to!{u32} (),
@@ -262,7 +264,5 @@ pub class FollowerFront {
         ActorError () => { HttpResponse (500) }
         _ => { HttpResponse (400) }
     }
-
-
 
 }

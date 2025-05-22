@@ -48,7 +48,7 @@ pub class ShortUrlService over ActorBase {
     }
 
     fn connectDatabase (mut self)-> bool {
-        log::info ("Starting", "short_url", "service connect database ", self._serviceConfig.db);
+        log::info ("Starting", ServiceKind::SHORT_URL, "service connect database ", self._serviceConfig.db);
         for d in self._config.databases {
             if d.name == self._serviceConfig.db {
                 self._db = (copy db::ShortUrlDatabase (server-> d.addr.to!{[c8]} (),
@@ -60,12 +60,12 @@ pub class ShortUrlService over ActorBase {
         }
 
         if let Err (msg) = self._db {
-            log::error ("Failed", "short_url", "failed to configure user database => ", msg);
+            log::error ("Failed", ServiceKind::SHORT_URL, "failed to configure user database => ", msg);
             self:.kill ();
             return false;
         }
         else if let Err () = self._db {
-            log::error ("Failed", "short_url", "failed to configure user database");
+            log::error ("Failed", ServiceKind::SHORT_URL, "failed to configure user database");
             self:.kill ();
             return false;
         }
@@ -75,16 +75,16 @@ pub class ShortUrlService over ActorBase {
 
     fn connectRegistry (mut self) {
         let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
-        log::info ("Starting", "short_url", "service connect registry ", regAddr);
+        log::info ("Starting", ServiceKind::SHORT_URL, "service connect registry ", regAddr);
         let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
 
-        if let Ok (uid) = registry::utils::connect (alias actor, "short_url", self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
-            log::info ("Connected", "short_url", "service");
+        if let Ok (uid) = registry::utils::connect (alias actor, ServiceKind::SHORT_URL, self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", ServiceKind::SHORT_URL, "service");
             self._needClose = true;
             self._uid = uid;
             self._registry = (alias actor)?;
         } else {
-            log::error ("Failed", "short_url", "registry connection. Aborting ", self._name);
+            log::error ("Failed", ServiceKind::SHORT_URL, "registry connection. Aborting ", self._name);
             self:.kill ();
         }
     }
@@ -98,9 +98,9 @@ pub class ShortUrlService over ActorBase {
      */
 
     pub over onQuit (mut self) {
-        log::warn ("Killing", "short_url", "service ", self._name);
+        log::warn ("Killing", ServiceKind::SHORT_URL, "service ", self._name);
         if let Ok (dmut reg) = alias self._registry && self._needClose {
-            registry::utils::close (alias reg, "short_url", self._name, SockAddr (self._config.system.loopback, self:.system.port));
+            registry::utils::close (alias reg, ServiceKind::SHORT_URL, self._name, SockAddr (self._config.system.loopback, self:.system.port));
         }
 
         if let Ok (dmut db) = alias self._db {
@@ -119,7 +119,7 @@ pub class ShortUrlService over ActorBase {
 
     pub over onMessage (mut self, rqt : &Config) {
         if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
-            log::info ("Received", "short_url", "poison pill in ", self._name);
+            log::info ("Received", ServiceKind::SHORT_URL, "poison pill in ", self._name);
             self._needClose = false; // message comes from registry, no need to inform it from service exit
             self:.kill ();
         }
