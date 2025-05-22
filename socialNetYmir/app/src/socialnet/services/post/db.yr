@@ -53,15 +53,17 @@ pub class PostDatabase {
                                               ~ "text VARCHAR (" ~ to!{[c8]} (TEXT_LEN) ~ ") NOT NULL\n)");
         rqt:.finalize ();
         rqt:.execute ();
+        rqt:.dispose ();
 
         rqt = self._client:.prepare ("CREATE TABLE IF NOT EXISTS tags (\n"
                                      ~ "id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n"
                                      ~ "user_id INT NOT NULL,\n"
                                      ~ "post_id INT NOT NULL\n,"
-                                     ~ "FOREIGN KEY (post_id) REFERENCES post(id)\n)");
+                                     ~ "FOREIGN KEY (post_id) REFERENCES posts(id)\n)");
 
         rqt:.finalize ();
         rqt:.execute ();
+        rqt:.dispose ();
     }
 
     /*!
