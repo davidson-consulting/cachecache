@@ -41,7 +41,15 @@ fn joinAll () {
 fn configureRoutes (dmut server : &HttpServer, dmut system : &ActorSystem, cfg : SocialNetConfiguration) {
     let dmut follower = copy FollowerFront (alias system, cfg);
 
+    // Social Graph
     server:.route (Path ("/followers-len"), &(follower:.onFollowLen), method-> HttpRequestKind::GET);
+    server:.route (Path ("/subscriptions-len"), &(follower:.onSubsLen), method-> HttpRequestKind::GET);
+    server:.route (Path ("/is-following"), &(follower:.onIsFollow), method-> HttpRequestKind::GET);
+    server:.route (Path ("/follow"), &(follower:.onFollow), method-> HttpRequestKind::POST);
+    server:.route (Path ("/unfollow"), &(follower:.onUnFollow), method-> HttpRequestKind::POST);
+    server:.route (Path ("/followers"), &(follower:.onFollowers), method-> HttpRequestKind::GET);
+    server:.route (Path ("/subscriptions"), &(follower:.onSubs), method-> HttpRequestKind::GET);
+
 }
 
 

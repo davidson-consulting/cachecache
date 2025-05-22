@@ -158,9 +158,13 @@ pub class SocialGraphService over ActorBase {
         {
             let uid = rqt ["userId"].to!{u32} ();
             let toWhom = rqt ["toWhom"].to!{u32} ();
-            db:.insertSub (uid, toWhom);
+            let token = rqt ["token"].to!{[c8]} ();
 
-            return json#{"code" : ResponseCode::OK};
+            if user::utils::checkConnected (token, uid, self._config) {
+                db:.insertSub (uid, toWhom);
+                return json#{"code" : ResponseCode::OK};
+            }
+
         }?; // catch
 
         return json#{"code" : ResponseCode::ERROR};
@@ -183,9 +187,12 @@ pub class SocialGraphService over ActorBase {
         {
             let uid = rqt ["userId"].to!{u32} ();
             let toWhom = rqt ["toWhom"].to!{u32} ();
-            db:.removeSub (uid, toWhom);
+            let token = rqt ["token"].to!{[c8]} ();
 
-            return json#{"code" : ResponseCode::OK};
+            if user::utils::checkConnected (token, uid, self._config) {
+                db:.removeSub (uid, toWhom);
+                return json#{"code" : ResponseCode::OK};
+            }
         }?; // catch
 
         return json#{"code" : ResponseCode::ERROR};
@@ -208,9 +215,9 @@ pub class SocialGraphService over ActorBase {
         {
             let uid = rqt ["userId"].to!{u32} ();
             let toWhom = rqt ["toWhom"].to!{u32} ();
-            db:.findSub (uid, toWhom);
+            let isSub = db:.findSub (uid, toWhom);
 
-            return json#{"code" : ResponseCode::OK};
+            return json#{"code" : ResponseCode::OK, "result" : if (isSub) { 1 } else { 0 }};
         }?; // catch
 
         return json#{"code" : ResponseCode::ERROR};

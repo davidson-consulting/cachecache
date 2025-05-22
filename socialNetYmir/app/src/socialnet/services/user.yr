@@ -1,6 +1,7 @@
 in user;
 
 mod ::db;
+pub mod ::utils;
 
 use std::io;
 use std::concurrency::actor;

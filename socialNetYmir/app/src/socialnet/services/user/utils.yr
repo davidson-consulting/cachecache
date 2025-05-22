@@ -1,0 +1,33 @@
+in utils;
+
+use socialnet::utils::jwt;
+use socialnet::config;
+
+use std::config::_;
+
+/**
+ * Generate a jwt token to connect a user
+ * @params:
+ *    - uid: the user to connect
+ *    - cfg: the configuration of the social network app
+ * */
+pub fn connect (uid : u32, cfg : SocialNetConfiguration)-> [c8] {
+    jwt::encode (json#{"userId" : uid}, cfg.auth.secret, cfg.auth.issuer)
+}
+
+/**
+ * Check wether a token contains information about a user connection
+ * @params:
+ *    - token: the jwt token
+ *    - uid: the user to check
+ *    - cfg: the configuration of the social network app
+ * */
+pub fn checkConnected (token : [c8], uid : u32, cfg : SocialNetConfiguration)-> bool {
+    if let Ok (jwtToken) = jwt::decode (token, cfg.auth.secret, cfg.auth.issuer)? {
+        if let Ok (Int (value-> u)) = jwtToken ["userId"]? && uid == cast!u32 (u) {
+            return true;
+        }
+    }
+
+    false
+}

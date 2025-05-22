@@ -18,16 +18,26 @@ pub class FollowerFront {
         log::info ("Starting", "follower", "connect registry ", regAddr);
     }
 
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          LENGTHS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : /followers-len?user_id=X
+     * */
     pub fn onFollowLen (mut self, req : HttpRequest)-> HttpResponse {
         if let Ok (userId) = req.parameters ["user_id"] {
-            log::debug ("Try", "follow", "get followers len : ", userId.to!{u32} ());
+            log::debug ("Try", "follow", "get followers len : ", userId);
 
             if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
                 let msg = json#{"code" : RequestCode::COUNT_FOLLOWERS,
                                 "userId" : userId.to!{u32} ()};
 
                 let result = foll:.request (msg):.value ();
-                std::io::println (result);
                 match (result ["code"]?, result ["nb"]?) {
                     (Ok (Int (value-> ResponseCode::OK)), Ok (Int (value-> v))) => return HttpResponse (200, body-> to!{[c8]} (v));
                 }
@@ -40,12 +50,219 @@ pub class FollowerFront {
 
         HttpResponse (400)
     } catch {
-        CastFailure () => {
-            HttpResponse (400)
-        }
-        ActorError () => {
-            HttpResponse (500)
-        }
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
     }
+
+    /**
+     * Route : /subscriptions-len?user_id=X
+     * */
+    pub fn onSubsLen (mut self, req : HttpRequest)-> HttpResponse {
+        if let Ok (userId) = req.parameters ["user_id"] {
+            log::debug ("Try", "follow", "get followers len : ", userId);
+
+            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                let msg = json#{"code" : RequestCode::COUNT_SUBS,
+                                "userId" : userId.to!{u32} ()};
+
+                let result = foll:.request (msg):.value ();
+                match (result ["code"]?, result ["nb"]?) {
+                    (Ok (Int (value-> ResponseCode::OK)), Ok (Int (value-> v))) => return HttpResponse (200,
+                                                                                                        body-> to!{[c8]} (v));
+                }
+
+                return HttpResponse (403);
+            } else {
+                return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          INSERT/REMOVE          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : /follow?user_id=X&to_whom=Y&token=Z
+     * */
+    pub fn onFollow (mut self, req : HttpRequest)-> HttpResponse {
+        let js = json::parse (req.body);
+
+        match (js ["user_id"], js ["to_whom"], js ["token"])? {
+            Ok ((userId, toWhom, token)) => {
+                log::debug ("Try", "follow", "subscribe : ", userId, " to ", toWhom);
+
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                    let msg = json#{"code" : RequestCode::INSERT_SUB,
+                                    "userId" : userId.to!{u32} (),
+                                    "toWhom" : toWhom.to!{u32} (),
+                                    "token" : token};
+
+                    let result = foll:.request (msg):.value ();
+                    match result ["code"]? {
+                        Ok (Int (value-> ResponseCode::OK)) => return HttpResponse (200);
+                    }
+
+                    return HttpResponse (403);
+                } else return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => {  HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /**
+     * Route : /unfollow?user_id=X&to_whom=Y&token=Z
+     * */
+    pub fn onUnFollow (mut self, req : HttpRequest)-> HttpResponse {
+        let js = json::parse (req.body);
+
+        match (js ["user_id"], js ["to_whom"], js ["token"])? {
+            Ok ((userId, toWhom, token)) => {
+                log::debug ("Try", "follow", "subscribe : ", userId, " to ", toWhom);
+
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                    let msg = json#{"code" : RequestCode::REMOVE_SUB,
+                                    "userId" : userId.to!{u32} (),
+                                    "toWhom" : toWhom.to!{u32} (),
+                                    "token" : token};
+
+                    let result = foll:.request (msg):.value ();
+                    match result ["code"]? {
+                        Ok (Int (value-> ResponseCode::OK)) => return HttpResponse (200);
+                    }
+
+                    return HttpResponse (403);
+                } else return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => {  HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          CHECKING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : /is-following?user_id=X&to_whom=Y
+     * */
+    pub fn onIsFollow (mut self, req : HttpRequest)-> HttpResponse {
+        match (req.parameters ["user_id"], req.parameters ["to_whom"]) {
+            (Ok (userId), Ok (toWhom)) => {
+                log::debug ("Try", "follow", "check is following ", userId, " ", toWhom);
+
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                    let msg = json#{"code" : RequestCode::IS_SUB,
+                                    "userId" : userId.to!{u32} (),
+                                    "toWhom" : toWhom.to!{u32} ()};
+
+                    let result = foll:.request (msg):.value ();
+                    match (result ["code"]?, result ["result"]?) {
+                        (Ok (Int (value-> ResponseCode::OK)), Ok (Int (value-> v))) => return HttpResponse (200,
+                                                                                                            body-> if (v == 0) { "false" } else { "true" });
+                    }
+
+                    return HttpResponse (403);
+                } else return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    }  catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          GET LISTS          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : /followers?user_id=X&page=Y&nb=Z
+     * */
+    pub fn onFollowers (mut self, req : HttpRequest)-> HttpResponse {
+        match (req.parameters ["user_id"], req.parameters ["page"], req.parameters ["nb"]) {
+            (Ok (userId), Ok (page), Ok (nb)) => {
+                log::debug ("Try", "follow", "get follower list ", userId, " ", page, " ", nb);
+
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                    let msg = json#{"code" : RequestCode::FIND_FOLLOWERS,
+                                    "userId" : userId.to!{u32} (),
+                                    "page" : page.to!{u32} (),
+                                    "nb" : nb.to!{u32} ()};
+
+                    let result = foll:.request (msg):.value ();
+                    match (result ["code"]?, result ["list"]?) {
+                        (Ok (Int (value-> ResponseCode::OK)), Ok (v)) => return HttpResponse (200,
+                                                                                              body-> json::dump (v));
+                    }
+
+                    return HttpResponse (403);
+                } else return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    }  catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /**
+     * Route : /subscriptions?user_id=X&page=Y&nb=Z
+     * */
+    pub fn onSubs (mut self, req : HttpRequest)-> HttpResponse {
+        match (req.parameters ["user_id"], req.parameters ["page"], req.parameters ["nb"]) {
+            (Ok (userId), Ok (page), Ok (nb)) => {
+                log::debug ("Try", "follow", "get follower list ", userId, " ", page, " ", nb);
+
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, "social_graph") {
+                    let msg = json#{"code" : RequestCode::FIND_SUBS,
+                                    "userId" : userId.to!{u32} (),
+                                    "page" : page.to!{u32} (),
+                                    "nb" : nb.to!{u32} ()};
+
+                    let result = foll:.request (msg):.value ();
+                    match (result ["code"]?, result ["list"]?) {
+                        (Ok (Int (value-> ResponseCode::OK)), Ok (v)) => return HttpResponse (200,
+                                                                                              body-> json::dump (v));
+                    }
+
+                    return HttpResponse (403);
+                } else return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    }  catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+
 
 }
