@@ -8,14 +8,11 @@ use std::concurrency::actor;
 pub class UserFront {
 
     let dmut _registry : &ActorRef;
-    let dmut _system : &ActorSystem;
 
-    pub self (dmut system : &ActorSystem, cfg : SocialNetConfiguration)
-        with _system = alias system
-        , _registry = system:.remote (cfg.registry.name, SockAddr (cfg.registry.addr, cfg.registry.port))
+    pub self (dmut registry : &ActorRef)
+        with _registry = alias registry
     {
-        let regAddr = SockAddr (cfg.registry.addr, cfg.registry.port);
-        log::info ("Starting", "user", "connect registry ", regAddr);
+        log::info ("Starting", "front", "user routes");
     }
 
     /*!
@@ -63,6 +60,45 @@ pub class UserFront {
         _ => { HttpResponse (400) }
     }
 
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ==================================          REGISTRATION          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn onRegister (mut self, req : HttpRequest)-> HttpResponse {
+        let js = json::parse (req.body);
+
+        match (js ["login"], js ["password"])? {
+            Ok ((login, password)) => {
+                log::debug ("Try", "user", "register : ", login, "/", password);
+
+                if let Ok (dmut u) = alias registry::utils::find (alias self._registry, ServiceKind::USER) {
+                    let msg = json#{"code" : RequestCode::REGISTER_USER,
+                                    "login" : login,
+                                    "password" : password};
+
+                    let result = u:.request (msg):.value ();
+                    match result ["code"]? {
+                        Ok (Int (value-> ResponseCode::OK)) => {
+                            return HttpResponse (200);
+                        }
+                    }
+
+                    return HttpResponse (403);
+                } else {
+                    return HttpResponse (500);
+                }
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => {  HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
 
 
 

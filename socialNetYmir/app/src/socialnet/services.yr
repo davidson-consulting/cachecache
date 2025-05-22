@@ -5,6 +5,8 @@ pub mod ::user;
 pub mod ::short_url;
 pub mod ::post;
 pub mod ::social_graph;
+pub mod ::compose;
+pub mod ::timeline;
 
 use std::{config::_, io, format};
 use std::{net::addr, concurrency::actor};
@@ -52,6 +54,12 @@ pub fn servicesMain (cfg : &Config) {
                 }
                 ServiceKind::SOCIAL_GRAPH => {
                     system:.add (format ("social_graph-{}", z), copy SocialGraphService (act, serviceCfg));
+                }
+                ServiceKind::COMPOSE => {
+                    system:.add (format ("compose-{}", z), copy ComposeService (act, serviceCfg));
+                }
+                ServiceKind::TIMELINE => {
+                    system:.add (format ("timeline-{}", z), copy TimelineService (act, serviceCfg));
                 }
             }
         }

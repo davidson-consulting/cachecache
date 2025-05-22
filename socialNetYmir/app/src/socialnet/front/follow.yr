@@ -8,14 +8,11 @@ use std::concurrency::actor;
 pub class FollowerFront {
 
     let dmut _registry : &ActorRef;
-    let dmut _system : &ActorSystem;
 
-    pub self (dmut system : &ActorSystem, cfg : SocialNetConfiguration)
-        with _system = alias system
-        , _registry = system:.remote (cfg.registry.name, SockAddr (cfg.registry.addr, cfg.registry.port))
+    pub self (dmut registry : &ActorRef)
+        with _registry = alias registry
     {
-        let regAddr = SockAddr (cfg.registry.addr, cfg.registry.port);
-        log::info ("Starting", "follower", "connect registry ", regAddr);
+        log::info ("Starting", "front", "follower routes");
     }
 
     /*!

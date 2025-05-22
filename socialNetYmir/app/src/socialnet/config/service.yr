@@ -9,6 +9,9 @@ pub enum
 | SHORT_URL    = "short"
 | POST         = "post"
 | SOCIAL_GRAPH = "social"
+| COMPOSE      = "compose"
+| TIMELINE     = "timeline"
+| FRONT        = "front"
  -> ServiceKind;
 
 pub record ServiceConfig {

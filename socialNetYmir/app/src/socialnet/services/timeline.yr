@@ -1,0 +1,81 @@
+in timeline;
+
+use std::io;
+use std::concurrency::actor;
+use std::config::_;
+use std::syntax::_;
+use std::net::addr;
+
+use std::{algorithm::sorting, stream, format, format::_};
+
+use socialnet::registry::_;
+use socialnet::utils::_;
+use socialnet::config::_;
+
+pub class TimelineService over ActorBase {
+
+    let _config : SocialNetConfiguration;
+    let _serviceConfig : ServiceConfig;
+
+    // The registry of the service
+    let dmut _registry : (&ActorRef)? = none;
+    let mut _uid = 0us;
+    let mut _needClose = false;
+
+    pub self (serviceConfig : ServiceConfig, systemConfig : SocialNetConfiguration)
+        with _config = systemConfig
+        , _serviceConfig = serviceConfig
+    {}
+
+    pub over onStart (mut self) {
+        let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
+        log::info ("Starting", ServiceKind::TIMELINE, "service connect registry ", regAddr);
+        let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
+
+        if let Ok (uid) = registry::utils::connect (alias actor, ServiceKind::TIMELINE, self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", ServiceKind::TIMELINE, "service");
+            self._needClose = true;
+            self._uid = uid;
+            self._registry = (alias actor)?;
+        } else {
+            log::error ("Failed", ServiceKind::TIMELINE, "registry connection. Aborting ", self._name);
+            self:.kill ();
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          MESSAGING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onMessage (mut self, rqt : &Config) {
+        if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
+            log::info ("Received", ServiceKind::TIMELINE, "poison pill in ", self._name);
+            self._needClose = false; // message comes from registry, no need to inform it from service exit
+            self:.kill ();
+        }
+    }
+
+    pub over onRequest (mut self, _ : &Config)-> &Config {
+        json#{"code" : ResponseCode::MALFORMED}
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          EXIT          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onQuit (mut self) {
+        log::warn ("Killing", ServiceKind::TIMELINE, "service ", self._name);
+        if let Ok (dmut reg) = alias self._registry && self._needClose {
+            registry::utils::close (alias reg, ServiceKind::TIMELINE, self._name, SockAddr (self._config.system.loopback, self:.system.port));
+        }
+    }
+
+}

@@ -5,6 +5,7 @@ use std::{conv::_, config::_};
 
 pub record FrontConfig {
 
+    pub let mut name : [c8] = "front";
     pub let mut port : u16 = 0;
     pub let mut addr : &IpAddr = Ipv4::LOCALHOST;
     pub let mut nbThreads : u32 = 0;
@@ -20,6 +21,10 @@ pub record FrontConfig {
 
         if let Ok (s) = cfg ["addr"]? {
             self.addr = s.to!{[c8]} ().to!{&IpAddr} ();
+        }
+
+        if let Ok (s) = cfg ["name"]? {
+            self.name = s.to!{[c8]} ();
         }
 
         if let Ok (s) = cfg ["threads"]? {

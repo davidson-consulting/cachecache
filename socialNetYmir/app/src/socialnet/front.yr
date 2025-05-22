@@ -2,6 +2,9 @@ in front;
 
 mod ::follow;
 mod ::user;
+mod ::submit;
+mod ::timeline;
+mod ::service;
 
 use std::{config::_, io, fs::path};
 use std::{net::_, concurrency::actor};
@@ -15,54 +18,13 @@ use socialnet::{utils::_,
                 front::_};
 
 lazy dmut __SYSTEM__ : [(&ActorSystem)?] = copy [none];
-lazy dmut __HTTP__ : [(&HttpServer)?] = copy [none];
 
 fn killSystem (code : u32) {
     if let Ok (dmut s) = alias __SYSTEM__ [0] {
         log::warn ("Kill", "FRONT", "actor system (signal code : ", code, ")");
         s:.kill ();
     }
-
-    if let Ok (dmut h) = alias __HTTP__ [0] {
-        log::warn ("Kill", "FRONT", "http server (signal code : ", code, ")");
-        h:.kill ();
-    }
 }
-
-fn joinAll () {
-    if let Ok (dmut s) = alias __SYSTEM__ [0] {
-        s:.join ();
-    }
-
-    if let Ok (dmut h) = alias __HTTP__ [0] {
-        h:.join ();
-    }
-}
-
-fn on404 (rqt : HttpRequest)-> HttpResponse {
-    println ("Wrong request : ", rqt);
-    HttpResponse (404)
-}
-
-fn configureRoutes (dmut server : &HttpServer, dmut system : &ActorSystem, cfg : SocialNetConfiguration) {
-    let dmut follower = copy FollowerFront (alias system, cfg);
-    let dmut user = copy UserFront (alias system, cfg);
-
-    server:.setOn404 (&on404);
-
-    // Social Graph
-    server:.route (Path ("/followers-len"), &(follower:.onFollowLen), method-> HttpRequestKind::GET);
-    server:.route (Path ("/subscriptions-len"), &(follower:.onSubsLen), method-> HttpRequestKind::GET);
-    server:.route (Path ("/is-following"), &(follower:.onIsFollow), method-> HttpRequestKind::GET);
-    server:.route (Path ("/follow"), &(follower:.onFollow), method-> HttpRequestKind::POST);
-    server:.route (Path ("/unfollow"), &(follower:.onUnFollow), method-> HttpRequestKind::POST);
-    server:.route (Path ("/followers"), &(follower:.onFollowers), method-> HttpRequestKind::GET);
-    server:.route (Path ("/subscriptions"), &(follower:.onSubs), method-> HttpRequestKind::GET);
-
-    // User
-    server:.route (Path ("/login"), &(user:.onLogin), method-> HttpRequestKind::POST);
-}
-
 
 pub fn frontMain (cfg : &Config) {
     let serviceCfg = config::SocialNetConfiguration (cfg);
@@ -75,8 +37,14 @@ pub fn frontMain (cfg : &Config) {
     log::info ("Create", "FRONT", "actor system on ", systemAddr);
     let dmut system = copy ActorSystem (systemAddr, nbThreads-> serviceCfg.system.nbThreads);
 
-    let httpAddr = SockAddr (serviceCfg.front.addr, serviceCfg.front.port);
-    let dmut server = copy HttpServer (httpAddr, nbThreads-> serviceCfg.front.nbThreads);
+    {
+        system:.add (serviceCfg.front.name, copy FrontActor (serviceCfg));
+    } catch {
+        error => {
+            log::error ("Failed", "SERVICE", error);
+            return;
+        }
+    }
 
     log::info ("Starting", "FRONT", "actor system");
     {
@@ -84,31 +52,13 @@ pub fn frontMain (cfg : &Config) {
     } catch {
         inE => {
             log::error ("Error", "FRONT", "while sarting actor system : \n => \t", inE);
-            killSystem (0);
-            joinAll ();
-            panic;
+            return;
         }
     }
     log::info ("Running", "FRONT", "actor system is running on ", system.ip, ":", system.port);
 
-    configureRoutes (alias server, alias system, serviceCfg);
-
-    log::info ("Starting", "FRONT", "http server");
-    {
-        server:.start ();
-    } catch {
-        inE => {
-            log::error ("Error", "FRONT", "while sarting http server : \n => \t", inE);
-            killSystem (0);
-            joinAll ();
-            panic;
-        }
-    }
-    log::info ("Running", "FRONT", "http server is running on ", server.ip, ":", server.port);
-
-    __HTTP__ [0] = (alias server)?;
     __SYSTEM__ [0] = (alias system)?;
-    joinAll ();
+    system:.join ();
 
     log::info ("Exiting", "FRONT", "services");
 }

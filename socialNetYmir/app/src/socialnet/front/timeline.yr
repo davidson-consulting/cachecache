@@ -1,0 +1,155 @@
+in timeline;
+
+use std::net::_;
+use std::{conv, conv::_, config::_};
+use socialnet::{utils::_, config::_};
+use std::concurrency::actor;
+
+pub class TimelineFront {
+
+    let dmut _registry : &ActorRef;
+
+    pub self (dmut registry : &ActorRef)
+        with _registry = alias registry
+    {
+        log::info ("Starting", "front", "timeline routes");
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =====================================          LENGTH          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : GET /home-timeline-len?user_id=X
+     * */
+    pub fn onHomeTimelineLen (mut self, req : HttpRequest)-> HttpResponse {
+        if let Ok (userId) = req.parameters ["user_id"] {
+            log::debug ("Try", "timeline", "get home timeline len : ", userId);
+
+            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::TIMELINE) {
+                let msg = json#{"code" : RequestCode::COUNT_HTIMELINE,
+                                "userId" : userId.to!{u32} ()};
+
+                let result = foll:.request (msg):.value ();
+                match (result ["code"]?, result ["nb"]?) {
+                    (Ok (Int (value-> ResponseCode::OK)), Ok (Int (value-> v))) => return HttpResponse (200, body-> to!{[c8]} (v));
+                }
+
+                return HttpResponse (403);
+            } else {
+                return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /**
+     * Route : GET /user-timeline-len?user_id=X
+     * */
+    pub fn onUserTimelineLen (mut self, req : HttpRequest)-> HttpResponse {
+        if let Ok (userId) = req.parameters ["user_id"] {
+            log::debug ("Try", "timeline", "get user timeline : ", userId);
+
+            if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::TIMELINE) {
+                let msg = json#{"code" : RequestCode::COUNT_UTIMELINE,
+                                "userId" : userId.to!{u32} ()};
+
+                let result = foll:.request (msg):.value ();
+                match (result ["code"]?, result ["nb"]?) {
+                    (Ok (Int (value-> ResponseCode::OK)), Ok (Int (value-> v))) => return HttpResponse (200,
+                                                                                                        body-> to!{[c8]} (v));
+                }
+
+                return HttpResponse (403);
+            } else {
+                return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =================================          GET TIMELINES          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : GET /home-timeline?user_id=X&page=Y&nb=Z
+     * */
+    pub fn onHomeTimeline (mut self, req : HttpRequest)-> HttpResponse {
+        match (req.parameters ["user_id"], req.parameters ["page"], req.parameters ["nb"]) {
+            (Ok (userId), Ok (page), Ok (nb)) => {
+                log::debug ("Try", "timeline", "get home timeline ", userId, " ", page, " ", nb);
+
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::COMPOSE) {
+                    let msg = json#{"code" : RequestCode::FIND_HTIMELINE,
+                                    "userId" : userId.to!{u32} (),
+                                    "page" : page.to!{u32} (),
+                                    "nb" : nb.to!{u32} ()};
+
+                    let result = foll:.request (msg):.value ();
+                    match (result ["code"]?, result ["posts"]?) {
+                        (Ok (Int (value-> ResponseCode::OK)), Ok (v)) => return HttpResponse (200,
+                                                                                              body-> json::dump (v));
+                    }
+
+                    return HttpResponse (403);
+                } else return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    }  catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+    /**
+     * Route : GET /user-timeline?user_id=X&page=Y&nb=Z
+     * */
+    pub fn onUserTimeline  (mut self, req : HttpRequest)-> HttpResponse {
+        match (req.parameters ["user_id"], req.parameters ["page"], req.parameters ["nb"]) {
+            (Ok (userId), Ok (page), Ok (nb)) => {
+                log::debug ("Try", "timeline", "get user timeline ", userId, " ", page, " ", nb);
+
+                if let Ok (dmut foll) = alias registry::utils::find (alias self._registry, ServiceKind::COMPOSE) {
+                    let msg = json#{"code" : RequestCode::FIND_UTIMELINE,
+                                    "userId" : userId.to!{u32} (),
+                                    "page" : page.to!{u32} (),
+                                    "nb" : nb.to!{u32} ()};
+
+                    let result = foll:.request (msg):.value ();
+                    match (result ["code"]?, result ["posts"]?) {
+                        (Ok (Int (value-> ResponseCode::OK)), Ok (v)) => return HttpResponse (200,
+                                                                                              body-> json::dump (v));
+                    }
+
+                    return HttpResponse (403);
+                } else return HttpResponse (500);
+            }
+        }
+
+        HttpResponse (400)
+    }  catch {
+        ActorError () => { HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+
+
+}

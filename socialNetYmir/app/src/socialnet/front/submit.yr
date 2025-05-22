@@ -1,0 +1,63 @@
+in submit;
+
+use std::net::_;
+use std::{conv, conv::_, config::_};
+use socialnet::{utils::_, config::_};
+use std::concurrency::actor;
+
+pub class SubmitFront {
+
+    let dmut _registry : &ActorRef;
+
+    pub self (dmut registry : &ActorRef)
+        with _registry = alias registry
+    {
+        log::info ("Starting", "front", "submit routes");
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ==================================          POST SUBMIT          ===================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * Route : POST /submit
+     * { "user_id" : X, "token" : Y, "text" : Z }
+     * */
+    pub fn onSubmit (mut self, req : HttpRequest)-> HttpResponse {
+        let js = json::parse (req.body);
+
+        match (js ["user_id"], js ["token"], js ["text"])? {
+            Ok ((userId, token, text)) => {
+                log::debug ("Try", "submit", "new post : ", userId, " ", text);
+
+                if let Ok (dmut u) = alias registry::utils::find (alias self._registry, ServiceKind::COMPOSE) {
+                    let msg = json#{"code" : RequestCode::INSERT_POST,
+                                    "userId" : userId.to!{u32} (),
+                                    "text" : text,
+                                    "token" : token};
+
+                    let result = u:.request (msg):.value ();
+                    match result ["code"]? {
+                        Ok (Int (value-> ResponseCode::OK)) => {
+                            return HttpResponse (200);
+                        }
+                    }
+
+                    return HttpResponse (403);
+                } else {
+                    return HttpResponse (500);
+                }
+            }
+        }
+
+        HttpResponse (400)
+    } catch {
+        ActorError () => {  HttpResponse (500) }
+        _ => { HttpResponse (400) }
+    }
+
+}

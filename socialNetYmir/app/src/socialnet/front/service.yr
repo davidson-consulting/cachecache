@@ -1,0 +1,166 @@
+in service;
+
+use std::{io, fs::path};
+use std::concurrency::actor;
+use std::config::_;
+use std::syntax::_;
+use std::net::_;
+
+use socialnet::{utils::_,
+                config::_,
+                registry::_,
+                services::_,
+                front::_};
+
+
+pub class FrontActor over ActorBase {
+
+    let _config : SocialNetConfiguration;
+
+    // The registry of the service
+    let dmut _registry : (&ActorRef)? = none;
+    let mut _uid = 0us;
+    let mut _needClose = false;
+
+    let dmut _http : (&HttpServer)? = none;
+
+    pub self (systemConfig : SocialNetConfiguration)
+        with _config = systemConfig
+    {}
+
+    pub over onStart (mut self) {
+        let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
+        log::info ("Starting", ServiceKind::FRONT, " connect registry ", regAddr);
+        let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
+
+        if let Ok (uid) = registry::utils::connect (alias actor, ServiceKind::FRONT, self._name, SockAddr (self._config.system.loopback, self:.system.port)) {
+            log::info ("Connected", ServiceKind::FRONT, "service");
+            self._needClose = true;
+            self._uid = uid;
+            self._registry = (alias actor)?;
+        } else {
+            log::error ("Failed", ServiceKind::FRONT, "registry connection. Aborting ", self._name);
+            self:.kill ();
+        }
+
+        self:.startHttp ();
+    }
+
+
+    fn startHttp (mut self) {
+        let httpAddr = SockAddr (self._config.front.addr, self._config.front.port);
+        let dmut server = copy HttpServer (httpAddr, nbThreads-> self._config.front.nbThreads);
+
+        self._http = (alias server)?;
+        self:.configureRoutes ();
+
+        log::info ("Starting", ServiceKind::FRONT, "http server");
+        {
+            server:.start ();
+        } catch {
+            inE => {
+                log::error ("Error", ServiceKind::FRONT, "while sarting http server : \n => \t", inE);
+                self:.kill ();
+                return;
+            }
+        }
+
+        log::info ("Running", ServiceKind::FRONT, "http server is running on ", server.ip, ":", server.port);
+    }
+
+    fn configureRoutes (mut self) {
+        let dmut server = if let Ok (dmut h) = alias self._http { alias h }
+        else {
+            log::error ("Error", ServiceKind::FRONT, "http server");
+            self:.kill ();
+            return;
+        }
+
+        if let Ok (dmut reg) = alias self._registry {
+            let dmut follower = copy FollowerFront (alias reg);
+            let dmut user = copy UserFront (alias reg);
+            let dmut submit = copy SubmitFront (alias reg);
+            let dmut timeline = copy TimelineFront (alias reg);
+
+            server:.setOn404 (&self.on404);
+
+            // Social Graph
+            server:.route (Path ("/followers-len"), &(follower:.onFollowLen), method-> HttpRequestKind::GET);
+            server:.route (Path ("/subscriptions-len"), &(follower:.onSubsLen), method-> HttpRequestKind::GET);
+            server:.route (Path ("/is-following"), &(follower:.onIsFollow), method-> HttpRequestKind::GET);
+            server:.route (Path ("/follow"), &(follower:.onFollow), method-> HttpRequestKind::POST);
+            server:.route (Path ("/unfollow"), &(follower:.onUnFollow), method-> HttpRequestKind::POST);
+            server:.route (Path ("/followers"), &(follower:.onFollowers), method-> HttpRequestKind::GET);
+            server:.route (Path ("/subscriptions"), &(follower:.onSubs), method-> HttpRequestKind::GET);
+
+            // User
+            server:.route (Path ("/login"), &(user:.onLogin), method-> HttpRequestKind::POST);
+            server:.route (Path ("/new"), &(user:.onRegister), method-> HttpRequestKind::POST);
+
+            // Submit
+            server:.route (Path ("/submit"), &(submit:.onSubmit), method-> HttpRequestKind::POST);
+
+            // Timeline
+            server:.route (Path ("/home-timeline-len"), &(timeline:.onHomeTimelineLen), method-> HttpRequestKind::GET);
+            server:.route (Path ("/user-timeline-len"), &(timeline:.onUserTimelineLen), method-> HttpRequestKind::GET);
+            server:.route (Path ("/home-timeline"), &(timeline:.onUserTimeline), method-> HttpRequestKind::GET);
+            server:.route (Path ("/user-timeline"), &(timeline:.onUserTimeline), method-> HttpRequestKind::GET);
+        }
+    }
+
+
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          MESSAGING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onMessage (mut self, rqt : &Config) {
+        if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
+            log::info ("Received", ServiceKind::FRONT, "poison pill in ", self._name);
+            self._needClose = false; // message comes from registry, no need to inform it from service exit
+            self:.kill ();
+        }
+    }
+
+    pub over onRequest (mut self, _ : &Config)-> &Config {
+        json#{"code" : ResponseCode::MALFORMED}
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          EXIT          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onQuit (mut self) {
+        log::warn ("Killing", ServiceKind::FRONT, "service ", self._name);
+        if let Ok (dmut reg) = alias self._registry && self._needClose {
+            registry::utils::close (alias reg, ServiceKind::FRONT, self._name, SockAddr (self._config.system.loopback, self:.system.port));
+        }
+
+        if let Ok (dmut h) = alias self._http {
+            h:.kill ();
+            h:.join ();
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =====================================          ON 404          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn on404 (self, rqt : HttpRequest)-> HttpResponse {
+        println ("Wrong request : ", rqt);
+        HttpResponse (404)
+    }
+
+}
