@@ -1,0 +1,188 @@
+in db;
+
+use std::{fs::_, conv, io, env};
+use socialnet::utils::log;
+
+def BUFFER_MAX = 8192;
+
+pub class TimelineDatabase {
+
+    let _post : Path;
+    let _home : Path;
+
+    let dmut _bufferHome : [u32 => [u32]] = copy [];
+    let dmut _bufferPost : [u32 => [u32]] = copy [];
+    let mut _bufferSize : u32 = 0;
+
+    pub self (cwd : Path)
+        with _post = cwd.push (Path (".post"))
+        , _home = cwd.push (Path (".home"))
+        throws AssertError
+    {
+        sys::createDir (self._post, recursive-> true);
+        sys::createDir (self._home, recursive-> true);
+    } catch {
+        _ => throw copy AssertError ("Failed to configure db");
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          WRITING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn insertHome (mut self, uid : u32, pid : u32) {
+        atomic self {
+            if let Ok (dmut z) = alias self._bufferHome [uid] {
+                self._bufferHome [uid] = z ~ [pid];
+            } else {
+                self._bufferHome [uid] = copy [pid];
+            }
+
+            self._bufferSize += 1;
+        }
+
+        if self._bufferSize > BUFFER_MAX {
+            self:.commit ();
+        }
+    }
+
+    pub fn insertPost (mut self, uid : u32, pid : u32) {
+        atomic self {
+            if let Ok (dmut z) = alias self._bufferPost [uid] {
+                self._bufferPost [uid] = z ~ [pid];
+            } else {
+                self._bufferPost [uid] = copy [pid];
+            }
+
+            self._bufferSize += 1;
+        }
+
+        if self._bufferSize > BUFFER_MAX {
+            self:.commit ();
+        }
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          READING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn findHome (mut self, uid : u32, page : u32, nb : u32)-> [u32] {
+        self:.readFile (uid, page, nb, self._home)
+    }
+
+    pub fn findPost (mut self, uid : u32, page : u32, nb : u32)-> [u32] {
+        self:.readFile (uid, page, nb, self._post)
+    }
+
+
+    fn readFile (mut self, uid : u32, page : u32, nb : u32, base : Path)-> [u32] {
+        let dmut result : [u32] = [];
+        {
+            let filename = base.push (to![c8] (uid));
+            let dmut f = File::open (filename, read-> true);
+            {
+                f:.lock ();
+                let offset = page * nb;
+                let nbAll = f.len () / u32::size;
+                if offset > nbAll return [];
+
+                f:.seek (offset * u32::size);
+                let toRead = std::algorithm::comparison::min (nbAll - offset, nb);
+
+                let dmut buffer = copy [0u32 ; toRead];
+                result = f:.readRaw (alias buffer);
+            } exit {
+                f:.unlock ()?;
+                f:.close ();
+            }
+        } catch {
+            _ => {}
+        }
+
+        result
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          LENGTHS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn countHome (mut self, uid : u32)-> u32 {
+        self:.countFile (uid, self._home)
+    }
+
+    pub fn countPosts (mut self, uid : u32)-> u32 {
+        self:.countFile (uid, self._post)
+    }
+
+    fn countFile (mut self, uid : u32, base : Path)-> u32 {
+        {
+            let filename = base.push (to!{[c8]} (uid));
+            let dmut f = File::open (filename, read-> true);
+
+            {
+                return f.len () / u32::size;
+            } exit {
+                f:.close ();
+            }
+
+        } catch {
+            _ => {}
+        }
+
+        0us
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * =====================================          COMMIT          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub fn commit (mut self) {
+        atomic self {
+            for u, z in self._bufferPost self:.writeFile (u, z, self._post);
+            for u, z in self._bufferHome self:.writeFile (u, z, self._home);
+
+            self._bufferHome = copy [];
+            self._bufferPost = copy [];
+            self._bufferSize = 0;
+        }
+    }
+
+
+    fn writeFile (mut self, uid : u32, lst : [u32], base : Path) {
+        {
+            let filename = base.push (to![c8] (uid));
+            let dmut f = if fs::sys::isFile (filename) {
+                File::open (filename, write-> true)
+            } else {
+                File::create (filename, write-> true)
+            };
+
+            {
+                f:.lock ();
+                f:.seek (f.len ());
+                f:.writeRaw (lst);
+            } exit {
+                f:.unlock ()?;
+                f:.close ();
+            }
+        } catch {
+            err => { log::error ("Failed", "timeline", "write ", err); }
+        }
+    }
+
+}

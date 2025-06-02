@@ -1,16 +1,20 @@
 in timeline;
 
+mod ::db;
+
 use std::io;
 use std::concurrency::actor;
 use std::config::_;
 use std::syntax::_;
 use std::net::addr;
+use std::time::_;
 
 use std::{algorithm::sorting, stream, format, format::_};
 
 use socialnet::registry::_;
 use socialnet::utils::_;
 use socialnet::config::_;
+use core::concurrency::sync::_;
 
 pub class TimelineService over ActorBase {
 
@@ -22,12 +26,46 @@ pub class TimelineService over ActorBase {
     let mut _uid = 0us;
     let mut _needClose = false;
 
+    let dmut _db : (&db::TimelineDatabase)? = none;
+    let mut _toUpdates : [u32 => mut [mut (u32, [u32])]] = copy [];
+
+    let dmut _th : (future-> void)? = none;
+    let dmut _ready = copy Semaphore ();
+
     pub self (serviceConfig : ServiceConfig, systemConfig : SocialNetConfiguration)
         with _config = systemConfig
         , _serviceConfig = serviceConfig
     {}
 
     pub over onStart (mut self) {
+        if !self:.connectDatabase () return;
+        if !self:.connectRegistry () return;
+
+        self._th = (spawn self:.treatRoutine ())?;
+        self._ready:.wait ();
+        log::info ("Launch", ServiceKind::TIMELINE, "treat routine ready");
+    }
+
+    fn connectDatabase (mut self)-> bool {
+        log::info ("Starting", ServiceKind::TIMELINE, "service connect database ", self._serviceConfig.db);
+        {
+            let dcfg = self._config.getDb (self._serviceConfig.db);
+            if (dcfg.kind != DatabaseKind::FILE) throw copy AssertError ("Wrong database kind");
+
+            let dmut db = copy db::TimelineDatabase (dcfg.directory);
+            self._db = (alias db)?;
+        } catch {
+            msg => {
+                log::error ("Failed", ServiceKind::TIMELINE, "failed to configure timeline database => ", msg);
+                self:.kill ();
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn connectRegistry (mut self)-> bool {
         let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
         log::info ("Starting", ServiceKind::TIMELINE, "service connect registry ", regAddr);
         let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
@@ -40,6 +78,31 @@ pub class TimelineService over ActorBase {
         } else {
             log::error ("Failed", ServiceKind::TIMELINE, "registry connection. Aborting ", self._name);
             self:.kill ();
+            return false;
+        }
+
+        true
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ======================================          EXIT          ======================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    pub over onQuit (mut self) {
+        if let Ok (th) = self._th {
+            log::warn ("Killing", ServiceKind::TIMELINE, "routine");
+            self._ready:.post ();
+            th.value;
+            self._th = none;
+        }
+
+        log::warn ("Killing", ServiceKind::TIMELINE, "service ", self._name);
+        if let Ok (dmut reg) = alias self._registry && self._needClose {
+            registry::utils::close (alias reg, ServiceKind::TIMELINE, self._name, SockAddr (self._config.system.loopback, self:.system.port));
         }
     }
 
@@ -52,29 +115,216 @@ pub class TimelineService over ActorBase {
      */
 
     pub over onMessage (mut self, rqt : &Config) {
-        if let Ok (Int (value-> RequestCode::POISON_PILL)) = rqt ["code"]? {
-            log::info ("Received", ServiceKind::TIMELINE, "poison pill in ", self._name);
-            self._needClose = false; // message comes from registry, no need to inform it from service exit
-            self:.kill ();
+        match rqt ["code"]? {
+            Ok (Int (value-> RequestCode::POISON_PILL)) => {
+                log::info ("Received", ServiceKind::TIMELINE, "poison pill in ", self._name);
+                self._needClose = false; // message comes from registry, no need to inform it from service exit
+                self:.kill ();
+            }
+
+            Ok (Int (value-> RequestCode::UPDATE_TIMELINE)) => {
+                self:.updateTimeline (rqt);
+            }
         }
     }
 
-    pub over onRequest (mut self, _ : &Config)-> &Config {
+    pub over onRequest (mut self, rqt : &Config)-> &Config {
+        match rqt ["code"]? {
+            Ok (Int (value-> RequestCode::COUNT_HTIMELINE)) => {
+                return self:.count (rqt, home-> true);
+            }
+            Ok (Int (value-> RequestCode::COUNT_UTIMELINE)) => {
+                return self:.count (rqt, home-> false);
+            }
+            Ok (Int (value-> RequestCode::FIND_HTIMELINE)) => {
+                return self:.read (rqt, home-> true);
+            }
+            Ok (Int (value-> RequestCode::FIND_UTIMELINE)) => {
+                return self:.read (rqt, home-> false);
+            }
+        }
+
         json#{"code" : ResponseCode::MALFORMED}
     }
 
     /*!
      * ====================================================================================================
      * ====================================================================================================
-     * ======================================          EXIT          ======================================
+     * ====================================          COUNTING          ====================================
      * ====================================================================================================
      * ====================================================================================================
      */
 
-    pub over onQuit (mut self) {
-        log::warn ("Killing", ServiceKind::TIMELINE, "service ", self._name);
-        if let Ok (dmut reg) = alias self._registry && self._needClose {
-            registry::utils::close (alias reg, ServiceKind::TIMELINE, self._name, SockAddr (self._config.system.loopback, self:.system.port));
+    fn count (mut self, rqt : &Config, home : bool)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            log::error ("Error", ServiceKind::TIMELINE, "no db");
+            return json#{"code" : ResponseCode::ERROR};
+        };
+
+        {
+            let uid = rqt ["uid"].to!{u32} ();
+            let nb = if home {
+                db:.countHome (uid)
+            } else {
+                db:.countPosts (uid)
+            };
+
+            return json#{"code" : ResponseCode::OK, "nb" : nb};
+        }?;
+
+        json#{"code" : ResponseCode::MALFORMED}
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          READING          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn read (mut self, rqt : &Config, home : bool)-> &Config {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            log::error ("Error", ServiceKind::TIMELINE, "no db");
+            return json#{"code" : ResponseCode::ERROR};
+        };
+
+
+        {
+            let uid = rqt ["uid"].to!{u32} ();
+            let page = rqt ["page"].to!{u32} ();
+            let nb = rqt ["nb"].to!{u32} ();
+
+            let lst = if home {
+                db:.findHome (uid, page, nb)
+            } else {
+                db:.findPost (uid, page, nb)
+            };
+
+            return json#{"code" : ResponseCode::OK, "list" : lst};
+        }?;
+
+        json#{"code" : ResponseCode::MALFORMED}
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          UPDATING          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn updateTimeline (mut self, msg : &Config) {
+        {
+            let uid = msg ["userId"].to!{u32} ();
+            let pid = msg ["postId"].to!{u32} ();
+            let tags : [u32] = if let Ok (a : &Array) = msg ["tags"]? {
+                copy [i.to!{u32} () for i in a[]]
+            } else {
+                []
+            };
+
+
+            atomic self {
+                if let Ok (z) = self._toUpdates [uid] {
+                    self._toUpdates [uid] = z ~ [(pid, tags)];
+                } else {
+                    self._toUpdates [uid] = copy [(pid, tags)];
+                }
+            }
+        }?; // catch
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ==================================          BATCH UPDATE          ==================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn treatRoutine (mut self) {
+        self._ready:.post ();
+
+        loop {
+            let z = atomic self {
+                let a = self._toUpdates;
+                self._toUpdates = copy [];
+                a
+            };
+
+            let beg = Instant::now ();
+            for u, lst in z {
+                self:.updateForFollowers (u, lst);
+            }
+
+            if let Ok (dmut db) = alias self._db && z.len != 0 {
+                db:.commit ();
+            }
+
+            let took = Instant::now () - beg;
+            let suppose = dur::millis (cast!u64 (1.0f / self._serviceConfig.freq * 1000.0f));
+            if took < suppose {
+                log::debug ("Sleep", ServiceKind::TIMELINE, suppose - took);
+                if self._ready:.wait (timeout-> suppose - took) {
+                    log::warn ("Interrupted", ServiceKind::TIMELINE, "interruption of thread");
+                    return;
+                }
+            }
+        }
+    }
+
+    fn updateForFollowers (mut self, uid : u32, lst : [(u32, [u32])]) {
+        let dmut db = if let Ok (dmut db) = alias self._db { alias db }
+        else {
+            log::error ("Error", ServiceKind::TIMELINE, "no db");
+            return;
+        };
+
+        let dmut reg = if let Ok (dmut r) = alias self._registry { alias r }
+        else {
+            log::error ("Error", ServiceKind::TIMELINE, "no registry");
+            return;
+        }
+
+        for up in lst {
+            db:.insertHome (uid, up.0);
+            db:.insertPost (uid, up.0);
+            for t in up.1 {
+                db:.insertHome (t, up.0);
+            }
+        }
+
+        if let Ok (dmut foll) = alias registry::utils::find (alias reg, ServiceKind::SOCIAL_GRAPH) {
+            for page in 0us .. usize::max {
+                let msg = json#{"code" : RequestCode::FIND_FOLLOWERS,
+                                 "userId" : uid,
+                                 "nb" : 1000,
+                                "page" : page};
+
+                let result = foll:.request (msg):.value ();
+                match (result ["code"]?, result ["list"]?) {
+                    (Ok (Int (value-> ResponseCode::OK)), Ok (v : &Array)) => {
+                        for f in v[] for up in lst {
+                            let u = f.to!{u32} ();
+                            let mut isTagged = false;
+                            for j in up.1 if j == u {
+                                isTagged = true;
+                                break;
+                            }
+
+                            if !isTagged {
+                                db:.insertHome (u, up.0);
+                            }
+                        }?; // catch
+
+                        if v[].len != 1000 break;
+                    }
+                }
+            }?; // catch
         }
     }
 

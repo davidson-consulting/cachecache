@@ -20,6 +20,7 @@ pub record ServiceConfig {
     pub let mut nbReplicate : u32 = 1;
     pub let mut db = "";
     pub let mut cache = "";
+    pub let mut freq = 1.0f;
 
     pub self empty () {}
 
@@ -37,6 +38,12 @@ pub record ServiceConfig {
 
         if let Ok (s) = cfg ["nb"]? {
             self.nbReplicate = cast!u32 (s.to!{i64} ());
+        }
+
+        if (self.kind == ServiceKind::TIMELINE) {
+            if let Ok (f) = cfg ["freq"]? {
+                self.freq = cast!{f32} (f.to!{f32} ());
+            }
         }
     } catch {
         inE => {

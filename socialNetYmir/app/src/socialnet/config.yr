@@ -51,6 +51,45 @@ pub record SocialNetConfiguration {
         self.front     = self.readFront (cfg);
     }
 
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ====================================          GETTERS          =====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    /**
+     * @returns: the configuration of a given database
+     * @params:
+     *    - name: the name of the db to get
+     * */
+    pub fn getDb (self, name : [c8])-> DatabaseConfig
+        throws AssertError
+    {
+        for i in self.databases if i.name == name {
+            return i;
+        }
+
+        throw copy AssertError ("No database : " ~ name);
+    }
+
+    /**
+     * @returns: the configuration of a given cache
+     * @params:
+     *    - name: the name of the cache to get
+     * */
+    pub fn getCache (self, name : [c8])-> CacheConfig
+        throws AssertError
+    {
+        for i in self.caches if i.name == name {
+            return i;
+        }
+
+        throw copy AssertError ("No cache : " ~ name);
+    }
+
     /*!
      * ====================================================================================================
      * ====================================================================================================

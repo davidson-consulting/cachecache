@@ -22,22 +22,13 @@ pub class TextService over ActorBase {
     let mut _uid = 0us;
     let mut _needClose = false;
 
-    let dmut _userPattern : &Regex;
-    let dmut _urlPattern  : &Regex;
+    let dmut _userPattern = copy Regex ("@[a-zA-Z0-9_]+");
+    let dmut _urlPattern  = copy Regex ("(http|https)://([a-zA-Z0-9_!~*'().&=+$%-/]+)");
 
     pub self (serviceConfig : ServiceConfig, systemConfig : SocialNetConfiguration)
         with _config = systemConfig
         , _serviceConfig = serviceConfig
-        , _urlPattern = ({
-            copy Regex ("(http|https)://([a-zA-Z0-9_!~*'().&=+$%-/]+)")
-        } catch {
-            _ => panic;
-        })
-        , _userPattern = ({
-            copy Regex ("@[a-zA-Z0-9_]+")
-        } catch {
-            _ => panic;
-        })
+        throws SyntaxError
     {}
 
     pub over onStart (mut self) {

@@ -8,9 +8,9 @@ pub class SocialGraphDatabase {
     let _subs : Path;
     let _folls : Path;
 
-    pub self ()
-        with _subs = Path (".subs")
-        , _folls = Path (".folls")
+    pub self (cwd : Path)
+        with _subs = cwd.push (Path (".subs"))
+        , _folls = cwd.push (Path (".folls"))
         throws AssertError
     {
         sys::createDir (self._subs, recursive-> true);

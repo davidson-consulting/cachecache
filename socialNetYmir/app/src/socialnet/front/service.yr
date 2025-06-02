@@ -30,7 +30,7 @@ pub class FrontActor over ActorBase {
 
     pub over onStart (mut self) {
         let regAddr = SockAddr (self._config.registry.addr, self._config.registry.port);
-        log::info ("Starting", ServiceKind::FRONT, " connect registry ", regAddr);
+        log::info ("Starting", ServiceKind::FRONT, "connect registry ", regAddr);
         let dmut actor = self:.system:.remote (self._config.registry.name, regAddr);
 
         if let Ok (uid) = registry::utils::connect (alias actor, ServiceKind::FRONT, self._name, SockAddr (self._config.system.loopback, self:.system.port)) {

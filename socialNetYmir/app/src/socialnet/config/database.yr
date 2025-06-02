@@ -1,7 +1,7 @@
 in database;
 
 use std::net::{_, addr::_};
-use std::{conv::_, config::_};
+use std::{conv::_, config::_, fs::path};
 
 pub enum
 | FILE = 1
@@ -19,6 +19,7 @@ pub record DatabaseConfig {
     pub let mut user = "root";
     pub let mut password = "";
     pub let mut port = 3306u16;
+    pub let mut directory : Path = env::currentDir ();
 
     pub self empty () {}
 
@@ -29,6 +30,9 @@ pub record DatabaseConfig {
         if let Ok (s) = cfg ["kind"]? match s.to!{[c8]} () {
             "file" => {
                 self.kind = DatabaseKind::FILE;
+                if let Ok (d) = cfg ["directory"]? {
+                    self.directory = Path (d.to!{[c8]} ());
+                }
             }
             "mysql" => {
                 self.kind = DatabaseKind::MYSQL;

@@ -47,17 +47,18 @@ pub class SocialGraphService over ActorBase {
 
     fn connectDatabase (mut self)-> bool {
         log::info ("Starting", ServiceKind::SOCIAL_GRAPH, "service connect database ", self._serviceConfig.db);
-        self._db = (copy db::SocialGraphDatabase ())?;
+        {
+            let dcfg = self._config.getDb (self._serviceConfig.db);
+            if (dcfg.kind != DatabaseKind::FILE) throw copy AssertError ("Wrong database kind");
 
-        if let Err (msg) = self._db {
-            log::error ("Failed", ServiceKind::SOCIAL_GRAPH, "failed to configure social_graph database => ", msg);
-            self:.kill ();
-            return false;
-        }
-        else if let Err () = self._db {
-            log::error ("Failed", ServiceKind::SOCIAL_GRAPH, "failed to configure social_graph database");
-            self:.kill ();
-            return false;
+            let dmut db = copy db::SocialGraphDatabase (dcfg.directory);
+            self._db = (alias db)?;
+        } catch {
+            msg => {
+                log::error ("Failed", ServiceKind::SOCIAL_GRAPH, "failed to configure social_graph database => ", msg);
+                self:.kill ();
+                return false;
+            }
         }
 
         true

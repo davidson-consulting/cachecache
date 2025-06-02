@@ -49,25 +49,22 @@ pub class ShortUrlService over ActorBase {
 
     fn connectDatabase (mut self)-> bool {
         log::info ("Starting", ServiceKind::SHORT_URL, "service connect database ", self._serviceConfig.db);
-        for d in self._config.databases {
-            if d.name == self._serviceConfig.db {
-                self._db = (copy db::ShortUrlDatabase (server-> d.addr.to!{[c8]} (),
-                                                       user-> d.user,
-                                                       password-> d.password,
-                                                       db-> d.dbName,
-                                                       port-> d.port))?;
-            }
-        }
+        {
+            let dcfg = self._config.getDb (self._serviceConfig.db);
+            if (dcfg.kind != DatabaseKind::MYSQL) throw copy AssertError ("Wrong database kind");
 
-        if let Err (msg) = self._db {
-            log::error ("Failed", ServiceKind::SHORT_URL, "failed to configure user database => ", msg);
-            self:.kill ();
-            return false;
-        }
-        else if let Err () = self._db {
-            log::error ("Failed", ServiceKind::SHORT_URL, "failed to configure user database");
-            self:.kill ();
-            return false;
+            let dmut db = copy db::ShortUrlDatabase (server-> dcfg.addr.to!{[c8]} (),
+                                                     user-> dcfg.user,
+                                                     password-> dcfg.password,
+                                                     db-> dcfg.dbName,
+                                                     port-> dcfg.port);
+            self._db = (alias db)?;
+        } catch {
+            msg => {
+                log::error ("Failed", ServiceKind::SHORT_URL, "failed to configure user database => ", msg);
+                self:.kill ();
+                return false;
+            }
         }
 
         true
