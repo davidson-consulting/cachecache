@@ -19,10 +19,11 @@ pub class TimelineDatabase {
         , _home = cwd.push (Path (".home"))
         throws AssertError
     {
-        sys::createDir (self._post, recursive-> true);
-        sys::createDir (self._home, recursive-> true);
-    } catch {
-        _ => throw copy AssertError ("Failed to configure db");
+        sys::createDir (self._post, recursive-> true)?;
+        sys::createDir (self._home, recursive-> true)?;
+
+        if !sys::isDir (self._post) throw copy AssertError ("Failed to create directory : " ~ self._post.toStr ());
+        if !sys::isDir (self._home) throw copy AssertError ("Failed to create directory : " ~ self._home.toStr ());
     }
 
     /*!

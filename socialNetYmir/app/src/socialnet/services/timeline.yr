@@ -31,6 +31,7 @@ pub class TimelineService over ActorBase {
 
     let dmut _th : (future-> void)? = none;
     let dmut _ready = copy Semaphore ();
+    let dmut _loop = copy Semaphore ();
 
     pub self (serviceConfig : ServiceConfig, systemConfig : SocialNetConfiguration)
         with _config = systemConfig
@@ -41,7 +42,8 @@ pub class TimelineService over ActorBase {
         if !self:.connectDatabase () return;
         if !self:.connectRegistry () return;
 
-        self._th = (spawn self:.treatRoutine ())?;
+        let t = spawn self:.treatRoutine ();
+        self._th = (t)?;
         self._ready:.wait ();
         log::info ("Launch", ServiceKind::TIMELINE, "treat routine ready");
     }
@@ -95,7 +97,7 @@ pub class TimelineService over ActorBase {
     pub over onQuit (mut self) {
         if let Ok (th) = self._th {
             log::warn ("Killing", ServiceKind::TIMELINE, "routine");
-            self._ready:.post ();
+            self._loop:.post ();
             th.value;
             self._th = none;
         }
@@ -191,7 +193,6 @@ pub class TimelineService over ActorBase {
             return json#{"code" : ResponseCode::ERROR};
         };
 
-
         {
             let uid = rqt ["uid"].to!{u32} ();
             let page = rqt ["page"].to!{u32} ();
@@ -227,7 +228,6 @@ pub class TimelineService over ActorBase {
                 []
             };
 
-
             atomic self {
                 if let Ok (z) = self._toUpdates [uid] {
                     self._toUpdates [uid] = z ~ [(pid, tags)];
@@ -248,6 +248,7 @@ pub class TimelineService over ActorBase {
 
     fn treatRoutine (mut self) {
         self._ready:.post ();
+        log::info ("Launched", ServiceKind::TIMELINE, "treat routine ready");
 
         loop {
             let z = atomic self {
@@ -269,8 +270,8 @@ pub class TimelineService over ActorBase {
             let suppose = dur::millis (cast!u64 (1.0f / self._serviceConfig.freq * 1000.0f));
             if took < suppose {
                 log::debug ("Sleep", ServiceKind::TIMELINE, suppose - took);
-                if self._ready:.wait (timeout-> suppose - took) {
-                    log::warn ("Interrupted", ServiceKind::TIMELINE, "interruption of thread");
+                if self._loop:.wait (timeout-> suppose - took) {
+                    log::warn ("Inter", ServiceKind::TIMELINE, "interruption of thread");
                     return;
                 }
             }

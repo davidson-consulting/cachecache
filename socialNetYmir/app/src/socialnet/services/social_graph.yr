@@ -161,14 +161,15 @@ pub class SocialGraphService over ActorBase {
             let toWhom = rqt ["toWhom"].to!{u32} ();
             let token = rqt ["token"].to!{[c8]} ();
 
-            if user::utils::checkConnected (token, uid, self._config) {
-                if !db:.findSub (uid, toWhom) {
-                    db:.insertSub (uid, toWhom);
-                }
-
-                return json#{"code" : ResponseCode::OK};
+            if !user::utils::checkConnected (token, uid, self._config) {
+                   return json#{"code" : ResponseCode::FORBIDDEN};
             }
 
+            if !db:.findSub (uid, toWhom) {
+                db:.insertSub (uid, toWhom);
+            }
+
+            return json#{"code" : ResponseCode::OK};
         }?; // catch
 
         return json#{"code" : ResponseCode::ERROR};

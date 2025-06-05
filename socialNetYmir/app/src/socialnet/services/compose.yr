@@ -59,8 +59,180 @@ pub class ComposeService over ActorBase {
         }
     }
 
-    pub over onRequest (mut self, _ : &Config)-> &Config {
+    pub over onRequest (mut self, rqt : &Config)-> &Config {
+        match rqt ["code"]? {
+            Ok (Int (value-> RequestCode::INSERT_POST)) => {
+                return self:.insertNewPost (rqt);
+            }
+
+            Ok (Int (value-> RequestCode::FIND_HTIMELINE)) => {
+                return self:.read (rqt, home-> true);
+            }
+
+            Ok (Int (value-> RequestCode::FIND_UTIMELINE)) => {
+                return self:.read (rqt, home-> false);
+            }
+        }
+
+        json#{"code" : ResponseCode::NOT_FOUND}
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ===================================          INSERTION          ====================================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn insertNewPost (mut self, rqt : &Config)-> &Config {
+        let dmut reg = if let Ok (dmut r) = alias self._registry { alias r }
+        else {
+            log::error ("Error", ServiceKind::COMPOSE, "no registry");
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let text = rqt ["text"].to![c8] ();
+            let uid = rqt ["userId"].to!{u32} ();
+            let token = rqt ["token"].to![c8] ();
+
+            if !user::utils::checkConnected (token, uid, self._config) {
+                return json#{"code" : ResponseCode::FORBIDDEN};
+            }
+
+            if let Ok ((finalText, tags)) = self:.constructText (alias reg, text) {
+                if let Ok (login) = self:.getUserLogin (alias reg, uid) {
+                    if let Ok (dmut postService) = alias registry::utils::find (alias reg, ServiceKind::POST) {
+                        let msg = json#{"code" : RequestCode::INSERT_POST,
+                                        "text" : finalText,
+                                        "tags" : tags,
+                                        "jwt" : token,
+                                        "userLogin" : login,
+                                        "userId" : uid};
+
+                        return postService:.request (msg):.value ();
+                    }
+                }
+            }
+
+            return json#{"code" : ResponseCode::ERROR}
+        } catch {
+            err => { log::error ("Error", ServiceKind::COMPOSE, err); }
+        }
+
         json#{"code" : ResponseCode::MALFORMED}
+    }
+
+    fn constructText (mut self, dmut reg : &ActorRef, txt : [c8])-> ([c8], [u32])? {
+        if let Ok (dmut txtService) = alias registry::utils::find (alias reg, ServiceKind::TEXT) {
+            let msg = json#{"code" : RequestCode::CTOR_MESSAGE,
+                            "text" : txt};
+
+            let result = txtService:.request (msg):.value ();
+            match (result ["code"], result ["text"], result ["tags"])? {
+                Ok ((Int (value-> ResponseCode::OK), Str (value-> s), a : &Array)) => {
+                    let textContent = s;
+                    let tags = copy [i.to!{u32} () for i in a[]];
+                    return (textContent, tags)?;
+                }
+            }
+        }?;
+
+        none
+    }
+
+    fn getUserLogin (mut self, dmut reg : &ActorRef, uid : u32)-> [c8]? {
+        if let Ok (dmut userService) = alias registry::utils::find (alias reg, ServiceKind::USER) {
+            let msg = json#{"code" : RequestCode::FIND_USER,
+                            "id" : uid};
+
+            let result = userService:.request (msg):.value ();
+
+            match (result ["code"], result ["login"])? {
+                Ok ((Int (value-> ResponseCode::OK), Str (value-> s))) => {
+                    return s?;
+                }
+            }
+        }?;
+
+        none
+    }
+
+    /*!
+     * ====================================================================================================
+     * ====================================================================================================
+     * ==============================          TIMELINE COMPOSITION          ==============================
+     * ====================================================================================================
+     * ====================================================================================================
+     */
+
+    fn read (mut self, rqt : &Config, home : bool)-> &Config {
+        let dmut reg = if let Ok (dmut r) = alias self._registry { alias r }
+        else {
+            log::error ("Error", ServiceKind::COMPOSE, "no registry");
+            return json#{"code" : ResponseCode::ERROR};
+        }
+
+        {
+            let uid = rqt ["userId"].to!{u32} ();
+            let page = rqt ["page"].to!{u32} ();
+            let nb = rqt ["nb"].to!{u32} ();
+
+            if let Ok (timeline) = self:.retreiveTimeline (alias reg, uid, page, nb, home) {
+                let dmut posts = copy Array ();
+                for t in timeline {
+                    if let Ok (p) = self:.findPost (alias reg, t) {
+                        posts:.push (p);
+                    }
+                }
+
+                return json#{"code" : ResponseCode::OK, "posts" : posts};
+            } else return json#{"code" : ResponseCode::ERROR};
+        } catch {
+            err => { log::error ("Error", ServiceKind::COMPOSE, err); }
+        };
+
+        json#{"code" : ResponseCode::MALFORMED}
+    }
+
+
+    fn retreiveTimeline (mut self, dmut reg : &ActorRef, uid : u32, page : u32, nb : u32, home : bool) -> [u32]? {
+        if let Ok (dmut timelineService) = alias registry::utils::find (alias reg, ServiceKind::TIMELINE) {
+            let code = if (home) { RequestCode::FIND_HTIMELINE } else { RequestCode::FIND_UTIMELINE };
+            let msg = json#{"code" : code,
+                            "uid" : uid,
+                            "page" : page,
+                            "nb" : nb};
+
+            let result = timelineService:.request (msg):.value ();
+            match (result ["code"], result ["list"])? {
+                Ok ((Int (value-> ResponseCode::OK), lst : &Array)) => {
+                    return (copy [i.to!{u32} () for i in lst[]])?;
+                }
+            }
+        }?;
+
+        none
+    }
+
+    fn findPost (mut self, dmut reg : &ActorRef, pid : u32)-> (&Config)? {
+        if let Ok (dmut postService) = alias registry::utils::find (alias reg, ServiceKind::POST) {
+            let msg = json#{"code" : RequestCode::FIND_POST,
+                            "postId" : pid};
+
+            let result = postService:.request (msg):.value ();
+            match (result ["code"], result ["userId"], result ["userLogin"], result ["text"], result ["tags"])? {
+                Ok ((Int (value-> ResponseCode::OK), uid, login, text, tags)) => {
+                    return (json#{"userId" : uid,
+                                  "login" : login,
+                                  "text" : text,
+                                  "tags" : tags})?;
+                }
+            }
+        }?;
+
+        none
     }
 
     /*!

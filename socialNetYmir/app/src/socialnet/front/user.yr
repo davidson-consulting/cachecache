@@ -1,7 +1,7 @@
 in user;
 
 use std::net::_;
-use std::{conv, conv::_, config::_};
+use std::{conv, conv::_, config::_, io};
 use socialnet::{utils::_, config::_};
 use std::concurrency::actor;
 
@@ -32,7 +32,7 @@ pub class UserFront {
 
         match (js ["login"], js ["password"])? {
             Ok ((login, password)) => {
-                log::debug ("Try", "user", "login : ", login, "/", password);
+                // log::debug ("Try", "user", "login : ", login, "/", password);
 
                 if let Ok (dmut u) = alias registry::utils::find (alias self._registry, ServiceKind::USER) {
                     let msg = json#{"code" : RequestCode::LOGIN_USER,
@@ -43,21 +43,28 @@ pub class UserFront {
                     match (result ["code"]?, result ["token"]?, result ["userId"]?) {
                         (Ok (Int (value-> ResponseCode::OK)), Ok (Str (value-> v)), Ok (Int (value-> uid))) => {
                             return HttpResponse (200,
-                                                 body-> json::dump (json#{"token" : v, "user_id" : uid}));
+                                                 body-> json::dump (json#{"token" : v, "user_id" : uid}),
+                                                 contentType-> "application/json");
                         }
                     }
 
+                    log::error ("Error", "user", "wrong ", msg);
                     return HttpResponse (403);
                 } else {
+                    log::error ("Error", "user", "service Not found");
                     return HttpResponse (500);
                 }
             }
         }
 
+        log::error ("What?", "", js);
         HttpResponse (400)
     } catch {
-        ActorError () => {  HttpResponse (500) }
-        _ => { HttpResponse (400) }
+        // ActorError () => {  HttpResponse (500) }
+        err  => {
+            log::error ("Panic", "", err);
+            HttpResponse (400)
+        }
     }
 
     /*!

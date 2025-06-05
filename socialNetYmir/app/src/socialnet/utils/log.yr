@@ -65,7 +65,7 @@ pub fn error {T...} (padd : [c8] = "\t", what : [c8], who : [c8], params : T) {
 
     let msg = align (Colors::RED, what, who, stream[]);
     atomic {
-        eprintln (padd, msg);
+        println (padd, msg);
     }
 }
 

@@ -57,7 +57,9 @@ pub fn find (dmut registry : &actor::ActorRef, kind : [c8])-> dmut (&ActorRef)? 
 
             return (alias registry.sys:.remote (id, SockAddr (ip.to!{&IpAddr} (), port)))?;
         }
-    } catch { _ => {} }
+    } catch { err => {
+        log::error ("Error", "reg", err);
+    } }
 
     none
 }

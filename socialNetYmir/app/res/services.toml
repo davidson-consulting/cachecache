@@ -14,30 +14,30 @@ addr = "localhost"
 port = 0
 
 [services.user]
-nb = 1
+nb = 12
 db = "mysql"
 
 [services.timeline]
-nb = 1
+nb = 12
 db = "file"
 
 [services.short]
-nb = 1
+nb = 12
 db = "mysql"
 
 [services.social]
-nb = 1
+nb = 12
 db = "file"
 
 [services.post]
-nb = 1
+nb = 12
 db = "mysql"
 
 [services.compose]
-nb = 1
+nb = 12
 
 [services.text]
-nb = 1
+nb = 12
 
 [db.mysql]
 name = "socialNet"

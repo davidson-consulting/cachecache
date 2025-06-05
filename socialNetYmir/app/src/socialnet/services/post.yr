@@ -153,6 +153,7 @@ pub class PostService over ActorBase {
             return json#{"code" : ResponseCode::ERROR};
         };
 
+
         {
             let userId = rqt ["userId"].to!{u32} ();
             let userLogin = rqt ["userLogin"].to!{[c8]} ();
@@ -167,13 +168,13 @@ pub class PostService over ActorBase {
                             "postId" : id,
                             "userId" : userId};
 
-            if let Ok (dmut timeline) = alias registry::utils::find (alias reg, "timeline") {
+            if let Ok (dmut timeline) = alias registry::utils::find (alias reg, ServiceKind::TIMELINE) {
                 timeline:.send (msg);
                 return json#{"code" : ResponseCode::OK};
             }
         } catch {
-            _ => {}
-        }
+            err => { log::error ("Error", ServiceKind::POST, err); }
+        };
 
         return json#{"code" : ResponseCode::ERROR};
     }
@@ -194,6 +195,7 @@ pub class PostService over ActorBase {
 
         {
             let post = rqt ["postId"].to!{u32} ();
+
             if let Ok ((userId, userLogin, text, tags)) = db:.find (post) {
                 return json#{"code" : ResponseCode::OK,
                              "userId" : userId,

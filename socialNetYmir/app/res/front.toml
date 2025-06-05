@@ -1,7 +1,7 @@
 [sys]
 port = 0
 iface = "lo"
-threads = 1
+threads = 20
 
 [registry]
 name = "registry"
@@ -14,4 +14,4 @@ port = 0
 
 [http]
 port = 8080
-threads = 40
+threads = 20

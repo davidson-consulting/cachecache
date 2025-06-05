@@ -41,6 +41,7 @@ pub class FrontActor over ActorBase {
         } else {
             log::error ("Failed", ServiceKind::FRONT, "registry connection. Aborting ", self._name);
             self:.kill ();
+            return;
         }
 
         self:.startHttp ();
@@ -140,13 +141,13 @@ pub class FrontActor over ActorBase {
 
     pub over onQuit (mut self) {
         log::warn ("Killing", ServiceKind::FRONT, "service ", self._name);
-        if let Ok (dmut reg) = alias self._registry && self._needClose {
-            registry::utils::close (alias reg, ServiceKind::FRONT, self._name, SockAddr (self._config.system.loopback, self:.system.port));
-        }
-
         if let Ok (dmut h) = alias self._http {
             h:.kill ();
             h:.join ();
+        }
+
+        if let Ok (dmut reg) = alias self._registry && self._needClose {
+            registry::utils::close (alias reg, ServiceKind::FRONT, self._name, SockAddr (self._config.system.loopback, self:.system.port));
         }
     }
 

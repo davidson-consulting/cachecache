@@ -87,7 +87,7 @@ pub class PostDatabase {
         let dmut rqt = self._client:.prepare ("INSERT INTO posts (user_id, user_login, text) values (?, ?, ?)");
         rqt:.setParam (0, userId);
         rqt:.setParam (1, userLogin);
-        rqt:.setParam (1, text);
+        rqt:.setParam (2, text);
 
         rqt:.finalize ();
         rqt:.execute ();
@@ -95,22 +95,16 @@ pub class PostDatabase {
         let postId = rqt.getGeneratedId ();
         rqt:.dispose ();
 
-
-        let mut tagReqStr = "INSERT INTO tags (post_id, user_id) values ";
-        for _ in 0 .. tags.len {
-            tagReqStr ~= "(?, ?)";
-        }
-
-        let dmut tagReq = self._client:.prepare (tagReqStr);
         for i in 0 .. tags.len {
-            tagReq:.setParam (cast!u32 (i * 2), tags [i]);
-            tagReq:.setParam (cast!u32 (i * 2 + 1), userId);
+            let mut tagReqStr = "INSERT INTO tags (post_id, user_id) values (?, ?)";
+            let dmut tagReq = self._client:.prepare (tagReqStr);
+            tagReq:.setParam (0, postId);
+            tagReq:.setParam (1, tags [i]);
+
+            tagReq:.finalize ();
+            tagReq:.execute ();
+            tagReq:.dispose ();
         }
-
-        tagReq:.finalize ();
-        tagReq:.execute ();
-        tagReq:.dispose ();
-
 
         return postId;
     }

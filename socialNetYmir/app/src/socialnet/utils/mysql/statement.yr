@@ -83,13 +83,16 @@ pub class Statement {
             MysqlFieldTypes::LONG
         };
 
-        self._paramBinds [i].buffer = cast!{*void} ((copy [value]).ptr);
+        let dmut buffer = copy [value];
+
+        self._paramBinds [i].buffer = cast!{*void} (buffer.ptr);
         self._paramBinds [i].is_null = &(self._isNull [i]);
         self._paramBinds [i].length = &(self._length [i]);
         self._paramBinds [i].error = &(self._errors [i]);
 
         self._isNull [i] = false;
         self._length [i] = 1;
+        self._errors [i] = false;
     }
 
     /**

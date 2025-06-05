@@ -13,10 +13,11 @@ pub class SocialGraphDatabase {
         , _folls = cwd.push (Path (".folls"))
         throws AssertError
     {
-        sys::createDir (self._subs, recursive-> true);
-        sys::createDir (self._folls, recursive-> true);
-    } catch {
-        _ => throw copy AssertError ("Failed to configure db");
+        sys::createDir (self._subs, recursive-> true)?;
+        sys::createDir (self._folls, recursive-> true)?;
+
+        if !sys::isDir (self._subs) throw copy AssertError ("Failed to create directory : " ~ self._subs.toStr ());
+        if !sys::isDir (self._folls) throw copy AssertError ("Failed to create directory : " ~ self._folls.toStr ());
     }
 
     /*!

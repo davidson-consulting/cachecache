@@ -103,7 +103,7 @@ pub class TextService over ActorBase {
      * */
     fn constructText (mut self, rqt : &Config)-> &Config {
         {
-            let text = rqt[ServiceKind::TEXT].to!{[c8]} ();
+            let text = rqt["text"].to!{[c8]} ();
             let users = self._userPattern.apply (text);
             let urls = self._urlPattern.apply (text);
 
@@ -141,6 +141,7 @@ pub class TextService over ActorBase {
 
         let dmut resTags : [(usize, usize, [c8])] = [];
         let dmut tags : [u32 => ()] = copy [];
+        let mut names : [usize => mut [c8]] = copy [];
 
         {
             let dmut rqts : [usize => &ActorRqtFuture] = copy [];
@@ -148,6 +149,7 @@ pub class TextService over ActorBase {
                 if let Ok (dmut actor) = alias registry::utils::find (alias reg, "user") {
                     let msg = json#{"code" : RequestCode::FIND_USER, "login" : u.1 [1 .. $]};
                     rqts [u.0] = actor:.request (msg);
+                    names [u.0] = u.1 [1 .. $];
                 }
             }
 
@@ -155,11 +157,12 @@ pub class TextService over ActorBase {
                 let msg = rqt:.value ();
                 if let Ok (Int (value-> ResponseCode::OK)) = msg ["code"]? {
                     let id = cast!u32 (msg ["id"].to!{u64} ());
-                    let name = users [u].1 [1 .. $];
-                    let newName = format ("<a href=\"{{FRONT}}/user/{}\">@{}</a>", id, name);
+                    if let Ok (name) = names [u] {
+                        let newName = format ("<a href=\\\"{{FRONT}}/user/{}\\\">@{}</a>", id, name);
 
-                    resTags ~= [(u, name.len + 1, newName)];
-                    tags [id] = ();
+                        resTags ~= [(u, name.len + 1, newName)];
+                        tags [id] = ();
+                    }
                 }
             }
         }?; // catch
@@ -187,7 +190,7 @@ pub class TextService over ActorBase {
         {
             let dmut rqts : [usize => &ActorRqtFuture] = copy [];
             for u in urls {
-                if let Ok (dmut actor) = alias registry::utils::find (alias reg, "short_url") {
+                if let Ok (dmut actor) = alias registry::utils::find (alias reg, ServiceKind::SHORT_URL) {
                     let msg = json#{"code" : RequestCode::FIND_URL, "url" : u.1};
                     rqts [u.0] = actor:.request (msg);
                 }

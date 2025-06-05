@@ -148,8 +148,13 @@ pub class UserDatabase {
             let res = {
                 let login = rqt.getResult!{[c8]} (0);
                 let pass = rqt.getResult!{[c8]} (1);
-                (login, pass)
-            }?;
+                (login, pass)?
+            } catch {
+                err => {
+                    std::io::println (err)?;
+                    none
+                }
+            };
 
             rqt:.dispose ();
             return res;

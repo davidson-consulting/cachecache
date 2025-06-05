@@ -32,7 +32,7 @@ pub class SubmitFront {
 
         match (js ["user_id"], js ["token"], js ["text"])? {
             Ok ((userId, token, text)) => {
-                log::debug ("Try", "submit", "new post : ", userId, " ", text);
+                // log::debug ("Try", "submit", "new post : ", userId, " ", text);
 
                 if let Ok (dmut u) = alias registry::utils::find (alias self._registry, ServiceKind::COMPOSE) {
                     let msg = json#{"code" : RequestCode::INSERT_POST,

@@ -1,7 +1,7 @@
 in service;
 
 use std::concurrency::actor;
-use std::{config::_, net::{addr, addr::_}};
+use std::{config::_, net::{addr, addr::_}, io};
 
 use socialnet::utils::protocol;
 
@@ -13,7 +13,9 @@ pub class RegistryActor over ActorBase {
     // The uniq id generator
     let mut _uid : usize = 0;
 
-    pub self () {}
+    pub self ()
+        // with super (isAtomic-> false)
+    {}
 
     /*!
      * ====================================================================================================
@@ -46,6 +48,7 @@ pub class RegistryActor over ActorBase {
     }
 
     pub over onRequest (mut self, rqt : &Config)-> &Config {
+        // println ("ON REQ : ", rqt);
         if let Ok (Int (value-> code)) = rqt ["code"]? {
             match code {
                 RequestCode::REGISTER_SERVICE => {
@@ -105,6 +108,7 @@ pub class RegistryActor over ActorBase {
             let port = cast!u16 (rqt ["port"].to!{i64} ());
 
             log::info ("Register", "registry", "service ", kind, " ", id, " ", ip, " ", port);
+
             if let Ok ((x, z)) = self._services [kind] {
                 self._services [kind] = (x, (z ~ [Service (id, ip, port)]));
             } else {
@@ -139,7 +143,7 @@ pub class RegistryActor over ActorBase {
             }
 
             if let Ok (s) = service {
-                log::debug ("Found", "registry", "service ", kind, " ", s.id, " ", s.ip, " ", s.port);
+                // log::debug ("Found", "registry", "service ", kind, " ", s.id, " ", s.ip, " ", s.port);
 
                 return json#{"code" : ResponseCode::OK,
                              "ip" : s.ip,
@@ -148,6 +152,7 @@ pub class RegistryActor over ActorBase {
             }
         } catch { _ => {} }
 
+        log::error ("Error", "Registry", "Not found ", rqt);
         return json#{"code" : ResponseCode::ERROR};
     }
 
