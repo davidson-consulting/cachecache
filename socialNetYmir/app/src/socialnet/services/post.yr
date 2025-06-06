@@ -23,6 +23,7 @@ pub class PostService over ActorBase {
     let dmut _registry : (&ActorRef)? = none;
     let mut _uid = 0us;
     let mut _needClose = false;
+    let mut _nb = 1u32;
 
     let dmut _db : (&db::PostDatabase)? = none;
 
@@ -153,7 +154,6 @@ pub class PostService over ActorBase {
             return json#{"code" : ResponseCode::ERROR};
         };
 
-
         {
             let userId = rqt ["userId"].to!{u32} ();
             let userLogin = rqt ["userLogin"].to!{[c8]} ();
@@ -169,6 +169,7 @@ pub class PostService over ActorBase {
                             "userId" : userId};
 
             if let Ok (dmut timeline) = alias registry::utils::find (alias reg, ServiceKind::TIMELINE) {
+                println ("SEND MSG");
                 timeline:.send (msg);
                 return json#{"code" : ResponseCode::OK};
             }

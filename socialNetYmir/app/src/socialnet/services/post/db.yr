@@ -59,7 +59,7 @@ pub class PostDatabase {
                                      ~ "id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n"
                                      ~ "user_id INT NOT NULL,\n"
                                      ~ "post_id INT NOT NULL\n,"
-                                     ~ "FOREIGN KEY (post_id) REFERENCES posts(id)\n)");
+                                     ~ "FOREIGN KEY (post_id) REFERENCES posts (id)\n)");
 
         rqt:.finalize ();
         rqt:.execute ();
@@ -96,10 +96,11 @@ pub class PostDatabase {
         rqt:.dispose ();
 
         for i in 0 .. tags.len {
-            let mut tagReqStr = "INSERT INTO tags (post_id, user_id) values (?, ?)";
+            let mut tagReqStr = "INSERT INTO tags (user_id, post_id) values (?, ?)";
             let dmut tagReq = self._client:.prepare (tagReqStr);
-            tagReq:.setParam (0, postId);
-            tagReq:.setParam (1, tags [i]);
+            tagReq:.setParam (0, tags [i]);
+            tagReq:.setParam (1, postId);
+
 
             tagReq:.finalize ();
             tagReq:.execute ();

@@ -131,9 +131,9 @@ pub class MysqlClient {
         }
 
         if mysql_stmt_prepare (stmt, toStringZ (query), cast!u64 (query.len)) != 0 {
-            let msg = mysql_error (self._conn);
+            let msg = self:.getErrorMsg ();
             mysql_stmt_close (stmt);
-            throw copy AssertError ("Failed to prepare statement - " ~ query ~ " : " ~ unsafe { fromStringZ (msg) });
+            throw copy AssertError ("Failed to prepare statement - " ~ query ~ " : " ~ msg);
         }
 
         let nbParam = mysql_stmt_param_count (stmt);
@@ -176,9 +176,11 @@ pub class MysqlClient {
      */
 
     pub fn dispose (mut self) {
-        if self._conn != null {
-            mysql_close (self._conn);
-            self._conn = null;
+        atomic self {
+            if self._conn != null {
+                mysql_close (self._conn);
+                self._conn = null;
+            }
         }
     }
 

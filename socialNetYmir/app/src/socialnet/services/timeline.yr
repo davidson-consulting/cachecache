@@ -222,6 +222,7 @@ pub class TimelineService over ActorBase {
         {
             let uid = msg ["userId"].to!{u32} ();
             let pid = msg ["postId"].to!{u32} ();
+            println ("Update : ", msg);
             let tags : [u32] = if let Ok (a : &Array) = msg ["tags"]? {
                 copy [i.to!{u32} () for i in a[]]
             } else {
@@ -258,6 +259,7 @@ pub class TimelineService over ActorBase {
             };
 
             let beg = Instant::now ();
+            println (z);
             for u, lst in z {
                 self:.updateForFollowers (u, lst);
             }
@@ -285,48 +287,49 @@ pub class TimelineService over ActorBase {
             return;
         };
 
-        let dmut reg = if let Ok (dmut r) = alias self._registry { alias r }
-        else {
-            log::error ("Error", ServiceKind::TIMELINE, "no registry");
-            return;
-        }
+        // let dmut reg = if let Ok (dmut r) = alias self._registry { alias r }
+        // else {
+        //     log::error ("Error", ServiceKind::TIMELINE, "no registry");
+        //     return;
+        // }
 
         for up in lst {
             db:.insertHome (uid, up.0);
             db:.insertPost (uid, up.0);
+            println ("Insert Post : ", uid, " ", up.0);
             for t in up.1 {
                 db:.insertHome (t, up.0);
             }
         }
 
-        if let Ok (dmut foll) = alias registry::utils::find (alias reg, ServiceKind::SOCIAL_GRAPH) {
-            for page in 0us .. usize::max {
-                let msg = json#{"code" : RequestCode::FIND_FOLLOWERS,
-                                 "userId" : uid,
-                                 "nb" : 1000,
-                                "page" : page};
+        // if let Ok (dmut foll) = alias registry::utils::find (alias reg, ServiceKind::SOCIAL_GRAPH) {
+        //     for page in 0us .. usize::max {
+        //         let msg = json#{"code" : RequestCode::FIND_FOLLOWERS,
+        //                          "userId" : uid,
+        //                          "nb" : 1000,
+        //                         "page" : page};
 
-                let result = foll:.request (msg):.value ();
-                match (result ["code"]?, result ["list"]?) {
-                    (Ok (Int (value-> ResponseCode::OK)), Ok (v : &Array)) => {
-                        for f in v[] for up in lst {
-                            let u = f.to!{u32} ();
-                            let mut isTagged = false;
-                            for j in up.1 if j == u {
-                                isTagged = true;
-                                break;
-                            }
+        //         let result = foll:.request (msg):.value ();
+        //         match (result ["code"]?, result ["list"]?) {
+        //             (Ok (Int (value-> ResponseCode::OK)), Ok (v : &Array)) => {
+        //                 for f in v[] for up in lst {
+        //                     let u = f.to!{u32} ();
+        //                     let mut isTagged = false;
+        //                     for j in up.1 if j == u {
+        //                         isTagged = true;
+        //                         break;
+        //                     }
 
-                            if !isTagged {
-                                db:.insertHome (u, up.0);
-                            }
-                        }?; // catch
+        //                     if !isTagged {
+        //                         db:.insertHome (u, up.0);
+        //                     }
+        //                 }?; // catch
 
-                        if v[].len != 1000 break;
-                    }
-                }
-            }?; // catch
-        }
+        //                 if v[].len != 1000 break;
+        //             }
+        //         }
+        //     }?; // catch
+        //}
     }
 
 }

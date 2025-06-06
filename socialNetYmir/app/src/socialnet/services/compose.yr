@@ -86,6 +86,7 @@ pub class ComposeService over ActorBase {
      */
 
     fn insertNewPost (mut self, rqt : &Config)-> &Config {
+        println ("INSERT NEW POST : ", rqt);
         let dmut reg = if let Ok (dmut r) = alias self._registry { alias r }
         else {
             log::error ("Error", ServiceKind::COMPOSE, "no registry");
